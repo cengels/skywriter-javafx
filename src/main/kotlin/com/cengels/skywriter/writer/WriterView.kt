@@ -1,26 +1,24 @@
 package com.cengels.skywriter.writer
 
-import javafx.application.Platform
-import javafx.scene.text.TextFlow
-import org.fxmisc.richtext.StyleClassedTextArea
-import org.fxmisc.richtext.StyledTextArea
-import org.fxmisc.richtext.TextExt
+import com.cengels.skywriter.enum.Heading
+import javafx.scene.text.TextAlignment
 import tornadofx.*
-import kotlin.concurrent.thread
 
 class WriterView: View() {
     val model = WriterViewModel()
-    val textArea = WriterTextArea().apply {
-        this.insertText(0, "test")
-        this.plainTextChanges().subscribe { change ->
+    val textArea = WriterTextArea().also {
+        it.insertText(0, "This is a thing. This is another thing.")
+        it.plainTextChanges().subscribe { change ->
             // TODO
         }
 
+        it.isWrapText = true
+
         contextmenu {
-            item("Cut")
-            item("Copy")
-            item("Paste")
-            item("Delete")
+            item("Cut").action { it.cut() }
+            item("Copy").action { it.copy() }
+            item("Paste").action { it.paste() }
+            item("Delete").action { it.deleteText(it.selection) }
         }
     }
 
@@ -43,12 +41,12 @@ class WriterView: View() {
                     }
 
                     menu("Edit") {
-                        item("Undo", "Ctrl+Z")
-                        item("Redo", "Ctrl+Y")
+                        item("Undo", "Ctrl+Z").action { textArea.undo() }
+                        item("Redo", "Ctrl+Y").action { textArea.redo() }
                         separator()
-                        item("Cut", "Ctrl+X")
-                        item("Copy", "Ctrl+C")
-                        item("Paste", "Ctrl+V")
+                        item("Cut", "Ctrl+X").action { textArea.cut() }
+                        item("Copy", "Ctrl+C").action { textArea.copy() }
+                        item("Paste", "Ctrl+V").action { textArea.paste() }
                         item("Paste Unformatted", "Ctrl+Shift+V")
                         separator()
                         item("Select Word", "Ctrl+W").action { textArea.selectWord() }
@@ -60,28 +58,30 @@ class WriterView: View() {
                     menu("Formatting") {
                         item("Bold", "Ctrl+B").action { textArea.updateSelection("bold") }
                         item("Italic", "Ctrl+I").action { textArea.updateSelection("italic") }
+                        separator()
+                        item("No Heading").action { textArea.setHeading(null) }
+                        item("Heading 1").action { textArea.setHeading(Heading.H1) }
+                        item("Heading 2").action { textArea.setHeading(Heading.H2) }
+                        item("Heading 3").action { textArea.setHeading(Heading.H3) }
+                        item("Heading 4").action { textArea.setHeading(Heading.H4) }
+                        item("Heading 5").action { textArea.setHeading(Heading.H5) }
+                        item("Heading 6").action { textArea.setHeading(Heading.H6) }
+                        separator()
+                        item("Align Left").action { textArea.setAlignment(TextAlignment.LEFT) }
+                        item("Align Center").action { textArea.setAlignment(TextAlignment.CENTER) }
+                        item("Align Right").action { textArea.setAlignment(TextAlignment.RIGHT) }
+                        item("Align Justify").action { textArea.setAlignment(TextAlignment.JUSTIFY) }
                     }
                 }
             }
 
             center {
-//                scrollpane {
-                    this += textArea
-
-//                    textarea {
-//                        bind(model.text)
-//                    }
-//                }
+                this += textArea
             }
 
             bottom {
                 progressbar {
-                    thread {
-                        for (i in 1..100) {
-                            Platform.runLater { progress = i.toDouble() / 100.0 }
-                            Thread.sleep(100)
-                        }
-                    }
+
                 }
             }
         }
