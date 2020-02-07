@@ -1,0 +1,39 @@
+// set up the kotlin-gradle plugin
+buildscript {
+    ext.kotlin_version = '1.1.60'
+    repositories {
+        mavenLocal()    //    mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.3.61'
+}
+
+// apply the kotlin-gradle plugin
+apply plugin: "kotlin"
+
+version '0.1'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "no.tornado:tornadofx:1.7.20"
+}
+
+kotlin {
+    experimental.coroutines 'enable'
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
