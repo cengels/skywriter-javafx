@@ -1,11 +1,28 @@
 package com.cengels.skywriter.writer
 
 import javafx.application.Platform
+import javafx.scene.text.TextFlow
+import org.fxmisc.richtext.StyleClassedTextArea
+import org.fxmisc.richtext.StyledTextArea
+import org.fxmisc.richtext.TextExt
 import tornadofx.*
 import kotlin.concurrent.thread
 
 class WriterView: View() {
     val model = WriterViewModel()
+    val textArea = WriterTextArea().apply {
+        this.insertText(0, "test")
+        this.plainTextChanges().subscribe { change ->
+            // TODO
+        }
+
+        contextmenu {
+            item("Cut")
+            item("Copy")
+            item("Paste")
+            item("Delete")
+        }
+    }
 
     override val root = vbox {
         borderpane {
@@ -34,27 +51,27 @@ class WriterView: View() {
                         item("Paste", "Ctrl+V")
                         item("Paste Unformatted", "Ctrl+Shift+V")
                         separator()
-                        item("Select Word", "Ctrl+W")
+                        item("Select Word", "Ctrl+W").action { textArea.selectWord() }
                         item("Select Sentence")
-                        item("Select Paragraph", "Ctrl+Shift+W")
-                        item("Select All", "Ctrl+A")
+                        item("Select Paragraph", "Ctrl+Shift+W").action { textArea.selectParagraph() }
+                        item("Select All", "Ctrl+A").action { textArea.selectAll() }
+                    }
+
+                    menu("Formatting") {
+                        item("Bold", "Ctrl+B").action { textArea.updateSelection("bold") }
+                        item("Italic", "Ctrl+I").action { textArea.updateSelection("italic") }
                     }
                 }
             }
 
             center {
-                scrollpane {
-                    textarea {
-                        bind(model.text)
+//                scrollpane {
+                    this += textArea
 
-                        contextmenu {
-                            item("Cut")
-                            item("Copy")
-                            item("Paste")
-                            item("Delete")
-                        }
-                    }
-                }
+//                    textarea {
+//                        bind(model.text)
+//                    }
+//                }
             }
 
             bottom {
