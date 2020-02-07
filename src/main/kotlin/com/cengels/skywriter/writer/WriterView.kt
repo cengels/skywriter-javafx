@@ -1,8 +1,16 @@
 package com.cengels.skywriter.writer
 
 import com.cengels.skywriter.enum.Heading
+import com.cengels.skywriter.persistence.MarkdownParser
+import com.sun.org.apache.xml.internal.serialize.LineSeparator
 import javafx.scene.text.TextAlignment
+import javafx.stage.FileChooser
+import org.fxmisc.richtext.model.Codec
+import org.fxmisc.richtext.model.ReadOnlyStyledDocument
+import org.fxmisc.richtext.model.StyledDocument
 import tornadofx.*
+import java.io.File
+
 
 class WriterView: View() {
     val model = WriterViewModel()
@@ -14,11 +22,17 @@ class WriterView: View() {
 
         it.isWrapText = true
 
+        it.setStyleCodecs(MarkdownParser.PARAGRAPH_CODEC, MarkdownParser.SEGMENT_CODEC)
+
         contextmenu {
             item("Cut").action { it.cut() }
             item("Copy").action { it.copy() }
             item("Paste").action { it.paste() }
             item("Delete").action { it.deleteText(it.selection) }
+        }
+
+        shortcut("Shift+Enter") {
+            it.insertText(it.caretPosition, LineSeparator.Windows)
         }
     }
 
@@ -33,7 +47,19 @@ class WriterView: View() {
                         item("Save", "Ctrl+S") {
                             enableWhen(model.dirty)
                         }
-                        item("Save As...", "Ctrl+Shift+S")
+                        item("Save As...", "Ctrl+Shift+S").action {
+                            val initialDir = System.getProperty("user.dir")
+
+                            chooseFile(
+                                "Save As...",
+                                arrayOf(FileChooser.ExtensionFilter("Markdown", ".md")),
+                                File(initialDir),
+                                FileChooserMode.Save).apply {
+                                if (this.isNotEmpty()) {
+                                    MarkdownParser(textArea.document).save(this.single())
+                                }
+                            }
+                        }
                         item("Rename...", "Ctrl+R")
                         separator()
                         item("Preferences...", "Ctrl+P")

@@ -5,6 +5,7 @@ import com.cengels.skywriter.style.FormattingStylesheet
 import javafx.scene.control.IndexRange
 import javafx.scene.text.TextAlignment
 import org.fxmisc.richtext.StyleClassedTextArea
+import org.fxmisc.richtext.model.ReadOnlyStyledDocument
 import org.fxmisc.richtext.model.StyleSpan
 import org.fxmisc.richtext.model.StyleSpansBuilder
 
@@ -16,7 +17,6 @@ class WriterTextArea : StyleClassedTextArea() {
 
     fun isRangeStyled(start: Int, end: Int, className: String): Boolean {
         val styleSpans = getStyleSpans(start, end)
-        println(getStyleSpans(start, end))
 
         return styleSpans.all { span -> span.style.any { style -> style == className } }
     }
@@ -80,5 +80,9 @@ class WriterTextArea : StyleClassedTextArea() {
         val paragraph = this.currentParagraph
         val paragraphText = this.getParagraph(paragraph).text
 //        this.selectRange()
+    }
+
+    fun toMarkdown() {
+        println(this.document)
     }
 }
