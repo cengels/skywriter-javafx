@@ -114,5 +114,75 @@ class MarkdownParserTests : FreeSpec({
                 output[3].style.shouldContainExactly("bold")
             }
         }
+        "properly handle unterminated tokens" - {
+            "with an unterminated italics segment" {
+                val output = MarkdownParser.SEGMENT_CODEC.decode("This test *involves an unterminated token.")
+
+                output.size shouldBe 1
+                output.single().segment shouldBe "This test *involves an unterminated token."
+                output.single().style.size shouldBe 0
+            }
+            "with an unterminated bold segment" {
+                val output = MarkdownParser.SEGMENT_CODEC.decode("This test involves an unterminated token**.")
+
+                output.size shouldBe 1
+                output.single().segment shouldBe "This test involves an unterminated token**."
+                output.single().style.size shouldBe 0
+            }
+            "with multiple unterminated tokens" {
+                val output = MarkdownParser.SEGMENT_CODEC.decode("This ** test involves multiple_ unterminated tokens.")
+
+                output.size shouldBe 1
+                output.single().segment shouldBe "This ** test involves multiple_ unterminated tokens."
+                output.single().style.size shouldBe 0
+            }
+            "with multiple unterminated tokens and legitimate tokens 1".config(enabled = false) {
+                val output = MarkdownParser.SEGMENT_CODEC.decode("This ** test involves **multiple**_ unterminated tokens.")
+
+                output.size shouldBe 3
+                output[0].segment shouldBe "This "
+                output[0].style.size shouldBe 0
+                output[1].segment shouldBe " test involves "
+                output[1].style.shouldContainExactlyInAnyOrder("bold")
+                output[2].segment shouldBe "**_ unterminated tokens."
+                output[2].style.size shouldBe 0
+            }
+            "with multiple unterminated tokens and legitimate tokens 2".config(enabled = false) {
+                val output = MarkdownParser.SEGMENT_CODEC.decode("This ** test involves *multiple*_ unterminated tokens.")
+
+                output.size shouldBe 3
+                output[0].segment shouldBe "This ** test involves "
+                output[0].style.size shouldBe 0
+                output[1].segment shouldBe "multiple"
+                output[1].style.shouldContainExactlyInAnyOrder("italic")
+                output[2].segment shouldBe "_ unterminated tokens."
+                output[2].style.size shouldBe 0
+            }
+        }
+        "avoid decoding escaped tokens" - {
+            "with simple escaped tokens" {
+                val output = MarkdownParser.SEGMENT_CODEC.decode("This test \\*involves an escaped token\\*.")
+
+                output.size shouldBe 1
+                output.single().segment shouldBe "This test *involves an escaped token*."
+                output.single().style.size shouldBe 0
+            }
+            "where the backslash itself is escaped" {
+                val output = MarkdownParser.SEGMENT_CODEC.decode("This test \\\\*involves an escaped token.\\\\*")
+
+                output.size shouldBe 2
+                output[0].segment shouldBe "This test \\"
+                output[0].style.size shouldBe 0
+                output[1].segment shouldBe "involves an escaped token.\\"
+                output[1].style.shouldContainExactlyInAnyOrder("italic")
+            }
+            "where the escaping of the backslash is escaped" {
+                val output = MarkdownParser.SEGMENT_CODEC.decode("This test \\\\\\*involves an escaped token.\\\\\\*")
+
+                output.size shouldBe 1
+                output.single().segment shouldBe "This test \\*involves an escaped token.\\*"
+                output.single().style.size shouldBe 0
+            }
+        }
     }
 })

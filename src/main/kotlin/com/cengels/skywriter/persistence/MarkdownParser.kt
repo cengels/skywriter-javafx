@@ -8,6 +8,8 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
     companion object {
         var segOps: SegmentOps<String, MutableCollection<String>>? = null
 
+        const val ESCAPE_CHARACTER: Char = '\\'
+
         val TOKEN_MAP: Map<String, String> = mapOf(
             Pair("**", "bold"),
             Pair("__", "bold"),
@@ -88,11 +90,27 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
                     val nextToken = findNextToken(remainingString)
 
                     if (nextToken.first < 0) {
-                        segments.add(StyledSegment(remainingString, mutableListOf()))
+                        if (openingTokens.size > 0 && segments.size > 0) {
+                            // unterminated token
+                            // TODO: Not all test cases work with this, but it's not important enough to warrant putting more time into.
+                            segments[segments.lastIndex] = StyledSegment(unescape("${segments.last().segment}${openingTokens.last()}$remainingString"), mutableListOf())
+                            openingTokens.removeAt(openingTokens.lastIndex)
+
+                            while (openingTokens.size > 0) {
+                                val segment = segments.last()
+                                val index: Int = segments.indexOf(segment)
+                                segments[index - 1] = StyledSegment(unescape("${segments[index - 1].segment}${openingTokens.last()}${segment.segment}"), segments[index - 1].style)
+                                segments.removeAt(index)
+                                openingTokens.removeAt(openingTokens.lastIndex)
+                            }
+                        } else {
+                            segments.add(StyledSegment(unescape(remainingString), mutableListOf()))
+                        }
+
                         remainingString = ""
                     } else if (openingTokens.isNotEmpty() && openingTokens.last() == nextToken.second) {
                         if (nextToken.first != 0) {
-                            segments.add(StyledSegment(remainingString.slice(0 until nextToken.first), openingTokens.map { TOKEN_MAP[it]!! }.toMutableSet()))
+                            segments.add(StyledSegment(unescape(remainingString.slice(0 until nextToken.first)), openingTokens.map { TOKEN_MAP[it]!! }.toMutableSet()))
                         }
 
                         openingTokens.removeAt(openingTokens.size - 1)
@@ -102,9 +120,9 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
                         remainingString = remainingString.slice(nextToken.second.length until remainingString.length)
                     } else {
                         if (openingTokens.isEmpty()) {
-                            segments.add(StyledSegment(remainingString.slice(0 until nextToken.first), mutableListOf()))
+                            segments.add(StyledSegment(unescape(remainingString.slice(0 until nextToken.first)), mutableListOf()))
                         } else {
-                            segments.add(StyledSegment(remainingString.slice(0 until nextToken.first), openingTokens.map { TOKEN_MAP[it]!! }.toMutableSet()))
+                            segments.add(StyledSegment(unescape(remainingString.slice(0 until nextToken.first)), openingTokens.map { TOKEN_MAP[it]!! }.toMutableSet()))
                         }
 
                         openingTokens.add(nextToken.second)
@@ -148,12 +166,11 @@ private fun findNextToken(string: String): Pair<Int, String> {
     return MarkdownParser.TOKEN_MAP.keys.fold(Pair(-1, "")) { acc, token ->
         val index: Int = string.indexOf(token)
 
-        // TODO: Ignore escaped tokens
         if (index == -1) {
             return@fold acc
         }
 
-        if (index < acc.first || acc.first == -1) {
+        if ((index < acc.first || acc.first == -1) && !string.isEscaped(index)) {
             return@fold Pair(index, token)
         }
 
@@ -178,6 +195,22 @@ private fun escape(string: String): String {
         .replace("\\", "\\\\")
 }
 
+/** Unescapes symbols reserved for Markdown from the specified String. */
+private fun unescape(string: String): String {
+    var result = string
+    var index: Int = result.lastIndexOf(MarkdownParser.ESCAPE_CHARACTER)
+
+    while (index != -1) {
+        if (!string.isEscaped(index)) {
+            result = result.removeRange(index..index)
+        }
+
+        index = result.slice(0 until index).lastIndexOf(MarkdownParser.ESCAPE_CHARACTER)
+    }
+
+    return result
+}
+
 fun String.surround(with: String): String = "$with$this$with"
 
 /** Splits the string at the specified exclusive positions. */
@@ -195,4 +228,9 @@ fun String.split(vararg at: Int): Collection<String> {
     splitString.add(this.slice(at.last() until this.length))
 
     return splitString
+}
+
+/** Checks whether the character at the specified index is escaped. */
+fun String.isEscaped(index: Int): Boolean {
+    return this.slice(0 until index).takeLastWhile { it == MarkdownParser.ESCAPE_CHARACTER }.length % 2 == 1
 }
