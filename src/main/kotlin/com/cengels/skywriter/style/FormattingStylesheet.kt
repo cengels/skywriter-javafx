@@ -14,16 +14,8 @@ class FormattingStylesheet : Stylesheet() {
         val h4 by cssclass()
         val h5 by cssclass()
         val h6 by cssclass()
-        val centered by cssclass()
-        val justified by cssclass()
-        val rightaligned by cssclass()
         val bold by cssclass()
         val italic by cssclass()
-        val alignments: Map<TextAlignment, String> = mapOf(
-            Pair(TextAlignment.RIGHT, "rightaligned"),
-            Pair(TextAlignment.CENTER, "centered"),
-            Pair(TextAlignment.JUSTIFY, "justified")
-        )
         val headings: Map<Heading, String> = mapOf(
             Pair(Heading.H1, "h1"),
             Pair(Heading.H2, "h2"),
@@ -63,18 +55,6 @@ class FormattingStylesheet : Stylesheet() {
         h6 {
             fontSize = 12.pt
             fontWeight = FontWeight.BOLD
-        }
-
-        centered {
-            textAlignment = TextAlignment.CENTER
-        }
-
-        justified {
-            textAlignment = TextAlignment.JUSTIFY
-        }
-
-        rightaligned {
-            textAlignment = TextAlignment.RIGHT
         }
 
         bold {

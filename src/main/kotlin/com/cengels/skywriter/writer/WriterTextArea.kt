@@ -39,21 +39,6 @@ class WriterTextArea : StyleClassedTextArea() {
         }
     }
 
-    /** Sets the alignment on the selected paragraphs. */
-    fun setAlignment(textAlignment: TextAlignment) {
-        val range = this.getSelectedParagraphs()
-        for (i in range.start..range.end) {
-            val paragraph = this.getParagraph(i)
-            val stylesWithoutAlignment = paragraph.paragraphStyle.filter { !FormattingStylesheet.alignments.values.contains(it) }.toMutableList()
-
-            if (textAlignment != TextAlignment.LEFT) {
-                stylesWithoutAlignment.add(FormattingStylesheet.alignments[textAlignment])
-            }
-
-            this.setParagraphStyle(i, stylesWithoutAlignment)
-        }
-    }
-
     /** Sets the currently selected paragraphs as the specified heading. */
     fun setHeading(heading: Heading?) {
         val range = this.getSelectedParagraphs()

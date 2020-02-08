@@ -5,9 +5,6 @@ import com.cengels.skywriter.persistence.MarkdownParser
 import com.sun.org.apache.xml.internal.serialize.LineSeparator
 import javafx.scene.text.TextAlignment
 import javafx.stage.FileChooser
-import org.fxmisc.richtext.model.Codec
-import org.fxmisc.richtext.model.ReadOnlyStyledDocument
-import org.fxmisc.richtext.model.StyledDocument
 import tornadofx.*
 import java.io.File
 
@@ -21,8 +18,6 @@ class WriterView: View() {
         }
 
         it.isWrapText = true
-
-        it.setStyleCodecs(MarkdownParser.PARAGRAPH_CODEC, MarkdownParser.SEGMENT_CODEC)
 
         contextmenu {
             item("Cut").action { it.cut() }
@@ -92,11 +87,6 @@ class WriterView: View() {
                         item("Heading 4").action { textArea.setHeading(Heading.H4) }
                         item("Heading 5").action { textArea.setHeading(Heading.H5) }
                         item("Heading 6").action { textArea.setHeading(Heading.H6) }
-                        separator()
-                        item("Align Left").action { textArea.setAlignment(TextAlignment.LEFT) }
-                        item("Align Center").action { textArea.setAlignment(TextAlignment.CENTER) }
-                        item("Align Right").action { textArea.setAlignment(TextAlignment.RIGHT) }
-                        item("Align Justify").action { textArea.setAlignment(TextAlignment.JUSTIFY) }
                     }
                 }
             }
