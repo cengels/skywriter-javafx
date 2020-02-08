@@ -3,8 +3,9 @@ package com.cengels.skywriter.writer
 import com.cengels.skywriter.enum.Heading
 import com.cengels.skywriter.persistence.MarkdownParser
 import com.sun.org.apache.xml.internal.serialize.LineSeparator
-import javafx.scene.text.TextAlignment
+import javafx.scene.control.ButtonType
 import javafx.stage.FileChooser
+import javafx.stage.WindowEvent
 import tornadofx.*
 import java.io.File
 
@@ -14,7 +15,7 @@ class WriterView: View("Skywriter") {
     val textArea = WriterTextArea().also {
         it.insertText(0, "This is a thing. This is another thing.")
         it.plainTextChanges().subscribe { change ->
-            // TODO
+            model.dirty = true
         }
 
         it.isWrapText = true
@@ -32,54 +33,50 @@ class WriterView: View("Skywriter") {
     }
 
     init {
-        model.fileProperty.onChange { this.title = if (model.file != null) "Skywriter ${model.file!!.name}" else "Skywriter" }
+        this.updateTitle()
+        model.fileProperty.onChange { this.updateTitle() }
+        model.dirtyProperty.onChange { this.updateTitle() }
+    }
+
+    override fun onDock() {
+        currentWindow!!.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST) {
+            warnOnUnsavedChanges { it.consume() }
+        }
     }
 
     override val root = vbox {
+        setPrefSize(800.0, 600.0)
         borderpane {
             top {
                 menubar {
                     menu("File") {
-                        item("New", "Ctrl+N")
-                        item("Open...", "Ctrl+O").action {
-                            val initialDir = if (model.file != null) model.file!!.parent else System.getProperty("user.dir")
+                        item("New", "Ctrl+N").action {
+                            warnOnUnsavedChanges { return@action }
 
-                            chooseFile(
-                                "Open...",
-                                arrayOf(FileChooser.ExtensionFilter("Markdown", "*.md")),
-                                File(initialDir),
-                                FileChooserMode.Single).apply {
-                                if (this.isNotEmpty()) {
-                                    // TODO: Add warning to save the current file if dirty
-                                    model.file = this.single()
-                                    MarkdownParser(textArea.document).load(this.single(), textArea.segOps).also {
-                                        textArea.replace(it)
-                                    }
-                                }
-                            }
+                            textArea.replaceText("")
+                            model.file = null
+                            model.dirty = false
+                        }
+                        item("Open...", "Ctrl+O").action {
+                            openLoadDialog()
                         }
                         separator()
                         item("Save", "Ctrl+S") {
-//                            enableWhen(model.dirty)
+                            enableWhen(model.dirtyProperty)
+                            action { save() }
                         }
                         item("Save As...", "Ctrl+Shift+S").action {
-                            val initialDir = if (model.file != null) model.file!!.parent else System.getProperty("user.dir")
-
-                            chooseFile(
-                                "Save As...",
-                                arrayOf(FileChooser.ExtensionFilter("Markdown", "*.md")),
-                                File(initialDir),
-                                FileChooserMode.Save).apply {
-                                if (this.isNotEmpty()) {
-                                    model.file = this.single()
-                                    MarkdownParser(textArea.document).save(this.single())
-                                }
-                            }
+                            openSaveDialog()
                         }
-                        item("Rename...", "Ctrl+R")
+                        item("Rename...", "Ctrl+R") {
+                            enableWhen(model.fileExistsProperty)
+                            action { rename() }
+                        }
                         separator()
                         item("Preferences...", "Ctrl+P")
-                        item("Quit", "Ctrl+Alt+F4")
+                        item("Quit", "Ctrl+Alt+F4").action {
+                            close()
+                        }
                     }
 
                     menu("Edit") {
@@ -117,8 +114,98 @@ class WriterView: View("Skywriter") {
             }
 
             bottom {
-                progressbar {
+            }
+        }
+    }
 
+    private fun updateTitle() {
+        this.title = if (model.file != null) "Skywriter • ${model.file!!.name}" else "Skywriter • Untitled"
+
+        if (model.dirty) {
+            this.title += " *"
+        }
+    }
+
+    private fun save() {
+        if (model.file == null) {
+            return openSaveDialog()
+        }
+
+        MarkdownParser(textArea.document).save(model.file!!)
+        model.dirty = false
+    }
+
+    private fun openSaveDialog() {
+        val initialDir = if (model.file != null) model.file!!.parent else System.getProperty("user.dir")
+
+        chooseFile(
+            "Save As...",
+            arrayOf(FileChooser.ExtensionFilter("Markdown", "*.md")),
+            File(initialDir),
+            FileChooserMode.Save).apply {
+            if (this.isNotEmpty()) {
+                model.file = this.single()
+                MarkdownParser(textArea.document).save(this.single())
+                model.dirty = false
+            }
+        }
+    }
+
+    private fun openLoadDialog() {
+        val initialDir = if (model.file != null) model.file!!.parent else System.getProperty("user.dir")
+
+        chooseFile(
+            "Open...",
+            arrayOf(FileChooser.ExtensionFilter("Markdown", "*.md")),
+            File(initialDir),
+            FileChooserMode.Single).apply {
+            if (this.isNotEmpty()) {
+                warnOnUnsavedChanges { return@apply }
+
+                model.file = this.single()
+                MarkdownParser(textArea.document).load(this.single(), textArea.segOps).also {
+                    textArea.replace(it)
+                    model.dirty = false
+                }
+            }
+        }
+    }
+
+    private fun rename() {
+        chooseFile(
+            "Rename...",
+            arrayOf(FileChooser.ExtensionFilter("Markdown", "*.md")),
+            File(model.file!!.parent),
+            FileChooserMode.Save).apply {
+            if (this.isNotEmpty()) {
+                if (model.dirty) {
+                    save()
+                }
+
+                val newFile: File = this.single()
+                if (newFile.exists()) {
+                    newFile.delete()
+                }
+
+                model.file!!.renameTo(newFile)
+                updateTitle()
+            }
+        }
+    }
+
+    /** Warns the user of unsaved changes and prompts them to save. */
+    private inline fun warnOnUnsavedChanges(onCancel: () -> Unit) {
+        if (model.dirty) {
+            warning(
+                "Warning",
+                "You have unsaved changes. Would you like to save them?",
+                ButtonType.YES,
+                ButtonType.NO,
+                ButtonType.CANCEL
+            ) {
+                when (this.result) {
+                    ButtonType.YES -> save()
+                    ButtonType.CANCEL -> onCancel()
                 }
             }
         }

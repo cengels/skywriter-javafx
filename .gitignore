@@ -30,3 +30,4 @@ gradlew
 gradlew.bat
 out/
 .kotlintest/
+conf/
