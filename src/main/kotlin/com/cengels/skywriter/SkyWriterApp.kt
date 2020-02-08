@@ -1,12 +1,19 @@
 package com.cengels.skywriter
 
 import com.cengels.skywriter.style.FormattingStylesheet
+import com.cengels.skywriter.style.WriterStylesheet
 import com.cengels.skywriter.writer.WriterView
 import javafx.stage.Stage
 import javafx.stage.WindowEvent
 import tornadofx.App
+import tornadofx.reloadStylesheetsOnFocus
+import tornadofx.reloadViewsOnFocus
 
-class SkyWriterApp : App(WriterView::class, FormattingStylesheet::class) {
+class SkyWriterApp : App(WriterView::class, WriterStylesheet::class, FormattingStylesheet::class) {
+    init {
+        reloadStylesheetsOnFocus()
+    }
+
     override fun start(stage: Stage) {
         stage.minWidth = 300.0
         stage.minHeight = 200.0

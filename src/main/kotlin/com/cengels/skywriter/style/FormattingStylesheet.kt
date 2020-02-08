@@ -1,6 +1,7 @@
 package com.cengels.skywriter.style
 
 import com.cengels.skywriter.enum.Heading
+import javafx.scene.paint.Color
 import javafx.scene.text.FontPosture
 import javafx.scene.text.FontWeight
 import javafx.scene.text.TextAlignment
@@ -24,9 +25,15 @@ class FormattingStylesheet : Stylesheet() {
             Pair(Heading.H5, "h5"),
             Pair(Heading.H6, "h6")
         )
+        val paragraphText by cssclass()
+        val text by cssclass()
     }
 
     init {
+        paragraphText {
+            padding = CssBox(0.em, 0.em, 0.8.em, 0.em)
+        }
+
         h1 {
             fontSize = 22.pt
             fontWeight = FontWeight.BOLD

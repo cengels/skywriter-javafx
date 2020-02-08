@@ -2,8 +2,13 @@ package com.cengels.skywriter.writer
 
 import com.cengels.skywriter.enum.Heading
 import com.cengels.skywriter.persistence.MarkdownParser
+import com.cengels.skywriter.style.WriterStylesheet
 import com.sun.org.apache.xml.internal.serialize.LineSeparator
 import javafx.scene.control.ButtonType
+import javafx.scene.layout.ColumnConstraints
+import javafx.scene.layout.Priority
+import javafx.scene.layout.RowConstraints
+import javafx.scene.paint.Color
 import javafx.stage.FileChooser
 import javafx.stage.WindowEvent
 import tornadofx.*
@@ -13,11 +18,14 @@ import java.io.File
 class WriterView: View("Skywriter") {
     val model = WriterViewModel()
     val textArea = WriterTextArea().also {
-        it.plainTextChanges().subscribe { change ->
+        it.addClass(WriterStylesheet.textArea)
+
+        it.richChanges().subscribe { change ->
             model.dirty = true
         }
 
         it.isWrapText = true
+        it.useMaxHeight = true
 
         contextmenu {
             item("Cut").action { it.cut() }
@@ -58,77 +66,98 @@ class WriterView: View("Skywriter") {
         }
     }
 
-    override val root = vbox {
+    override val root = borderpane {
         setPrefSize(800.0, 600.0)
-        borderpane {
-            top {
-                menubar {
-                    menu("File") {
-                        item("New", "Ctrl+N").action {
-                            warnOnUnsavedChanges { return@action }
+        top {
+            useMaxWidth = true
+            menubar {
+                menu("File") {
+                    item("New", "Ctrl+N").action {
+                        warnOnUnsavedChanges { return@action }
 
-                            textArea.replaceText("")
-                            model.file = null
-                            model.dirty = false
-                        }
-                        item("Open...", "Ctrl+O").action {
-                            openLoadDialog()
-                        }
-                        separator()
-                        item("Save", "Ctrl+S") {
-                            enableWhen(model.dirtyProperty)
-                            action { save() }
-                        }
-                        item("Save As...", "Ctrl+Shift+S").action {
-                            openSaveDialog()
-                        }
-                        item("Rename...", "Ctrl+R") {
-                            enableWhen(model.fileExistsProperty)
-                            action { rename() }
-                        }
-                        separator()
-                        item("Preferences...", "Ctrl+P")
-                        item("Quit", "Ctrl+Alt+F4").action {
-                            close()
-                        }
+                        textArea.replaceText("")
+                        model.file = null
+                        model.dirty = false
                     }
-
-                    menu("Edit") {
-                        item("Undo", "Ctrl+Z").action { textArea.undo() }
-                        item("Redo", "Ctrl+Y").action { textArea.redo() }
-                        separator()
-                        item("Cut", "Ctrl+X").action { textArea.cut() }
-                        item("Copy", "Ctrl+C").action { textArea.copy() }
-                        item("Paste", "Ctrl+V").action { textArea.paste() }
-                        item("Paste Unformatted", "Ctrl+Shift+V")
-                        separator()
-                        item("Select Word", "Ctrl+W").action { textArea.selectWord() }
-                        item("Select Sentence")
-                        item("Select Paragraph", "Ctrl+Shift+W").action { textArea.selectParagraph() }
-                        item("Select All", "Ctrl+A").action { textArea.selectAll() }
+                    item("Open...", "Ctrl+O").action {
+                        openLoadDialog()
                     }
-
-                    menu("Formatting") {
-                        item("Bold", "Ctrl+B").action { textArea.updateSelection("bold") }
-                        item("Italic", "Ctrl+I").action { textArea.updateSelection("italic") }
-                        separator()
-                        item("No Heading").action { textArea.setHeading(null) }
-                        item("Heading 1").action { textArea.setHeading(Heading.H1) }
-                        item("Heading 2").action { textArea.setHeading(Heading.H2) }
-                        item("Heading 3").action { textArea.setHeading(Heading.H3) }
-                        item("Heading 4").action { textArea.setHeading(Heading.H4) }
-                        item("Heading 5").action { textArea.setHeading(Heading.H5) }
-                        item("Heading 6").action { textArea.setHeading(Heading.H6) }
+                    separator()
+                    item("Save", "Ctrl+S") {
+                        enableWhen(model.dirtyProperty)
+                        action { save() }
+                    }
+                    item("Save As...", "Ctrl+Shift+S").action {
+                        openSaveDialog()
+                    }
+                    item("Rename...", "Ctrl+R") {
+                        enableWhen(model.fileExistsProperty)
+                        action { rename() }
+                    }
+                    separator()
+                    item("Preferences...", "Ctrl+P")
+                    item("Quit", "Ctrl+Alt+F4").action {
+                        close()
                     }
                 }
-            }
 
-            center {
-                this += textArea
-            }
+                menu("Edit") {
+                    item("Undo", "Ctrl+Z").action { textArea.undo() }
+                    item("Redo", "Ctrl+Y").action { textArea.redo() }
+                    separator()
+                    item("Cut", "Ctrl+X").action { textArea.cut() }
+                    item("Copy", "Ctrl+C").action { textArea.copy() }
+                    item("Paste", "Ctrl+V").action { textArea.paste() }
+                    item("Paste Unformatted", "Ctrl+Shift+V")
+                    separator()
+                    item("Select Word", "Ctrl+W").action { textArea.selectWord() }
+                    item("Select Sentence")
+                    item("Select Paragraph", "Ctrl+Shift+W").action { textArea.selectParagraph() }
+                    item("Select All", "Ctrl+A").action { textArea.selectAll() }
+                }
 
-            bottom {
+                menu("Formatting") {
+                    item("Bold", "Ctrl+B").action { textArea.activateStyle("bold") }
+                    item("Italic", "Ctrl+I").action { textArea.activateStyle("italic") }
+                    separator()
+                    item("No Heading").action { textArea.setHeading(null) }
+                    item("Heading 1").action { textArea.setHeading(Heading.H1) }
+                    item("Heading 2").action { textArea.setHeading(Heading.H2) }
+                    item("Heading 3").action { textArea.setHeading(Heading.H3) }
+                    item("Heading 4").action { textArea.setHeading(Heading.H4) }
+                    item("Heading 5").action { textArea.setHeading(Heading.H5) }
+                    item("Heading 6").action { textArea.setHeading(Heading.H6) }
+                }
             }
+        }
+
+        center {
+            gridpane {
+                this.useMaxWidth = true
+                this.useMaxHeight = true
+                this.columnConstraints.addAll(
+                    ColumnConstraints().apply { this.percentWidth = 15.0 },
+                    ColumnConstraints().apply { this.percentWidth = 70.0 },
+                    ColumnConstraints().apply { this.percentWidth = 15.0 }
+                )
+                this.rowConstraints.add(RowConstraints().apply { this.percentHeight = 100.0 })
+
+                vbox {
+                    addClass(WriterStylesheet.textAreaBackground)
+                    this.useMaxWidth = true
+                    this.useMaxHeight = true
+                    gridpaneConstraints {
+                        columnRowIndex(0, 0)
+                        columnSpan = 3
+                    }
+                }
+
+                this.add(textArea, 1, 0)
+            }
+        }
+
+        bottom {
+            useMaxWidth = true
         }
     }
 
@@ -136,7 +165,7 @@ class WriterView: View("Skywriter") {
         this.title = if (model.file != null) "Skywriter • ${model.file!!.name}" else "Skywriter • Untitled"
 
         if (model.dirty) {
-            this.title += " *"
+            this.title += "*"
         }
     }
 

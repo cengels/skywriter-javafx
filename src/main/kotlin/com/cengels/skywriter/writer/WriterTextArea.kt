@@ -8,8 +8,35 @@ import org.fxmisc.richtext.StyleClassedTextArea
 import org.fxmisc.richtext.model.ReadOnlyStyledDocument
 import org.fxmisc.richtext.model.StyleSpan
 import org.fxmisc.richtext.model.StyleSpansBuilder
+import tornadofx.select
 
 class WriterTextArea : StyleClassedTextArea() {
+    var insertionStyle: MutableCollection<String>? = null
+
+    init {
+        this.plainTextChanges().subscribe { change ->
+            if (insertionStyle != null) {
+                val from = change.position
+                val length = change.inserted.length
+
+                if (length > 0) {
+                    val styles = getStyleAtPosition(from).toMutableList()
+
+                    insertionStyle!!.forEach {
+                        if (styles.contains(it)) {
+                            styles.remove(it)
+                        } else {
+                            styles.add(it)
+                        }
+                    }
+
+                    setStyle(from, from + length, styles)
+                    insertionStyle = null
+                }
+            }
+        }
+    }
+
     fun updateSelection(className: String) {
         val selection: IndexRange = this.selection
         this.toggleStyleClass(selection.start, selection.end, className)
@@ -36,6 +63,21 @@ class WriterTextArea : StyleClassedTextArea() {
                     style -> style != className
                 }.plus(className).toMutableList(), styleSpan.length)
             }).create())
+        }
+    }
+
+    /** If text is selected, styles the selected text with the specified class. Otherwise, starts a new segment with the specified style class. */
+    fun activateStyle(className: String) {
+        if (selection.length > 0) {
+            updateSelection(className)
+        } else {
+            if (insertionStyle == null) {
+                insertionStyle = mutableListOf(className)
+            } else if (insertionStyle!!.contains(className)) {
+                insertionStyle!!.remove(className)
+            } else {
+                insertionStyle!!.add(className)
+            }
         }
     }
 
