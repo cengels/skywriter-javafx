@@ -9,7 +9,7 @@ import tornadofx.*
 import java.io.File
 
 
-class WriterView: View() {
+class WriterView: View("Skywriter") {
     val model = WriterViewModel()
     val textArea = WriterTextArea().also {
         it.insertText(0, "This is a thing. This is another thing.")
@@ -31,26 +31,47 @@ class WriterView: View() {
         }
     }
 
+    init {
+        model.fileProperty.onChange { this.title = if (model.file != null) "Skywriter ${model.file!!.name}" else "Skywriter" }
+    }
+
     override val root = vbox {
         borderpane {
             top {
                 menubar {
                     menu("File") {
                         item("New", "Ctrl+N")
-                        item("Open...", "Ctrl+O")
+                        item("Open...", "Ctrl+O").action {
+                            val initialDir = if (model.file != null) model.file!!.parent else System.getProperty("user.dir")
+
+                            chooseFile(
+                                "Open...",
+                                arrayOf(FileChooser.ExtensionFilter("Markdown", "*.md")),
+                                File(initialDir),
+                                FileChooserMode.Single).apply {
+                                if (this.isNotEmpty()) {
+                                    // TODO: Add warning to save the current file if dirty
+                                    model.file = this.single()
+                                    MarkdownParser(textArea.document).load(this.single(), textArea.segOps).also {
+                                        textArea.replace(it)
+                                    }
+                                }
+                            }
+                        }
                         separator()
                         item("Save", "Ctrl+S") {
-                            enableWhen(model.dirty)
+//                            enableWhen(model.dirty)
                         }
                         item("Save As...", "Ctrl+Shift+S").action {
-                            val initialDir = System.getProperty("user.dir")
+                            val initialDir = if (model.file != null) model.file!!.parent else System.getProperty("user.dir")
 
                             chooseFile(
                                 "Save As...",
-                                arrayOf(FileChooser.ExtensionFilter("Markdown", ".md")),
+                                arrayOf(FileChooser.ExtensionFilter("Markdown", "*.md")),
                                 File(initialDir),
                                 FileChooserMode.Save).apply {
                                 if (this.isNotEmpty()) {
+                                    model.file = this.single()
                                     MarkdownParser(textArea.document).save(this.single())
                                 }
                             }

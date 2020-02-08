@@ -2,6 +2,7 @@ package com.cengels.skywriter.persistence
 
 import org.fxmisc.richtext.model.*
 import java.io.*
+import java.util.*
 
 
 class MarkdownParser(val document: StyledDocument<MutableCollection<String>, String, MutableCollection<String>>) {
@@ -27,18 +28,23 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
 
             override fun decode(input: BufferedReader): StyledDocument<MutableCollection<String>, String, MutableCollection<String>> {
                 var line: String? = input.readLine()
-                val document: EditableStyledDocument<MutableCollection<String>, String, MutableCollection<String>> = SimpleEditableStyledDocument(
-                    mutableListOf(), mutableListOf())
+                val documentBuilder = ReadOnlyStyledDocumentBuilder<MutableCollection<String>, String, MutableCollection<String>>(segOps, mutableListOf())
 
                 while (line != null) {
                     val paragraphStyles: MutableCollection<String> = PARAGRAPH_CODEC.decode(line)
+                    line = line.trimStart('#')
+
+                    if (paragraphStyles.isNotEmpty() && line.startsWith(' ')) {
+                        line = line.slice(1..line.lastIndex)
+                    }
+
                     val textSegments: List<StyledSegment<String, MutableCollection<String>>> = SEGMENT_CODEC.decode(line)
 
-                    document.paragraphs.add(Paragraph(paragraphStyles, segOps, textSegments))
+                    documentBuilder.addParagraph(textSegments, paragraphStyles)
                     line = input.readLine()
                 }
 
-                return document
+                return documentBuilder.build()
             }
         }
 
@@ -144,17 +150,20 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
             fileOutputStream.close()
         } catch (exception: IOException) {
             exception.printStackTrace()
+
+            throw exception
         }
     }
 
-    fun load(file: File, segmentOps: SegmentOps<String, MutableCollection<String>>) {
+    fun load(file: File, segmentOps: SegmentOps<String, MutableCollection<String>>): StyledDocument<MutableCollection<String>, String, MutableCollection<String>> {
         try {
             val bufferedReader = BufferedReader(FileReader(file))
             segOps = segmentOps
-            DOCUMENT_CODEC.decode(bufferedReader)
-            bufferedReader.close()
+            return DOCUMENT_CODEC.decode(bufferedReader).apply { bufferedReader.close()  }
         } catch (exception: IOException) {
             exception.printStackTrace()
+
+            throw exception
         }
     }
 }
