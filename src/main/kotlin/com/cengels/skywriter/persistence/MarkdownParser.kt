@@ -20,9 +20,16 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
 
         val DOCUMENT_CODEC = object: PlainTextCodec<StyledDocument<MutableCollection<String>, String, MutableCollection<String>>, BufferedReader> {
             override fun encode(writer: BufferedWriter, element: StyledDocument<MutableCollection<String>, String, MutableCollection<String>>) {
-                element.paragraphs.forEach { paragraph ->
-                    PARAGRAPH_CODEC.encode(writer, paragraph.paragraphStyle)
-                    SEGMENT_CODEC.encode(writer, paragraph.styledSegments)
+                element.paragraphs.forEachIndexed { index, paragraph ->
+                    if (paragraph.text.trim().isNotEmpty()) {
+                        PARAGRAPH_CODEC.encode(writer, paragraph.paragraphStyle)
+                        SEGMENT_CODEC.encode(writer, paragraph.styledSegments)
+
+                        if (index != element.paragraphs.lastIndex) {
+                            writer.newLine()
+                            writer.newLine()
+                        }
+                    }
                 }
             }
 
@@ -31,17 +38,33 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
                 val documentBuilder = ReadOnlyStyledDocumentBuilder<MutableCollection<String>, String, MutableCollection<String>>(segOps, mutableListOf())
 
                 while (line != null) {
-                    val paragraphStyles: MutableCollection<String> = PARAGRAPH_CODEC.decode(line)
-                    line = line.trimStart('#')
+                    var segmentText: String = ""
+                    var paragraphBreak: Boolean = false
 
-                    if (paragraphStyles.isNotEmpty() && line.startsWith(' ')) {
-                        line = line.slice(1..line.lastIndex)
+                    while (line != null) {
+                        if (line.trim().isNotEmpty()) {
+                            if (paragraphBreak) {
+                                break
+                            }
+
+                            segmentText += if (segmentText.isEmpty()) line else " $line"
+                        } else {
+                            paragraphBreak = true
+                        }
+
+                        line = input.readLine()
                     }
 
-                    val textSegments: List<StyledSegment<String, MutableCollection<String>>> = SEGMENT_CODEC.decode(line)
+                    val paragraphStyles: MutableCollection<String> = PARAGRAPH_CODEC.decode(segmentText)
+                    segmentText = segmentText.trimStart('#')
+
+                    if (paragraphStyles.isNotEmpty() && segmentText.startsWith(' ')) {
+                        segmentText = segmentText.slice(1..segmentText.lastIndex)
+                    }
+
+                    val textSegments: List<StyledSegment<String, MutableCollection<String>>> = SEGMENT_CODEC.decode(segmentText)
 
                     documentBuilder.addParagraph(textSegments, paragraphStyles)
-                    line = input.readLine()
                 }
 
                 return documentBuilder.build()
