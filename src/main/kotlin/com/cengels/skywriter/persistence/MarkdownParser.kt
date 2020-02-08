@@ -85,18 +85,21 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
                 val openingTokens: MutableList<String> = mutableListOf()
 
                 while (remainingString.isNotEmpty()) {
-                    val nextToken = findNextToken(input)
+                    val nextToken = findNextToken(remainingString)
 
                     if (nextToken.first < 0) {
                         segments.add(StyledSegment(remainingString, mutableListOf()))
                         remainingString = ""
                     } else if (openingTokens.isNotEmpty() && openingTokens.last() == nextToken.second) {
-                        segments.add(StyledSegment(remainingString.slice(0 until nextToken.first), openingTokens.map { TOKEN_MAP[it]!! }.toMutableSet()))
+                        if (nextToken.first != 0) {
+                            segments.add(StyledSegment(remainingString.slice(0 until nextToken.first), openingTokens.map { TOKEN_MAP[it]!! }.toMutableSet()))
+                        }
 
                         openingTokens.removeAt(openingTokens.size - 1)
                         remainingString = remainingString.slice(nextToken.first + nextToken.second.length until remainingString.length)
                     } else if (nextToken.first == 0) {
                         openingTokens.add(nextToken.second)
+                        remainingString = remainingString.slice(nextToken.second.length until remainingString.length)
                     } else {
                         if (openingTokens.isEmpty()) {
                             segments.add(StyledSegment(remainingString.slice(0 until nextToken.first), mutableListOf()))
@@ -146,6 +149,9 @@ private fun findNextToken(string: String): Pair<Int, String> {
         val index: Int = string.indexOf(token)
 
         // TODO: Ignore escaped tokens
+        if (index == -1) {
+            return@fold acc
+        }
 
         if (index < acc.first || acc.first == -1) {
             return@fold Pair(index, token)
