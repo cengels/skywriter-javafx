@@ -27,7 +27,7 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
             }
 
             override fun decode(input: BufferedReader): StyledDocument<MutableCollection<String>, String, MutableCollection<String>> {
-                var line: String? = input.readLine()
+                var line: String? = input.readLine() ?: ""
                 val documentBuilder = ReadOnlyStyledDocumentBuilder<MutableCollection<String>, String, MutableCollection<String>>(segOps, mutableListOf())
 
                 while (line != null) {
@@ -134,6 +134,10 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
                         openingTokens.add(nextToken.second)
                         remainingString = remainingString.slice(nextToken.first + nextToken.second.length until remainingString.length)
                     }
+                }
+
+                if (segments.isEmpty()) {
+                    segments.add(StyledSegment("", mutableListOf()))
                 }
 
                 return segments

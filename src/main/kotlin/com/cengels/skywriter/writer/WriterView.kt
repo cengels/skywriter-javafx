@@ -13,7 +13,6 @@ import java.io.File
 class WriterView: View("Skywriter") {
     val model = WriterViewModel()
     val textArea = WriterTextArea().also {
-        it.insertText(0, "This is a thing. This is another thing.")
         it.plainTextChanges().subscribe { change ->
             model.dirty = true
         }
@@ -33,6 +32,16 @@ class WriterView: View("Skywriter") {
     }
 
     init {
+        app.config.string("lastOpenFile").apply {
+            if (this != null) {
+                File(this).apply {
+                    if (this.exists()) {
+                        open(this)
+                    }
+                }
+            }
+        }
+
         this.updateTitle()
         model.fileProperty.onChange { this.updateTitle() }
         model.dirtyProperty.onChange { this.updateTitle() }
@@ -41,6 +50,11 @@ class WriterView: View("Skywriter") {
     override fun onDock() {
         currentWindow!!.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST) {
             warnOnUnsavedChanges { it.consume() }
+
+            if (!it.isConsumed && model.file != null) {
+                app.config.set("lastOpenFile" to model.file!!.absolutePath)
+                app.config.save()
+            }
         }
     }
 
@@ -135,6 +149,14 @@ class WriterView: View("Skywriter") {
         model.dirty = false
     }
 
+    private fun open(file: File) {
+        model.file = file
+        MarkdownParser(textArea.document).load(file, textArea.segOps).also {
+            textArea.replace(it)
+            model.dirty = false
+        }
+    }
+
     private fun openSaveDialog() {
         val initialDir = if (model.file != null) model.file!!.parent else System.getProperty("user.dir")
 
@@ -162,11 +184,7 @@ class WriterView: View("Skywriter") {
             if (this.isNotEmpty()) {
                 warnOnUnsavedChanges { return@apply }
 
-                model.file = this.single()
-                MarkdownParser(textArea.document).load(this.single(), textArea.segOps).also {
-                    textArea.replace(it)
-                    model.dirty = false
-                }
+                open(this.single())
             }
         }
     }
