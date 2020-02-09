@@ -57,7 +57,11 @@ class WriterTextArea : StyleClassedTextArea() {
 
     /** Queues the specified action until after the document has completed all its queued changes and is ready to accept new ones. */
     fun whenReady(callback: () -> Unit) {
-        this.queue.offer(callback)
+        if (this.ready) {
+            callback()
+        } else {
+            this.queue.offer(callback)
+        }
     }
 
     /** Gets the paragraph at the specified absolute character position. */
