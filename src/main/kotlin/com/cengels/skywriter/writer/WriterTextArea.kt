@@ -55,12 +55,9 @@ class WriterTextArea : StyleClassedTextArea() {
         smartReplacer.observe(this)
     }
 
-    /** A safe version of [StyleClassedTextArea.replaceText()] that waits to replace text until the text area is done updating.. */
-    fun replaceTextWhenReady(start: Int, end: Int, text: String) {
-        this.queue.offer {
-            super.replaceText(start, end, text)
-            moveTo(caretPosition + 1)
-        }
+    /** Queues the specified action until after the document has completed all its queued changes and is ready to accept new ones. */
+    fun whenReady(callback: () -> Unit) {
+        this.queue.offer(callback)
     }
 
     /** Gets the paragraph at the specified absolute character position. */

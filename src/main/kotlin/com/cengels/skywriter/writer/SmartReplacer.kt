@@ -18,6 +18,7 @@ class SmartReplacer(
     companion object {
         val DEFAULT_QUOTES_MAP = mutableMapOf('"' to ('“' to '”'), '\'' to ('‘' to '’'))
         val DEFAULT_SYMBOL_MAP = mutableMapOf("---" to "—", "--" to "–", "#" to "*").toSortedMap(compareBy<String> { -it.length }.thenBy { it })
+        private val SYMBOLS_BEFORE_OPENING_QUOTE = arrayOf(' ', '-', '–', '—')
     }
 
     /** Subscribes to changes made on the specified text area and automatically replaces the configured symbols with the specified ones. */
@@ -51,12 +52,25 @@ class SmartReplacer(
             return
         }
 
+        val insertedChar = change.inserted.single()
         val offset = textArea.offsetToPosition(change.position, TwoDimensional.Bias.Backward)
         val textBefore = textArea.getParagraph(offset.major).text.slice(0 until offset.minor)
 
         symbolMap.forEach { (replaceThis, withThis) ->
-            if (textBefore.endsWith(replaceThis) && (replaceThis.any { it != replaceThis.first() } || change.inserted.single() != replaceThis.first())) {
-                textArea.replaceTextWhenReady(change.position - replaceThis.length, change.position, withThis)
+            if (textBefore.endsWith(replaceThis) && (replaceThis.any { it != replaceThis.first() } || insertedChar != replaceThis.first())) {
+                textArea.whenReady {
+                    textArea.replaceText(change.position - replaceThis.length, change.position, withThis)
+                    textArea.moveTo(textArea.caretPosition + 1)
+                }
+                return@apply
+            }
+        }
+
+        quotesMap.forEach { (replaceThis, withThis) ->
+            if (replaceThis == insertedChar) {
+                val replacer = if (textBefore.isEmpty() || SYMBOLS_BEFORE_OPENING_QUOTE.any { textBefore.endsWith(it) }) withThis.first else withThis.second
+
+                textArea.whenReady { textArea.replaceText(change.position, change.insertionEnd, replacer.toString()) }
                 return@apply
             }
         }
