@@ -6,9 +6,9 @@ A lightweight distraction-free writer built on top of TornadoFX (Java) that expo
 - [x] Import from Markdown
 - [x] Export to Markdown
 - [x] Basic formatting
-- [ ] Theming
-- [ ] Smart quotes
-- [ ] Find and replace
-- [ ] Spellcheck
-- [ ] Tracker for words written per day
-- [ ] Tracker for time written per day
+- [ ] Theming ([#2](https://github.com/cengels/skywriter/issues/2))
+- [ ] Smart quotes ([#4](https://github.com/cengels/skywriter/issues/4))
+- [ ] Find and replace ([#5](https://github.com/cengels/skywriter/issues/5))
+- [ ] Spellcheck ([#7](https://github.com/cengels/skywriter/issues/7))
+- [ ] Tracker for words written per day ([#9](https://github.com/cengels/skywriter/issues/9))
+- [ ] Tracker for time written per day ([#10](https://github.com/cengels/skywriter/issues/10))
