@@ -2,38 +2,89 @@ package com.cengels.skywriter.writer
 
 import com.cengels.skywriter.enum.Heading
 import com.cengels.skywriter.style.FormattingStylesheet
+import javafx.beans.property.SimpleBooleanProperty
+import javafx.event.Event
+import javafx.event.EventType
 import javafx.scene.control.IndexRange
 import javafx.scene.text.TextAlignment
 import org.fxmisc.richtext.StyleClassedTextArea
-import org.fxmisc.richtext.model.ReadOnlyStyledDocument
-import org.fxmisc.richtext.model.StyleSpan
-import org.fxmisc.richtext.model.StyleSpansBuilder
+import org.fxmisc.richtext.model.*
 import tornadofx.select
+import tornadofx.getValue
+import tornadofx.setValue
+import java.util.*
 
 class WriterTextArea : StyleClassedTextArea() {
     var insertionStyle: MutableCollection<String>? = null
+    val smartReplacer: SmartReplacer = SmartReplacer(SmartReplacer.DEFAULT_QUOTES_MAP, SmartReplacer.DEFAULT_SYMBOL_MAP)
+    val readyProperty = SimpleBooleanProperty(false)
+    var ready by readyProperty
+        private set
+    private var midChange: Boolean = false
+    private val queue: Queue<() -> Unit> = LinkedList<() -> Unit>()
 
     init {
         this.plainTextChanges().subscribe { change ->
-            if (insertionStyle != null) {
-                val from = change.position
-                val length = change.inserted.length
+            if (change.inserted.isNotEmpty()) {
+                midChange = true
+                applyInsertionStyle(change)
+            }
+        }
 
-                if (length > 0) {
-                    val styles = getStyleAtPosition(from).toMutableList()
+        this.beingUpdatedProperty().addListener { observable, oldValue, newValue ->
+            if (oldValue && !newValue) {
+                if (midChange) {
+                    midChange = false
+                } else {
+                    ready = true
+                }
+            } else {
+                ready = false
+            }
+        }
 
-                    insertionStyle!!.forEach {
-                        if (styles.contains(it)) {
-                            styles.remove(it)
-                        } else {
-                            styles.add(it)
-                        }
-                    }
+        this.readyProperty.addListener { observable, oldValue, newValue ->
+            if (!oldValue && newValue) {
+                do {
+                    val queuedElement = this.queue.poll()
+                    queuedElement?.invoke()
+                } while (queuedElement != null)
+            }
+        }
 
-                    setStyle(from, from + length, styles)
-                    insertionStyle = null
+        smartReplacer.observe(this)
+    }
+
+    /** A safe version of [StyleClassedTextArea.replaceText()] that waits to replace text until the text area is done updating.. */
+    fun replaceTextWhenReady(start: Int, end: Int, text: String) {
+        this.queue.offer {
+            super.replaceText(start, end, text)
+            moveTo(caretPosition + 1)
+        }
+    }
+
+    /** Gets the paragraph at the specified absolute character position. */
+    fun getParagraphAt(characterPosition: Int): Paragraph<MutableCollection<String>, String, MutableCollection<String>> {
+        return getParagraph(this.offsetToPosition(characterPosition, TwoDimensional.Bias.Backward).major)
+    }
+
+    private fun applyInsertionStyle(change: PlainTextChange) {
+        if (insertionStyle != null) {
+            val from = change.position
+            val length = change.inserted.length
+
+            val styles = getStyleAtPosition(from).toMutableList()
+
+            insertionStyle!!.forEach {
+                if (styles.contains(it)) {
+                    styles.remove(it)
+                } else {
+                    styles.add(it)
                 }
             }
+
+            setStyle(from, from + length, styles)
+            insertionStyle = null
         }
     }
 
