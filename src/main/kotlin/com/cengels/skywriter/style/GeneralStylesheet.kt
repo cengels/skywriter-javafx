@@ -1,5 +1,7 @@
 package com.cengels.skywriter.style
 
+import javafx.scene.effect.DropShadow
+import javafx.scene.effect.Effect
 import javafx.scene.paint.Color
 import tornadofx.*
 

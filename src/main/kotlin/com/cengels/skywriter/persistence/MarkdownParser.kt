@@ -170,11 +170,10 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
 
     fun save(file: File) {
         try {
-            val fileOutputStream = FileOutputStream(file)
-            val bufferedWriter = BufferedWriter(OutputStreamWriter(fileOutputStream, "UTF-8"))
-            DOCUMENT_CODEC.encode(bufferedWriter, this.document)
-            bufferedWriter.close()
-            fileOutputStream.close()
+            file.bufferedWriter().apply {
+                DOCUMENT_CODEC.encode(this, document)
+                this.close()
+            }
         } catch (exception: IOException) {
             exception.printStackTrace()
 

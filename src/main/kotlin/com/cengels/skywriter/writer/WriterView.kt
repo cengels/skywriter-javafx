@@ -3,6 +3,7 @@ package com.cengels.skywriter.writer
 import com.cengels.skywriter.enum.Heading
 import com.cengels.skywriter.persistence.MarkdownParser
 import com.cengels.skywriter.style.WriterStylesheet
+import com.cengels.skywriter.theming.ThemesView
 import com.sun.org.apache.xml.internal.serialize.LineSeparator
 import javafx.scene.control.ButtonType
 import javafx.scene.layout.ColumnConstraints
@@ -10,12 +11,14 @@ import javafx.scene.layout.Priority
 import javafx.scene.layout.RowConstraints
 import javafx.scene.paint.Color
 import javafx.stage.FileChooser
+import javafx.stage.Modality
+import javafx.stage.StageStyle
 import javafx.stage.WindowEvent
 import tornadofx.*
 import java.io.File
 
 
-class WriterView: View("Skywriter") {
+class WriterView : View("Skywriter") {
     val model = WriterViewModel()
     val textArea = WriterTextArea().also {
         it.addClass(WriterStylesheet.textArea)
@@ -96,6 +99,7 @@ class WriterView: View("Skywriter") {
                     }
                     separator()
                     item("Preferences...", "Ctrl+P")
+                    item("Appearance...").action { find<ThemesView>().openModal(StageStyle.UNDECORATED, Modality.APPLICATION_MODAL) }
                     item("Quit", "Ctrl+Alt+F4").action {
                         close()
                     }

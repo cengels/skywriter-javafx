@@ -1,17 +1,20 @@
 package com.cengels.skywriter
 
 import com.cengels.skywriter.style.FormattingStylesheet
+import com.cengels.skywriter.style.GeneralStylesheet
 import com.cengels.skywriter.style.WriterStylesheet
 import com.cengels.skywriter.writer.WriterView
+import javafx.scene.input.KeyCode
+import javafx.scene.input.KeyCodeCombination
+import javafx.scene.input.KeyCombination
 import javafx.stage.Stage
 import javafx.stage.WindowEvent
-import tornadofx.App
-import tornadofx.reloadStylesheetsOnFocus
-import tornadofx.reloadViewsOnFocus
+import tornadofx.*
 
 class SkyWriterApp : App(WriterView::class, WriterStylesheet::class, FormattingStylesheet::class) {
     init {
         reloadStylesheetsOnFocus()
+        FX.layoutDebuggerShortcut = KeyCodeCombination(KeyCode.J, KeyCombination.ALT_DOWN, KeyCombination.CONTROL_DOWN)
     }
 
     override fun start(stage: Stage) {
