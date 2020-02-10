@@ -1,15 +1,12 @@
 package com.cengels.skywriter.theming
 
 import com.cengels.skywriter.enum.ImageSizingType
-import tornadofx.*
+import javafx.scene.text.TextAlignment
 import java.awt.Color
 import java.io.Serializable
-import kotlin.properties.ReadWriteProperty
-import kotlin.reflect.KMutableProperty
-import kotlin.reflect.KProperty
 
 /** A theme the user can apply to change the look of the main writing area. */
-data class Theme(
+data class Theme (
     /** The name of the Theme. Must be unique. */
     var name: String = "",
     /** If this Theme is marked as default, it can neither be edited nor removed. */
@@ -41,29 +38,17 @@ data class Theme(
     /** The indent of the first line in pixels. */
     var firstLineIndent: Double = 0.0,
     /** The line height proportionally to the font's default line height. 1.0 = default. 2.0 = double line height. */
-    var lineHeight: Double = 1.0
-) : Cloneable, Serializable {
-    var _fontColor: Color = Color.BLACK
-    var _backgroundFill: Color = Color.LIGHT_GRAY
-    var _backgroundDocument: Color = Color.WHITE
+    var lineHeight: Double = 1.0,
     /** The color of text. */
-    @delegate:Transient var fontColor by SerializableColorProperty(::_fontColor)
+    var fontColor: Color = Color.BLACK,
     /** The background color of the area behind the document. */
-    @delegate:Transient var backgroundFill by SerializableColorProperty(::_backgroundFill)
+    var backgroundFill: Color = Color.LIGHT_GRAY,
     /** The background color of the text area. */
-    @delegate:Transient var backgroundDocument by SerializableColorProperty(::_backgroundDocument)
-
+    var backgroundDocument: Color = Color.WHITE,
+    /** The text alignment of normal text in the document. */
+    var textAlignment: TextAlignment = TextAlignment.LEFT
+) : Cloneable, Serializable {
     public override fun clone(): Theme {
         return this.copy(default = false)
-    }
-
-    class SerializableColorProperty(val ofProperty: KMutableProperty<Color>) : ReadWriteProperty<Theme, javafx.scene.paint.Color> {
-        override fun getValue(thisRef: Theme, property: KProperty<*>): javafx.scene.paint.Color {
-            return ofProperty.getter.call().let { javafx.scene.paint.Color(it.red / 255.0, it.green / 255.0, it.blue / 255.0, it.alpha / 255.0) }
-        }
-
-        override fun setValue(thisRef: Theme, property: KProperty<*>, value: javafx.scene.paint.Color) {
-            ofProperty.setter.call(Color(value.red.toFloat(), value.green.toFloat(), value.blue.toFloat()))
-        }
     }
 }

@@ -1,9 +1,10 @@
 package com.cengels.skywriter.theming
 
 import com.cengels.skywriter.persistence.AppConfig
+import javafx.geometry.Pos
+import javafx.scene.control.ButtonBar
 import javafx.scene.control.ButtonType
 import javafx.scene.control.ScrollPane
-import javafx.scene.paint.Color
 import tornadofx.*
 
 class ThemesView : View("Themes") {
@@ -54,12 +55,26 @@ class ThemesView : View("Themes") {
 
         right {
             vbox {
-                button("Add")
+                button("Add").action {
+                    openEditDialog(Theme()).result {
+                        if (ok) {
+                            themesManager.themes.add(result)
+                            themesManager.save()
+                        }
+                    }
+                }
                 button("Duplicate").action {
                     themesManager.duplicate()
                     themesManager.save()
                 }
                 button("Edit") {
+                    action {
+                        openEditDialog(themesManager.selectedTheme!!).result {
+                            if (ok) {
+                                themesManager.save()
+                            }
+                        }
+                    }
                     // For some reason, the condition needs to evaluate to false for it to enable the button.
                     enableWhen { themesManager.selectedThemeProperty.booleanBinding { it != null && !it.default } }
                 }
@@ -79,8 +94,8 @@ class ThemesView : View("Themes") {
         }
 
         bottom {
-            hbox {
-                button("OK") {
+            buttonbar {
+                button("OK", ButtonBar.ButtonData.OK_DONE) {
                     enableWhen { themesManager.selectedThemeProperty.isNotNull }
 
                     action {
@@ -88,8 +103,12 @@ class ThemesView : View("Themes") {
                         close()
                     }
                 }
-                button("Cancel").action { close() }
+                button("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE).action { close() }
             }
         }
+    }
+
+    private fun openEditDialog(theme: Theme): EditThemeView {
+        return EditThemeView(theme, themesManager.themes.filter { it != theme }.map { it.name }).apply { this.openModal(owner = currentWindow) }
     }
 }
