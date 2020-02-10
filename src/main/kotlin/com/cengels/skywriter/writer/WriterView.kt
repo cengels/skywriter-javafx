@@ -100,7 +100,7 @@ class WriterView : View("Skywriter") {
                     }
                     separator()
                     item("Preferences...", "Ctrl+P")
-                    item("Appearance...").action { find<ThemesView>().openModal(StageStyle.UNDECORATED, Modality.APPLICATION_MODAL) }
+                    item("Appearance...").action { find<ThemesView>().openModal() }
                     item("Quit", "Ctrl+Alt+F4").action {
                         close()
                     }
@@ -124,6 +124,7 @@ class WriterView : View("Skywriter") {
                 menu("Formatting") {
                     item("Bold", "Ctrl+B").action { textArea.activateStyle("bold") }
                     item("Italic", "Ctrl+I").action { textArea.activateStyle("italic") }
+                    item("Strikethrough").action { textArea.activateStyle("strikethrough") }
                     separator()
                     item("No Heading").action { textArea.setHeading(null) }
                     item("Heading 1").action { textArea.setHeading(Heading.H1) }

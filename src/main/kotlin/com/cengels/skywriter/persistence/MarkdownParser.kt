@@ -15,7 +15,8 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
             Pair("**", "bold"),
             Pair("__", "bold"),
             Pair("*", "italic"),
-            Pair("_", "italic")
+            Pair("_", "italic"),
+            Pair("~", "strikethrough")
         )
 
         val DOCUMENT_CODEC = object: PlainTextCodec<StyledDocument<MutableCollection<String>, String, MutableCollection<String>>, BufferedReader> {
@@ -98,12 +99,14 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
 
                     var text: String = escapedText
 
-                    if (it.style.contains("italic")) {
-                        text = text.surround("*")
-                    }
-
-                    if (it.style.contains("bold")) {
-                        text = text.surround("**")
+                    TOKEN_MAP.entries.apply {
+                        it.style.forEach {
+                            this.find { entry -> entry.value == it }.apply {
+                                if (this != null) {
+                                    text = text.surround(this.key)
+                                }
+                            }
+                        }
                     }
 
                     writer.write(text)

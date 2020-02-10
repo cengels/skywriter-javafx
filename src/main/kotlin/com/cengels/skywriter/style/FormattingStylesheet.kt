@@ -17,6 +17,7 @@ class FormattingStylesheet : Stylesheet() {
         val h6 by cssclass()
         val bold by cssclass()
         val italic by cssclass()
+        val strikethrough by cssclass()
         val headings: Map<Heading, String> = mapOf(
             Pair(Heading.H1, "h1"),
             Pair(Heading.H2, "h2"),
@@ -70,6 +71,10 @@ class FormattingStylesheet : Stylesheet() {
 
         italic {
             fontStyle = FontPosture.ITALIC
+        }
+
+        strikethrough {
+            strikethrough = true
         }
     }
 }
