@@ -1,5 +1,6 @@
 package com.cengels.skywriter
 
+import com.cengels.skywriter.persistence.AppConfig
 import com.cengels.skywriter.style.FormattingStylesheet
 import com.cengels.skywriter.style.GeneralStylesheet
 import com.cengels.skywriter.style.WriterStylesheet
@@ -21,28 +22,13 @@ class SkyWriterApp : App(WriterView::class, WriterStylesheet::class, FormattingS
         stage.minWidth = 300.0
         stage.minHeight = 200.0
 
-        restoreFromConfig(stage)
+        AppConfig.initialize(config)
+        AppConfig.restoreStage(stage)
 
         stage.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST) {
-            config.set("windowMaximized" to stage.isMaximized)
-            if (!stage.isMaximized) {
-                config.set("windowHeight" to stage.height)
-                config.set("windowWidth" to stage.width)
-                config.set("windowX" to stage.x)
-                config.set("windowY" to stage.y)
-            }
-            config.save()
+            AppConfig.storeStage(stage)
         }
 
         super.start(stage)
-    }
-
-    /** Attempts to restore the window size and position from the config. */
-    fun restoreFromConfig(stage: Stage) {
-        stage.isMaximized = config.boolean("windowMaximized", false)
-        stage.height = config.double("windowHeight", stage.height)
-        stage.width = config.double("windowWidth", stage.width)
-        stage.x = config.double("windowX", stage.x)
-        stage.y = config.double("windowY", stage.y)
     }
 }

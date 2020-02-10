@@ -1,6 +1,7 @@
 package com.cengels.skywriter.writer
 
 import com.cengels.skywriter.enum.Heading
+import com.cengels.skywriter.persistence.AppConfig
 import com.cengels.skywriter.persistence.MarkdownParser
 import com.cengels.skywriter.style.WriterStylesheet
 import com.cengels.skywriter.theming.ThemesView
@@ -43,7 +44,7 @@ class WriterView : View("Skywriter") {
     }
 
     init {
-        app.config.string("lastOpenFile").apply {
+        AppConfig.lastOpenFile.apply {
             if (this != null) {
                 File(this).apply {
                     if (this.exists()) {
@@ -63,8 +64,8 @@ class WriterView : View("Skywriter") {
             warnOnUnsavedChanges { it.consume() }
 
             if (!it.isConsumed && model.file != null) {
-                app.config.set("lastOpenFile" to model.file!!.absolutePath)
-                app.config.save()
+                AppConfig.lastOpenFile = model.file!!.absolutePath
+                AppConfig.save()
             }
         }
     }
