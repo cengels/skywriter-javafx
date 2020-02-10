@@ -44,12 +44,10 @@ class WriterView : View("Skywriter") {
     }
 
     init {
-        AppConfig.lastOpenFile.apply {
-            if (this != null) {
-                File(this).apply {
-                    if (this.exists()) {
-                        open(this)
-                    }
+        if (AppConfig.lastOpenFile != null) {
+            File(AppConfig.lastOpenFile!!).apply {
+                if (this.exists()) {
+                    open(this)
                 }
             }
         }

@@ -11,8 +11,16 @@ import javafx.scene.input.KeyCombination
 import javafx.stage.Stage
 import javafx.stage.WindowEvent
 import tornadofx.*
+import java.io.File
+import java.io.IOError
+import java.io.IOException
+import javax.swing.filechooser.FileSystemView
 
 class SkyWriterApp : App(WriterView::class, WriterStylesheet::class, FormattingStylesheet::class) {
+    companion object {
+        val userDirectory: String = "${FileSystemView.getFileSystemView().defaultDirectory.path}${File.separator}Skywriter${File.separator}"
+    }
+
     init {
         reloadStylesheetsOnFocus()
         FX.layoutDebuggerShortcut = KeyCodeCombination(KeyCode.J, KeyCombination.ALT_DOWN, KeyCombination.CONTROL_DOWN)
@@ -27,6 +35,14 @@ class SkyWriterApp : App(WriterView::class, WriterStylesheet::class, FormattingS
 
         stage.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST) {
             AppConfig.storeStage(stage)
+        }
+
+        File(userDirectory).apply {
+            if (!this.exists()) {
+                if (!this.mkdir()) {
+                    throw IOException("Could not create user directory.")
+                }
+            }
         }
 
         super.start(stage)
