@@ -1,19 +1,13 @@
 package com.cengels.skywriter.theming
 
-import com.cengels.skywriter.backgroundBinding
+import com.cengels.skywriter.util.backgroundBinding
 import com.cengels.skywriter.fragments.Dialog
-import com.cengels.skywriter.loremIpsum
-import com.cengels.skywriter.paintBinding
-import javafx.beans.binding.Binding
-import javafx.beans.property.Property
-import javafx.geometry.Orientation
+import com.cengels.skywriter.util.loremIpsum
 import javafx.geometry.Pos
 import javafx.scene.control.ButtonBar
 import javafx.scene.control.OverrunStyle
-import javafx.scene.paint.Paint
+import javafx.scene.control.ScrollPane
 import javafx.scene.text.Font
-import javafx.scene.text.TextAlignment
-import javafx.stage.Screen
 import tornadofx.*
 
 class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialog<Theme>(if (theme.name.isNotEmpty()) "Edit theme" else "Add theme") {
@@ -27,26 +21,37 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
 
     override val root = borderpane {
         left {
-            form {
-                fieldset {
-                    field("Name") {
-                        textfield(model.nameProperty) {
-                            validator {
-                                if (it!!.isEmpty()) {
-                                    return@validator error("Please enter a name for this theme.")
-                                } else if (otherThemes.contains(it)) {
-                                    return@validator error("Name must be unique.")
-                                }
+            scrollpane {
+                hbarPolicy = ScrollPane.ScrollBarPolicy.NEVER
+                maxWidth = 400.0
 
-                                return@validator success()
+                form {
+                    fieldset {
+                        field("Name") {
+                            textfield(model.nameProperty) {
+                                validator {
+                                    if (it!!.isEmpty()) {
+                                        return@validator error("Please enter a name for this theme.")
+                                    } else if (otherThemes.contains(it)) {
+                                        return@validator error("Name must be unique.")
+                                    }
+
+                                    return@validator success()
+                                }
                             }
                         }
                     }
-                }
 
-                fieldset("Font") {
-                    combobox(model.fontFamilyProperty, Font.getFamilies())
-                    textfield(model.fontSizeProperty, getDefaultConverter<Double>()!!)
+                    fieldset("Font") {
+                        field {
+                            combobox(model.fontFamilyProperty, Font.getFamilies()).required()
+                            textfield(model.fontSizeProperty, getDefaultConverter()!!) {
+                                required()
+                                filterInput { it.controlNewText.isDouble() }
+                            }
+                        }
+                        colorpicker(model.fontColorProperty, ColorPickerMode.Button)
+                    }
                 }
             }
         }
@@ -88,7 +93,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                         label {
                             useMaxWidth = true
                             loremIpsum()
-                            textFillProperty().bind(model.fontColorProperty.paintBinding())
+                            textFillProperty().bind(model.fontColorProperty)
                             isWrapText = true
                             textOverrun = OverrunStyle.CLIP
                             this@parentContainer.widthProperty().addListener { observable, oldValue, newValue ->

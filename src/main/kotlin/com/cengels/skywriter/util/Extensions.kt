@@ -1,4 +1,4 @@
-package com.cengels.skywriter
+package com.cengels.skywriter.util
 
 import javafx.beans.binding.Binding
 import javafx.beans.property.Property
@@ -8,32 +8,37 @@ import javafx.scene.layout.Background
 import javafx.scene.layout.BackgroundFill
 import javafx.scene.layout.CornerRadii
 import javafx.scene.paint.Paint
-import javafx.scene.text.Text
 import tornadofx.*
 import java.awt.Color
 
 /** Creates a binding that automatically converts the [java.awt.Color] values into [javafx.scene.paint.Paint] values. */
-fun Property<Color>.paintBinding(): Binding<Paint> {
-    return this.objectBinding {
-        if (it == null) {
-            return@objectBinding javafx.scene.paint.Color.GREEN
-        }
-        return@objectBinding it.toPaint()
-    } as Binding<Paint>
-}
+// fun Property<Color>.paintBinding(): Binding<Paint> {
+//     return this.objectBinding {
+//         if (it == null) {
+//             return@objectBinding javafx.scene.paint.Color.GREEN
+//         }
+//         return@objectBinding it.toPaint()
+//     } as Binding<Paint>
+// }
 
 /** Creates a binding that automatically converts the [java.awt.Color] values into [javafx.scene.paint.Paint] values. */
-fun Property<Color>.backgroundBinding(): Binding<Background> {
+// fun Property<Color>.backgroundBinding(): Binding<Background> {
+//     return this.objectBinding {
+//         if (it == null) {
+//             return@objectBinding Background(BackgroundFill(javafx.scene.paint.Color.GREEN, CornerRadii.EMPTY, Insets.EMPTY))
+//         }
+//         return@objectBinding Background(BackgroundFill(ColorConverter.convert(it), CornerRadii.EMPTY, Insets.EMPTY))
+//     } as Binding<Background>
+// }
+
+/** Creates a binding that automatically converts the [java.awt.Color] values into [javafx.scene.paint.Paint] values. */
+fun Property<javafx.scene.paint.Color>.backgroundBinding(): Binding<Background> {
     return this.objectBinding {
         if (it == null) {
             return@objectBinding Background(BackgroundFill(javafx.scene.paint.Color.GREEN, CornerRadii.EMPTY, Insets.EMPTY))
         }
-        return@objectBinding Background(BackgroundFill(it.toPaint(), CornerRadii.EMPTY, Insets.EMPTY))
+        return@objectBinding Background(BackgroundFill(it, CornerRadii.EMPTY, Insets.EMPTY))
     } as Binding<Background>
-}
-
-fun Color.toPaint(): Paint {
-    return javafx.scene.paint.Color(red / 255.0, green / 255.0, blue / 255.0, alpha / 255.0)
 }
 
 /** Inserts the specified number of paragraphs of lorem ipsum into the text field. */

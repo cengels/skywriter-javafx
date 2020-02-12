@@ -1,7 +1,7 @@
 package com.cengels.skywriter.theming
 
-import javafx.beans.property.SimpleObjectProperty
-import javafx.scene.paint.Paint
+import com.cengels.skywriter.util.ColorConverter
+import com.cengels.skywriter.util.ConverterProperty
 import tornadofx.*
 
 class EditThemeViewModel(theme: Theme) : ItemViewModel<Theme>(theme) {
@@ -19,8 +19,14 @@ class EditThemeViewModel(theme: Theme) : ItemViewModel<Theme>(theme) {
     val paddingHorizontalProperty = bind(Theme::paddingHorizontal)
     val firstLineIndentProperty = bind(Theme::firstLineIndent)
     val lineHeightProperty = bind(Theme::lineHeight)
-    val fontColorProperty = bind(Theme::fontColor)
-    val backgroundFillProperty = bind(Theme::backgroundFill)
-    val backgroundDocumentProperty = bind(Theme::backgroundDocument)
+    private val rawFontColorProperty = bind(Theme::fontColor)
+    private val rawBackgroundFillProperty = bind(Theme::backgroundFill)
+    private val rawBackgroundDocumentProperty = bind(Theme::backgroundDocument)
     val textAlignmentProperty = bind(Theme::textAlignment)
+    val fontColorProperty = ConverterProperty(rawFontColorProperty, ColorConverter)
+    var fontColor by fontColorProperty
+    var backgroundFillProperty = ConverterProperty(rawBackgroundFillProperty, ColorConverter)
+    var backgroundFill by fontColorProperty
+    var backgroundDocumentProperty = ConverterProperty(rawBackgroundDocumentProperty, ColorConverter)
+    var backgroundDocument by fontColorProperty
 }
