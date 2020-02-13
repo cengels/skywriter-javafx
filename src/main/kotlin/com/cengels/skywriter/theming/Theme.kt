@@ -19,8 +19,6 @@ data class Theme (
     var backgroundImage: String? = null,
     /** If an image is specified, this specifies its sizing type. */
     var backgroundImageSizingType: ImageSizingType? = null,
-    /** A value from 0 to 1 specifying the document's opacity. */
-    var documentOpacity: Double = 1.0,
     /**
      * Indicates the width of the main text area. If the value is between 0 and 1, the value is proportional to the
      * overall window width. If the value is over 1, assumes an absolute width in pixels.

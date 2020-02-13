@@ -2,12 +2,17 @@ package com.cengels.skywriter.util
 
 import javafx.beans.binding.Binding
 import javafx.beans.property.Property
+import javafx.event.EventTarget
 import javafx.geometry.Insets
+import javafx.geometry.Pos
 import javafx.scene.control.Label
+import javafx.scene.control.TextField
 import javafx.scene.layout.Background
 import javafx.scene.layout.BackgroundFill
 import javafx.scene.layout.CornerRadii
 import javafx.scene.paint.Paint
+import javafx.util.StringConverter
+import javafx.util.converter.*
 import tornadofx.*
 import java.awt.Color
 
@@ -40,6 +45,35 @@ fun Property<javafx.scene.paint.Color>.backgroundBinding(): Binding<Background> 
         return@objectBinding Background(BackgroundFill(it, CornerRadii.EMPTY, Insets.EMPTY))
     } as Binding<Background>
 }
+
+inline fun <reified T : Any> EventTarget.numberfield(property: Property<T>, noinline op: TextField.() -> Unit = {}) = textfield(property, getDefaultConverter()!!, op).apply {
+    required()
+    alignment = Pos.CENTER_RIGHT
+    filterInput {
+        when (T::class.javaPrimitiveType ?: T::class) {
+            Int::class.javaPrimitiveType -> it.controlNewText.isInt()
+            Long::class.javaPrimitiveType -> it.controlNewText.isLong()
+            Double::class.javaPrimitiveType -> it.controlNewText.isDouble()
+            Float::class.javaPrimitiveType -> it.controlNewText.isFloat()
+            else -> throw TypeCastException("Invalid type parameter.")
+        }
+    }
+}
+
+fun EventTarget.percentfield(property: Property<Double>, op: TextField.() -> Unit = {}) = textfield(property, PercentageStringConverter() as StringConverter<Double>, op).apply {
+    alignment = Pos.CENTER_RIGHT
+    validator {
+        if (it == null || it.isBlank()) {
+            error("Please enter a value.")
+        } else if (it.endsWith('%') && it.dropLast(1).isDouble()) {
+            success()
+        } else {
+            error("Please enter a valid percentage.")
+        }
+    }
+}
+
+
 
 /** Inserts the specified number of paragraphs of lorem ipsum into the text field. */
 fun Label.loremIpsum(paragraphs: Int = 3) {

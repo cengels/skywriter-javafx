@@ -1,17 +1,23 @@
 package com.cengels.skywriter.theming
 
-import com.cengels.skywriter.util.backgroundBinding
 import com.cengels.skywriter.fragments.Dialog
-import com.cengels.skywriter.util.loremIpsum
+import com.cengels.skywriter.util.*
+import javafx.beans.binding.DoubleBinding
+import javafx.beans.binding.DoubleExpression
 import javafx.geometry.Pos
 import javafx.scene.control.ButtonBar
 import javafx.scene.control.OverrunStyle
 import javafx.scene.control.ScrollPane
 import javafx.scene.text.Font
+import javafx.scene.text.TextAlignment
+import javafx.util.StringConverter
+import javafx.util.converter.DoubleStringConverter
+import javafx.util.converter.PercentageStringConverter
 import tornadofx.*
 
 class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialog<Theme>(if (theme.name.isNotEmpty()) "Edit theme" else "Add theme") {
     private val model: EditThemeViewModel = EditThemeViewModel(theme)
+    private lateinit var documentHeightBinding: DoubleBinding
 
     override fun onDock() {
         super.onDock()
@@ -26,6 +32,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                 maxWidth = 400.0
 
                 form {
+                    maxWidth = 400.0
                     fieldset {
                         field("Name") {
                             textfield(model.nameProperty) {
@@ -45,12 +52,36 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                     fieldset("Font") {
                         field {
                             combobox(model.fontFamilyProperty, Font.getFamilies()).required()
-                            textfield(model.fontSizeProperty, getDefaultConverter()!!) {
-                                required()
-                                filterInput { it.controlNewText.isDouble() }
+                            numberfield(model.fontSizeProperty)
+                            colorpicker(model.fontColorProperty, ColorPickerMode.Button)
+                        }
+                        field {
+                            label("Line height")
+                            percentfield(model.lineHeightProperty)
+                            combobox(model.textAlignmentProperty, TextAlignment.values().asList()) {
+                                converter = EnumConverter<TextAlignment>()
                             }
                         }
-                        colorpicker(model.fontColorProperty, ColorPickerMode.Button)
+                        // TODO: Issue #15
+                        // field("First line indent") {
+                        //     textfield(model.firstLineIndentProperty, getDefaultConverter()!!) {
+                        //         required()
+                        //         filterInput { it.controlNewText.isDouble() }
+                        //     }
+                        // }
+                    }
+
+                    fieldset("Dimensions") {
+                        field {
+                            label("Height")
+                            label("Width")
+                        }
+                        field {
+                            label("Horizontal padding")
+                            numberfield(model.paddingHorizontalProperty) { maxWidth = 50.0 }
+                            label("Vertical padding")
+                            numberfield(model.paddingVerticalProperty) { maxWidth = 50.0 }
+                        }
                     }
                 }
             }
@@ -65,7 +96,8 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
 
                     backgroundProperty().bind(model.backgroundFillProperty.backgroundBinding())
                     // 16:9
-                    prefHeightProperty().bind(widthProperty().multiply(0.5625))
+                    documentHeightBinding = widthProperty().multiply(0.5625)
+                    prefHeightProperty().bind(documentHeightBinding)
 
                     alignment = Pos.CENTER
 
@@ -94,6 +126,8 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                             useMaxWidth = true
                             loremIpsum()
                             textFillProperty().bind(model.fontColorProperty)
+                            textAlignmentProperty().bind(model.textAlignmentProperty)
+                            lineSpacingProperty().bind(model.lineHeightProperty)
                             isWrapText = true
                             textOverrun = OverrunStyle.CLIP
                             this@parentContainer.widthProperty().addListener { observable, oldValue, newValue ->

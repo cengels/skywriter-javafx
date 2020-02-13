@@ -1,7 +1,5 @@
 package com.cengels.skywriter.util
 
-import com.sun.javafx.binding.ExpressionHelper
-import com.sun.javaws.exceptions.InvalidArgumentException
 import javafx.beans.InvalidationListener
 import javafx.beans.binding.Binding
 import javafx.beans.property.ObjectProperty
