@@ -46,35 +46,6 @@ fun Property<javafx.scene.paint.Color>.backgroundBinding(): Binding<Background> 
     } as Binding<Background>
 }
 
-inline fun <reified T : Any> EventTarget.numberfield(property: Property<T>, noinline op: TextField.() -> Unit = {}) = textfield(property, getDefaultConverter()!!, op).apply {
-    required()
-    alignment = Pos.CENTER_RIGHT
-    filterInput {
-        when (T::class.javaPrimitiveType ?: T::class) {
-            Int::class.javaPrimitiveType -> it.controlNewText.isInt()
-            Long::class.javaPrimitiveType -> it.controlNewText.isLong()
-            Double::class.javaPrimitiveType -> it.controlNewText.isDouble()
-            Float::class.javaPrimitiveType -> it.controlNewText.isFloat()
-            else -> throw TypeCastException("Invalid type parameter.")
-        }
-    }
-}
-
-fun EventTarget.percentfield(property: Property<Double>, op: TextField.() -> Unit = {}) = textfield(property, PercentageStringConverter() as StringConverter<Double>, op).apply {
-    alignment = Pos.CENTER_RIGHT
-    validator {
-        if (it == null || it.isBlank()) {
-            error("Please enter a value.")
-        } else if (it.endsWith('%') && it.dropLast(1).isDouble()) {
-            success()
-        } else {
-            error("Please enter a valid percentage.")
-        }
-    }
-}
-
-
-
 /** Inserts the specified number of paragraphs of lorem ipsum into the text field. */
 fun Label.loremIpsum(paragraphs: Int = 3) {
     if (paragraphs > 0) {

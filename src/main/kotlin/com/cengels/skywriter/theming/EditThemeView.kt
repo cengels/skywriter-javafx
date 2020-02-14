@@ -4,6 +4,7 @@ import com.cengels.skywriter.fragments.Dialog
 import com.cengels.skywriter.util.*
 import javafx.beans.binding.DoubleBinding
 import javafx.beans.binding.DoubleExpression
+import javafx.beans.property.Property
 import javafx.geometry.Pos
 import javafx.scene.control.ButtonBar
 import javafx.scene.control.OverrunStyle
@@ -58,9 +59,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                         field {
                             label("Line height")
                             percentfield(model.lineHeightProperty)
-                            combobox(model.textAlignmentProperty, TextAlignment.values().asList()) {
-                                converter = EnumConverter<TextAlignment>()
-                            }
+                            combobox(model.textAlignmentProperty)
                         }
                         // TODO: Issue #15
                         // field("First line indent") {
@@ -74,13 +73,39 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                     fieldset("Dimensions") {
                         field {
                             label("Height")
+                            combinedfield(model.documentHeightProperty)
+                            // textfield(model.documentHeightProperty, if (model.documentHeight <= 1) PercentageStringConverter() as StringConverter<Double> else DoubleStringConverter()) {
+                            //     filterInput { it.text.isInt() || it.text == "." || it.text == "%" }
+                            //     validator {
+                            //         if (it == null || it.isBlank()) {
+                            //             error("Please enter a value.")
+                            //         } else if (it.isDouble() || (it.endsWith('%') && it.dropLast(1).isInt())) {
+                            //             success()
+                            //         } else {
+                            //             error("Please enter either an absolute value or a percentage.")
+                            //         }
+                            //     }
+                            //     this.textProperty().addListener { observable, oldValue, newValue ->
+                            //         val isPercentage = { value: String -> value.endsWith('%') && value.dropLast(1).isInt() }
+                            //         val isOldValuePercentage = isPercentage(oldValue)
+                            //         val isNewValuePercentage = isPercentage(newValue)
+                            //
+                            //         if (isOldValuePercentage && !isNewValuePercentage) {
+                            //             this.textProperty().unbindBidirectional(model.documentHeightProperty)
+                            //             runLater { this.textProperty().bindBidirectional(model.documentHeightProperty, DoubleStringConverter()) }
+                            //         } else if (!isOldValuePercentage && isNewValuePercentage) {
+                            //             this.textProperty().unbindBidirectional(model.documentHeightProperty)
+                            //             runLater { this.textProperty().bindBidirectional(model.documentHeightProperty, PercentageStringConverter() as StringConverter<Double>) }
+                            //         }
+                            //     }
+                            // }
                             label("Width")
                         }
                         field {
                             label("Horizontal padding")
-                            numberfield(model.paddingHorizontalProperty) { maxWidth = 50.0 }
+                            pixelfield(model.paddingHorizontalProperty as Property<Number>) { maxWidth = 50.0 }
                             label("Vertical padding")
-                            numberfield(model.paddingVerticalProperty) { maxWidth = 50.0 }
+                            pixelfield(model.paddingVerticalProperty as Property<Number>) { maxWidth = 50.0 }
                         }
                     }
                 }
