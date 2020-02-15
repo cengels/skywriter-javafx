@@ -1,7 +1,7 @@
 package com.cengels.skywriter.theming
 
-import com.cengels.skywriter.util.ColorConverter
-import com.cengels.skywriter.util.ConverterProperty
+import com.cengels.skywriter.util.convert.ColorConverter
+import com.cengels.skywriter.util.convert.ConverterProperty
 import tornadofx.*
 
 class EditThemeViewModel(theme: Theme) : ItemViewModel<Theme>(theme) {

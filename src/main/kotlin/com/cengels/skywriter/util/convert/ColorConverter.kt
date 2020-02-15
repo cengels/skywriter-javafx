@@ -1,4 +1,4 @@
-package com.cengels.skywriter.util
+package com.cengels.skywriter.util.convert
 
 import java.awt.Color
 

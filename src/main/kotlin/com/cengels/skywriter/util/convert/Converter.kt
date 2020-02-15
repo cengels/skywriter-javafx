@@ -1,4 +1,4 @@
-package com.cengels.skywriter.util
+package com.cengels.skywriter.util.convert
 
 interface Converter<TFrom, TTo> {
     fun convert(value: TFrom): TTo

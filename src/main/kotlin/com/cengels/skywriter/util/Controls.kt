@@ -1,6 +1,8 @@
 package com.cengels.skywriter.util
 
 import com.cengels.skywriter.enum.FieldType
+import com.cengels.skywriter.util.convert.EnumConverter
+import com.cengels.skywriter.util.convert.SuffixConverter
 import javafx.beans.property.Property
 import javafx.event.EventTarget
 import javafx.geometry.Orientation

@@ -1,4 +1,4 @@
-package com.cengels.skywriter.util
+package com.cengels.skywriter.util.convert
 
 import javafx.util.converter.IntegerStringConverter
 import javafx.util.converter.NumberStringConverter
