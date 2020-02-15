@@ -22,21 +22,21 @@ class EditThemeViewModel(theme: Theme) : ItemViewModel<Theme>(theme) {
     val textAlignmentProperty = bind(Theme::textAlignment)
     var textAlignment by textAlignmentProperty
 
+    private val rawWindowBackgroundProperty = bind(Theme::windowBackground)
+    val windowBackgroundProperty = ConverterProperty(rawWindowBackgroundProperty, ColorConverter)
+    var windowBackground by windowBackgroundProperty
     val backgroundImageProperty = bind(Theme::backgroundImage)
     var backgroundImage by backgroundImageProperty
     val backgroundImageSizingTypeProperty = bind(Theme::backgroundImageSizingType)
     var backgroundImageSizingType by backgroundImageSizingTypeProperty
-    private val rawBackgroundFillProperty = bind(Theme::backgroundFill)
-    val backgroundFillProperty = ConverterProperty(rawBackgroundFillProperty, ColorConverter)
-    var backgroundFill by fontColorProperty
-    private val rawBackgroundDocumentProperty = bind(Theme::backgroundDocument)
-    val backgroundDocumentProperty = ConverterProperty(rawBackgroundDocumentProperty, ColorConverter)
-    var backgroundDocument by fontColorProperty
 
     val documentWidthProperty = bind(Theme::documentWidth)
     var documentWidth by documentWidthProperty
     val documentHeightProperty = bind(Theme::documentHeight)
     var documentHeight by documentHeightProperty
+    private val rawDocumentBackgroundProperty = bind(Theme::documentBackground)
+    val documentBackgroundProperty = ConverterProperty(rawDocumentBackgroundProperty, ColorConverter)
+    var documentBackground by documentBackgroundProperty
     val paddingHorizontalProperty = bind(Theme::paddingHorizontal)
     var paddingHorizontal by paddingHorizontalProperty
     val paddingVerticalProperty = bind(Theme::paddingVertical)

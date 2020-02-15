@@ -61,7 +61,7 @@ fun EventTarget.percentfield(property: Property<Double>, op: TextField.() -> Uni
     }
 }
 
-/** Adds a custom text field that only accepts integers, shows a suffix, and can be incremented using arrows. */
+/** Adds a custom text field that only accepts integers and shows a suffix. */
 fun EventTarget.pixelfield(property: Property<Number>, op: TextField.() -> Unit = {}) = textfield(property, SuffixConverter("pixels"), op).apply {
     alignment = Pos.CENTER_RIGHT
     val suffix = " pixels"

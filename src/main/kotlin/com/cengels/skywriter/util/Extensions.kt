@@ -11,6 +11,7 @@ import javafx.scene.layout.Background
 import javafx.scene.layout.BackgroundFill
 import javafx.scene.layout.CornerRadii
 import javafx.scene.paint.Paint
+import javafx.stage.FileChooser
 import javafx.util.StringConverter
 import javafx.util.converter.*
 import tornadofx.*
@@ -68,3 +69,5 @@ fun Label.loremIpsum(paragraphs: Int = 3) {
         text += "Quisque laoreet aliquet mattis. Nunc suscipit leo massa, a tincidunt est faucibus vitae. Nunc facilisis mi dui, eget vehicula urna malesuada eget. Duis non augue vitae metus iaculis commodo. Duis eu commodo mi. Integer pretium nisl risus, ut venenatis ante fringilla ac. Nulla ut nunc dui. Phasellus ac leo libero. Pellentesque nec malesuada metus, eget iaculis nunc. Nulla blandit sodales mollis. Donec aliquet hendrerit risus, non interdum ipsum. Ut at faucibus risus."
     }
 }
+
+val imageExtensionFilter: FileChooser.ExtensionFilter by lazy { FileChooser.ExtensionFilter("Images", "*.JPG", "*.BMP", "*.PNG", "*.GIF", "*.JPEG", "*.MPO") }

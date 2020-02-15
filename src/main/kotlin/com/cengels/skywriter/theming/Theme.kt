@@ -18,7 +18,7 @@ data class Theme (
     /** Specifies a background image to be used behind the main text area. */
     var backgroundImage: String? = null,
     /** If an image is specified, this specifies its sizing type. */
-    var backgroundImageSizingType: ImageSizingType? = null,
+    var backgroundImageSizingType: ImageSizingType = ImageSizingType.COVER,
     /**
      * Indicates the width of the main text area. If the value is between 0 and 1, the value is proportional to the
      * overall window width. If the value is over 1, assumes an absolute width in pixels.
@@ -40,9 +40,9 @@ data class Theme (
     /** The color of text. */
     var fontColor: Color = Color.BLACK,
     /** The background color of the area behind the document. */
-    var backgroundFill: Color = Color.LIGHT_GRAY,
+    var windowBackground: Color = Color.LIGHT_GRAY,
     /** The background color of the text area. */
-    var backgroundDocument: Color = Color.WHITE,
+    var documentBackground: Color = Color.WHITE,
     /** The text alignment of normal text in the document. */
     var textAlignment: TextAlignment = TextAlignment.LEFT
 ) : Cloneable, Serializable {

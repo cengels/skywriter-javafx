@@ -1,26 +1,24 @@
 package com.cengels.skywriter.theming
 
 import com.cengels.skywriter.enum.FieldType
+import com.cengels.skywriter.enum.ImageSizingType
 import com.cengels.skywriter.fragments.Dialog
 import com.cengels.skywriter.util.*
 import javafx.beans.binding.DoubleBinding
-import javafx.beans.binding.DoubleExpression
 import javafx.beans.property.Property
-import javafx.geometry.Orientation
 import javafx.geometry.Pos
 import javafx.scene.control.ButtonBar
 import javafx.scene.control.OverrunStyle
 import javafx.scene.control.ScrollPane
-import javafx.scene.control.TextArea
+import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
-import javafx.scene.layout.VBox
+import javafx.scene.paint.Color
+import javafx.scene.shape.SVGPath
 import javafx.scene.text.Font
-import javafx.scene.text.TextAlignment
+import javafx.stage.FileChooser
 import javafx.stage.Screen
-import javafx.util.StringConverter
-import javafx.util.converter.DoubleStringConverter
-import javafx.util.converter.PercentageStringConverter
 import tornadofx.*
+import java.io.File
 
 class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialog<Theme>(if (theme.name.isNotEmpty()) "Edit theme" else "Add theme") {
     private val model: EditThemeViewModel = EditThemeViewModel(theme)
@@ -36,7 +34,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
         left {
             scrollpane {
                 hbarPolicy = ScrollPane.ScrollBarPolicy.NEVER
-                maxWidth = 300.0
+                maxWidth = 307.5
 
                 form {
                     maxWidth = 300.0
@@ -58,12 +56,13 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
 
                     fieldset("Font") {
                         field {
-                            alignment = Pos.CENTER_LEFT
+                            (inputContainer as HBox).alignment = Pos.CENTER_LEFT
                             combobox(model.fontFamilyProperty, Font.getFamilies()).required()
                             numberfield(model.fontSizeProperty).prefWidth = 120.0
                             colorpicker(model.fontColorProperty, ColorPickerMode.Button)
                         }
                         field("Line height") {
+                            (inputContainer as HBox).alignment = Pos.CENTER_LEFT
                             percentfield(model.lineHeightProperty)
                             combobox(model.textAlignmentProperty) {
                                 minWidth = 80.0
@@ -78,8 +77,56 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                         // }
                     }
 
-                    fieldset("Dimensions") {
+                    fieldset("Window") {
+                        field("Background color") {
+                            (inputContainer as HBox).alignment = Pos.CENTER_LEFT
+                            colorpicker(model.windowBackgroundProperty, ColorPickerMode.Button) {
+                                useMaxWidth = true
+                            }
+                        }
+                        field("Image") {
+                            (inputContainer as HBox).alignment = Pos.CENTER_LEFT
+                            button(model.backgroundImageProperty.stringBinding { it?.takeLastWhile { char -> char != File.separatorChar } ?: "Choose an image..." }) {
+                                action {
+                                    val initialDir = if (!model.backgroundImage.isNullOrBlank()) File(model.backgroundImage).parent else System.getProperty("user.dir")
+
+                                    chooseFile(
+                                        "Open Image...",
+                                        arrayOf(imageExtensionFilter),
+                                        File(initialDir),
+                                        FileChooserMode.Single).apply {
+                                        if (this.isNotEmpty()) {
+                                            model.backgroundImage = this.single().absolutePath
+                                        }
+                                    }
+                                }
+                                useMaxWidth = true
+                            }
+                            button(graphic = SVGPath().apply { content = "M 18 6 L 6 18 M 6 6 L 18 18"; stroke = Color.BLACK; strokeWidth = 2.0 }) {
+                                disableWhen { model.backgroundImageProperty.isBlank() }
+                                action {
+                                    model.backgroundImage = null
+                                }
+                            }
+                        }
+                        field(forceLabelIndent = true) {
+                            combobox(model.backgroundImageSizingTypeProperty) {
+                                useMaxWidth = true
+                                disableWhen { model.backgroundImageProperty.isBlank() }
+                            }
+                        }
+                    }
+
+                    fieldset("Document") {
+                        field("Background color") {
+                            (inputContainer as HBox).alignment = Pos.CENTER_LEFT
+                            colorpicker(model.documentBackgroundProperty, ColorPickerMode.Button) {
+                                useMaxWidth = true
+                            }
+                        }
+
                         field("Height") {
+                            (inputContainer as HBox).alignment = Pos.CENTER_LEFT
                             combinedfield(model.documentHeightProperty, onSwitch = { oldValue, newValue ->
                                 this.hgrow = Priority.ALWAYS
                                 if (newValue == FieldType.NUMBER) {
@@ -90,6 +137,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                             })
                         }
                         field("Width") {
+                            (inputContainer as HBox).alignment = Pos.CENTER_LEFT
                             combinedfield(model.documentWidthProperty, onSwitch = { oldValue, newValue ->
                                 if (newValue == FieldType.NUMBER) {
                                     model.documentWidth *= Screen.getPrimary().bounds.width
@@ -104,6 +152,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
 
                     fieldset("Padding") {
                         field {
+                            (inputContainer as HBox).alignment = Pos.CENTER_LEFT
                             label("Horizontal").minWidth = 60.0
                             pixelfield(model.paddingHorizontalProperty as Property<Number>)
                             label("Vertical") {
@@ -124,7 +173,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                 vbox textArea@ {
                     isFillWidth = false
 
-                    backgroundProperty().bind(model.backgroundFillProperty.backgroundBinding())
+                    backgroundProperty().bind(model.windowBackgroundProperty.backgroundBinding())
                     // 16:9
                     documentHeightBinding = widthProperty().multiply(0.5625)
                     prefHeightProperty().bind(documentHeightBinding)
@@ -136,7 +185,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                         paddingVerticalProperty.bind(model.paddingVerticalProperty)
                         paddingHorizontalProperty.bind(model.paddingHorizontalProperty)
 
-                        backgroundProperty().bind(model.backgroundDocumentProperty.backgroundBinding())
+                        backgroundProperty().bind(model.documentBackgroundProperty.backgroundBinding())
                         prefWidthProperty().bind(model.documentWidthProperty.doubleBinding(this@textArea.widthProperty(), FX.primaryStage.widthProperty()) {
                             if (it!! <= 1) {
                                 return@doubleBinding this@textArea.width * it
