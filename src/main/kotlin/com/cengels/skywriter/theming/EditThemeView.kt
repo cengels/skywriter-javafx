@@ -6,12 +6,13 @@ import com.cengels.skywriter.fragments.Dialog
 import com.cengels.skywriter.util.*
 import javafx.beans.binding.DoubleBinding
 import javafx.beans.property.Property
+import javafx.geometry.Insets
 import javafx.geometry.Pos
 import javafx.scene.control.ButtonBar
 import javafx.scene.control.OverrunStyle
 import javafx.scene.control.ScrollPane
-import javafx.scene.layout.HBox
-import javafx.scene.layout.Priority
+import javafx.scene.image.Image
+import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.shape.SVGPath
 import javafx.scene.text.Font
@@ -173,7 +174,21 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                 vbox textArea@ {
                     isFillWidth = false
 
-                    backgroundProperty().bind(model.windowBackgroundProperty.backgroundBinding())
+                    backgroundProperty().bind(model.windowBackgroundProperty.objectBinding(model.backgroundImageProperty, model.backgroundImageSizingTypeProperty) {
+                        if (model.backgroundImage.isNullOrBlank()) {
+                            return@objectBinding Background(BackgroundFill(it, CornerRadii.EMPTY, Insets.EMPTY))
+                        }
+
+                        return@objectBinding Background(
+                            arrayOf(BackgroundFill(it, CornerRadii.EMPTY, Insets.EMPTY)),
+                            arrayOf(BackgroundImage(Image("file:///${model.backgroundImage}"),
+                                if (model.backgroundImageSizingType == ImageSizingType.TILE) BackgroundRepeat.REPEAT else BackgroundRepeat.NO_REPEAT,
+                                if (model.backgroundImageSizingType == ImageSizingType.TILE) BackgroundRepeat.REPEAT else BackgroundRepeat.NO_REPEAT,
+                                if (model.backgroundImageSizingType == ImageSizingType.CENTER) BackgroundPosition.CENTER else BackgroundPosition.DEFAULT,
+                                BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, false, false,
+                                    model.backgroundImageSizingType == ImageSizingType.CONTAIN,
+                                    model.backgroundImageSizingType == ImageSizingType.COVER))))
+                    })
                     // 16:9
                     documentHeightBinding = widthProperty().multiply(0.5625)
                     prefHeightProperty().bind(documentHeightBinding)

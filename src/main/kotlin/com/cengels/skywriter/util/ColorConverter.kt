@@ -8,7 +8,7 @@ object ColorConverter : Converter<Color, javafx.scene.paint.Color> {
     }
 
     override fun convertBack(value: javafx.scene.paint.Color): Color {
-        return java.awt.Color(value.red.toFloat(), value.green.toFloat(), value.blue.toFloat())
+        return java.awt.Color(value.red.toFloat(), value.green.toFloat(), value.blue.toFloat(), value.opacity.toFloat())
     }
 
 }
