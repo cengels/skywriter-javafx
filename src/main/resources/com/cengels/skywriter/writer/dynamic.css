@@ -1,0 +1,25 @@
+/* Contains selectors and rules with dynamically computed values. */
+
+.root {
+    -fill: black;
+    -text-alignment: left;
+    -paragraph-spacing: 50;
+    -line-spacing: 50;
+}
+
+.paragraph-text .text {
+    -fx-fill: -fill;
+}
+
+.styled-text-area * {
+    -fx-text-alignment: -text-alignment;
+}
+
+.paragraph-text {
+    -fx-line-spacing: -line-spacing;
+    -fx-padding: 0 0 -paragraph-spacing 0;
+}
+
+.caret {
+    -fx-stroke: -fill;
+}

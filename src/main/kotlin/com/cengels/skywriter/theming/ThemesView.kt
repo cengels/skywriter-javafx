@@ -1,25 +1,11 @@
 package com.cengels.skywriter.theming
 
-import com.cengels.skywriter.persistence.AppConfig
-import javafx.geometry.Pos
 import javafx.scene.control.ButtonBar
 import javafx.scene.control.ButtonType
 import javafx.scene.control.ScrollPane
 import tornadofx.*
 
-class ThemesView : View("Themes") {
-    val themesManager = ThemesManager()
-
-    override fun onDock() {
-        super.onDock()
-
-        themesManager.load()
-
-        AppConfig.activeTheme.apply {
-            themesManager.selectedTheme = themesManager.themes.find { it.name == this } ?: ThemesManager.DEFAULT
-        }
-    }
-
+class ThemesView(val themesManager: ThemesManager) : View("Themes") {
     override val root = borderpane {
         minHeight = 350.0
         minWidth = 500.0

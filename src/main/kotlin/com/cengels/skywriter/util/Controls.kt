@@ -37,15 +37,15 @@ fun TextField.format(filter: (it: TextFormatter.Change) -> TextFormatter.Change?
     textFormatter = TextFormatter<Any>(filter)
 }
 
-/** Adds a custom field that only accepts percentages and converts to doubles between 0 and 1. */
-fun EventTarget.percentfield(property: Property<Double>, op: TextField.() -> Unit = {}) = textfield(property.apply { this.value = this.value.coerceIn(0.0..1.0) }, PercentageStringConverter() as StringConverter<Double>, op).apply {
+/** Adds a custom field that only accepts percentages and converts to doubles by dividing by 100. */
+fun EventTarget.percentfield(property: Property<Double>, max: Double = 1.0, op: TextField.() -> Unit = {}) = textfield(property.apply { this.value = this.value.coerceIn(0.0..max) }, PercentageStringConverter() as StringConverter<Double>, op).apply {
     alignment = Pos.CENTER_RIGHT
 
     format {
         val number = it.controlNewText.removeSuffix("%")
         val double: Double? = if (number.isDouble()) number.toDouble() else null
 
-        if (!it.controlNewText.endsWith("%") || (double == null && number.isNotBlank()) || (double != null && double !in 0.0..100.0)) {
+        if (!it.controlNewText.endsWith("%") || (double == null && number.isNotBlank()) || (double != null && double !in 0.0..max * 100)) {
             return@format null
         }
 

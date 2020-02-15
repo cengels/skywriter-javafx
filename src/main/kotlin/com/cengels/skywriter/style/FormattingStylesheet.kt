@@ -31,10 +31,6 @@ class FormattingStylesheet : Stylesheet() {
     }
 
     init {
-        paragraphText {
-            padding = CssBox(0.em, 0.em, 0.8.em, 0.em)
-        }
-
         h1 {
             fontSize = 22.pt
             fontWeight = FontWeight.BOLD

@@ -3,33 +3,53 @@ package com.cengels.skywriter.writer
 import com.cengels.skywriter.enum.Heading
 import com.cengels.skywriter.persistence.AppConfig
 import com.cengels.skywriter.persistence.MarkdownParser
-import com.cengels.skywriter.style.WriterStylesheet
+import com.cengels.skywriter.theming.ThemesManager
 import com.cengels.skywriter.theming.ThemesView
+import com.cengels.skywriter.util.convert.ColorConverter
+import com.cengels.skywriter.util.getBackgroundFor
+import com.cengels.skywriter.util.onChangeAndNow
+import com.cengels.skywriter.util.toBackground
 import com.sun.org.apache.xml.internal.serialize.LineSeparator
 import javafx.scene.control.ButtonType
 import javafx.scene.layout.ColumnConstraints
 import javafx.scene.layout.Priority
 import javafx.scene.layout.RowConstraints
-import javafx.scene.paint.Color
 import javafx.stage.FileChooser
-import javafx.stage.Modality
-import javafx.stage.StageStyle
 import javafx.stage.WindowEvent
+import javafx.util.converter.PercentageStringConverter
 import tornadofx.*
 import java.io.File
 
 
 class WriterView : View("Skywriter") {
     val model = WriterViewModel()
-    val textArea = WriterTextArea().also {
-        it.addClass(WriterStylesheet.textArea)
+    val themesManager = ThemesManager()
 
+    init {
+        this.updateTitle()
+        themesManager.load()
+        themesManager.selectedTheme = themesManager.themes.find { it.name == AppConfig.activeTheme } ?: ThemesManager.DEFAULT
+        model.fileProperty.onChange { this.updateTitle() }
+        model.dirtyProperty.onChange { this.updateTitle() }
+    }
+
+    val textArea = WriterTextArea().also {
         it.richChanges().subscribe { change ->
             model.dirty = true
         }
 
         it.isWrapText = true
         it.useMaxHeight = true
+        it.paddingHorizontalProperty.bind(themesManager.selectedThemeProperty.doubleBinding { it!!.paddingHorizontal.toDouble() })
+        it.paddingVerticalProperty.bind(themesManager.selectedThemeProperty.doubleBinding { it!!.paddingVertical.toDouble() })
+        it.backgroundProperty().bind(themesManager.selectedThemeProperty.objectBinding { it!!.documentBackground.toBackground() })
+
+        themesManager.selectedThemeProperty.onChangeAndNow { theme ->
+            it.style {
+                fontSize = theme!!.fontSize.pt
+                fontFamily = theme.fontFamily
+            }
+        }
 
         contextmenu {
             item("Cut").action { it.cut() }
@@ -38,6 +58,7 @@ class WriterView : View("Skywriter") {
             item("Delete").action { it.deleteText(it.selection) }
         }
 
+        // Doesn't work.
         shortcut("Shift+Enter") {
             it.insertText(it.caretPosition, LineSeparator.Windows)
         }
@@ -51,13 +72,11 @@ class WriterView : View("Skywriter") {
                 }
             }
         }
-
-        this.updateTitle()
-        model.fileProperty.onChange { this.updateTitle() }
-        model.dirtyProperty.onChange { this.updateTitle() }
     }
 
     override fun onDock() {
+        super.onDock()
+
         currentWindow!!.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST) {
             warnOnUnsavedChanges { it.consume() }
 
@@ -66,10 +85,20 @@ class WriterView : View("Skywriter") {
                 AppConfig.save()
             }
         }
+
+        currentStage!!.scene.stylesheets.add(WriterView::class.java.getResource("dynamic.css").toExternalForm())
     }
 
     override val root = borderpane {
         setPrefSize(800.0, 600.0)
+
+        themesManager.selectedThemeProperty.onChangeAndNow { theme ->
+            style = "-fill: ${ColorConverter.convert(theme!!.fontColor).css};\n" +
+                    "-text-alignment: ${theme.textAlignment.name.toLowerCase()};\n"
+                    // "-paragraph-spacing: 50;\n" +
+                    // "-line-spacing: ${PercentageStringConverter().toString(theme.lineHeight)};"
+        }
+
         top {
             useMaxWidth = true
             menubar {
@@ -98,7 +127,7 @@ class WriterView : View("Skywriter") {
                     }
                     separator()
                     item("Preferences...", "Ctrl+P")
-                    item("Appearance...").action { find<ThemesView>().openModal() }
+                    item("Appearance...").action { ThemesView(themesManager).openModal() }
                     item("Quit", "Ctrl+Alt+F4").action {
                         close()
                     }
@@ -137,26 +166,37 @@ class WriterView : View("Skywriter") {
 
         center {
             gridpane {
+                this.backgroundProperty().bind(themesManager.selectedThemeProperty.objectBinding { getBackgroundFor(it!!.windowBackground, it.backgroundImage, it.backgroundImageSizingType)  })
                 this.useMaxWidth = true
                 this.useMaxHeight = true
                 this.columnConstraints.addAll(
-                    ColumnConstraints().apply { this.percentWidth = 15.0 },
-                    ColumnConstraints().apply { this.percentWidth = 70.0 },
-                    ColumnConstraints().apply { this.percentWidth = 15.0 }
+                    ColumnConstraints().apply { this.hgrow = Priority.ALWAYS },
+                    ColumnConstraints().apply {
+                        this.percentWidthProperty().bind(themesManager.selectedThemeProperty.doubleBinding { if (it!!.documentWidth <= 1.0) it.documentWidth * 100.0 else -1.0 })
+                        this.prefWidthProperty().bind(themesManager.selectedThemeProperty.doubleBinding { if (it!!.documentWidth > 1.0) it.documentWidth else -1.0 })
+                    },
+                    ColumnConstraints().apply { this.hgrow = Priority.ALWAYS }
                 )
-                this.rowConstraints.add(RowConstraints().apply { this.percentHeight = 100.0 })
+                this.rowConstraints.addAll(
+                    RowConstraints().apply { this.vgrow = Priority.ALWAYS },
+                    RowConstraints().apply {
+                        this.percentHeightProperty().bind(themesManager.selectedThemeProperty.doubleBinding { if (it!!.documentHeight <= 1.0) it.documentHeight * 100.0 else -1.0 })
+                        this.prefHeightProperty().bind(themesManager.selectedThemeProperty.doubleBinding { if (it!!.documentHeight > 1.0) it.documentHeight else -1.0 })
+                    },
+                    RowConstraints().apply { this.vgrow = Priority.ALWAYS }
+                )
 
-                vbox {
-                    addClass(WriterStylesheet.textAreaBackground)
-                    this.useMaxWidth = true
-                    this.useMaxHeight = true
-                    gridpaneConstraints {
-                        columnRowIndex(0, 0)
-                        columnSpan = 3
-                    }
-                }
+                // vbox {
+                //     this.backgroundProperty().bind(themesManager.selectedThemeProperty.objectBinding { getBackgroundFor(it!!.windowBackground, it.backgroundImage, it.backgroundImageSizingType)  })
+                //     this.useMaxWidth = true
+                //     this.useMaxHeight = true
+                //     gridpaneConstraints {
+                //         columnRowIndex(0, 0)
+                //         columnSpan = 3
+                //     }
+                // }
 
-                this.add(textArea, 1, 0)
+                this.add(textArea, 1, 1)
             }
         }
 
@@ -166,7 +206,7 @@ class WriterView : View("Skywriter") {
     }
 
     private fun updateTitle() {
-        this.title = if (model.file != null) "Skywriter • ${model.file!!.name}" else "Skywriter • Untitled"
+        this.title = "Skywriter • ${if (model.file != null) model.file!!.name else "Untitled"}"
 
         if (model.dirty) {
             this.title += "*"

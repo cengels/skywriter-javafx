@@ -19,7 +19,7 @@ class ThemesManager {
 
     val themesProperty = SimpleListProperty<Theme>(observableListOf())
     var themes: ObservableList<Theme> by themesProperty
-    val selectedThemeProperty = SimpleObjectProperty<Theme?>()
+    val selectedThemeProperty = SimpleObjectProperty<Theme>()
     var selectedTheme by selectedThemeProperty
 
     val file: File
