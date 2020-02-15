@@ -3,8 +3,8 @@
 .root {
     -fill: black;
     -text-alignment: left;
-    -paragraph-spacing: 50;
-    -line-spacing: 50;
+    /* -paragraph-spacing: 50; */
+    -line-spacing: 5;
 }
 
 .paragraph-text .text {
@@ -17,7 +17,7 @@
 
 .paragraph-text {
     -fx-line-spacing: -line-spacing;
-    -fx-padding: 0 0 -paragraph-spacing 0;
+    -fx-padding: 0 0 20 0;
 }
 
 .caret {

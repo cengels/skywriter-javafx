@@ -22,8 +22,15 @@ class ThemesView(val themesManager: ThemesManager) : View("Themes") {
                 datagrid(themesManager.themes) {
                     this.useMaxWidth = true
                     this.useMaxHeight = true
+                    selectionModel.selectedItemProperty().onChange {
+                        if (it != null) {
+                            themesManager.selectedTheme = it
+                        }
+                    }
 
-                    bindSelected(themesManager.selectedThemeProperty)
+                    themesManager.selectedThemeProperty.onChange {
+                        this.selectionModel.select(it)
+                    }
 
                     cellFormat {
                         addClass("theme-container")
@@ -66,6 +73,7 @@ class ThemesView(val themesManager: ThemesManager) : View("Themes") {
                 }
                 button("Remove") {
                     enableWhen { themesManager.selectedThemeProperty.booleanBinding { it != null && !it.default } }
+                    shortcut("Delete")
 
                     action {
                         warning("Delete", "Are you sure you want to delete this theme? This operation cannot be undone.", ButtonType.YES, ButtonType.NO) {
@@ -95,6 +103,16 @@ class ThemesView(val themesManager: ThemesManager) : View("Themes") {
     }
 
     private fun openEditDialog(theme: Theme): EditThemeView {
-        return EditThemeView(theme, themesManager.themes.filter { it != theme }.map { it.name }).apply { this.openModal(owner = currentWindow) }
+        return EditThemeView(theme, themesManager.themes.filter { it != theme }.map { it.name }).apply {
+            this.openModal(owner = currentWindow)!!.setOnHidden {
+                themesManager.selectedTheme.apply {
+                    // Necessary to force an invalidation of the selectedTheme property, allowing the WriterView to immediately update its properties.
+                    // Without this, the theme would not be reflected in the WriterView until the user switched to another theme and back,
+                    // or restarted the application.
+                    themesManager.selectedTheme = ThemesManager.DEFAULT
+                    themesManager.selectedTheme = this
+                }
+            }
+        }
     }
 }

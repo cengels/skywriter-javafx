@@ -9,14 +9,12 @@ import com.cengels.skywriter.util.convert.ColorConverter
 import com.cengels.skywriter.util.getBackgroundFor
 import com.cengels.skywriter.util.onChangeAndNow
 import com.cengels.skywriter.util.toBackground
-import com.sun.org.apache.xml.internal.serialize.LineSeparator
 import javafx.scene.control.ButtonType
 import javafx.scene.layout.ColumnConstraints
 import javafx.scene.layout.Priority
 import javafx.scene.layout.RowConstraints
 import javafx.stage.FileChooser
 import javafx.stage.WindowEvent
-import javafx.util.converter.PercentageStringConverter
 import tornadofx.*
 import java.io.File
 
@@ -59,9 +57,9 @@ class WriterView : View("Skywriter") {
         }
 
         // Doesn't work.
-        shortcut("Shift+Enter") {
-            it.insertText(it.caretPosition, LineSeparator.Windows)
-        }
+//        shortcut("Shift+Enter") {
+//            it.insertText(it.caretPosition, LineSeparator.Windows)
+//        }
     }
 
     init {

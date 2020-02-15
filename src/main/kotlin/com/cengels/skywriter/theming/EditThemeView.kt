@@ -3,6 +3,7 @@ package com.cengels.skywriter.theming
 import com.cengels.skywriter.enum.FieldType
 import com.cengels.skywriter.fragments.Dialog
 import com.cengels.skywriter.util.*
+import javafx.application.Platform
 import javafx.beans.binding.DoubleBinding
 import javafx.beans.property.Property
 import javafx.geometry.Pos
@@ -19,7 +20,6 @@ import java.io.File
 
 class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialog<Theme>(if (theme.name.isNotEmpty()) "Edit theme" else "Add theme") {
     private val model: EditThemeViewModel = EditThemeViewModel(theme)
-    private lateinit var documentHeightBinding: DoubleBinding
 
     override fun onDock() {
         super.onDock()
@@ -172,8 +172,10 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
 
                     backgroundProperty().bind(model.windowBackgroundProperty.objectBinding(model.backgroundImageProperty, model.backgroundImageSizingTypeProperty) { getBackgroundFor(it!!, model.backgroundImage, model.backgroundImageSizingType) })
                     // 16:9
-                    documentHeightBinding = widthProperty().multiply(0.5625)
-                    prefHeightProperty().bind(documentHeightBinding)
+                    prefHeightProperty().bind(widthProperty().multiply(0.5625))
+                    // During the first layout pass, widthProperty does not fire a changed event.
+                    // Therefore, prefHeight will remain unset without the below call.
+                    Platform.runLater { this.requestLayout() }
 
                     alignment = Pos.CENTER
 
