@@ -9,14 +9,10 @@ import javafx.scene.control.ComboBox
 import javafx.scene.control.TextField
 import javafx.scene.control.TextFormatter
 import javafx.scene.layout.Pane
-import javafx.scene.layout.VBox
-import javafx.scene.text.TextAlignment
-import javafx.util.Duration
+import javafx.scene.layout.Priority
 import javafx.util.StringConverter
-import javafx.util.converter.IntegerStringConverter
 import javafx.util.converter.PercentageStringConverter
 import tornadofx.*
-import java.util.function.UnaryOperator
 import kotlin.math.min
 
 /** Adds a custom text field that only accepts the number type which was passed in. */
@@ -51,20 +47,7 @@ fun EventTarget.percentfield(property: Property<Double>, op: TextField.() -> Uni
             return@format null
         }
 
-        if (it.controlNewText.removeSuffix("%").isBlank()) {
-            it.text = "0"
-        } else if (it.controlNewText != "0%" && it.controlNewText.startsWith("0")) {
-            it.text = it.text.trimStart('0')
-        }
-
-        return@format it
-    }
-
-    this.selectionProperty().addListener { observable, oldValue, newValue ->
-        val indexOfPercent = this.text.lastIndexOf('%')
-        if (newValue.end > this.text.lastIndexOf('%')) {
-            this.selectRange(min(newValue.start, indexOfPercent), indexOfPercent)
-        }
+        return@format it.assureSuffix("%")
     }
 
     validator {
@@ -78,15 +61,23 @@ fun EventTarget.percentfield(property: Property<Double>, op: TextField.() -> Uni
     }
 }
 
-/** Adds a combobox consisting of values from the specified enum. */
-inline fun <reified E : Enum<E>> EventTarget.combobox(property: Property<E>? = null, noinline op: ComboBox<E>.() -> Unit = {}) = combobox(property, enumValues<E>().asList(), op).apply {
-    converter = EnumConverter<E>()
-}
-
 /** Adds a custom text field that only accepts integers, shows a suffix, and can be incremented using arrows. */
 fun EventTarget.pixelfield(property: Property<Number>, op: TextField.() -> Unit = {}) = textfield(property, SuffixConverter("pixels"), op).apply {
     alignment = Pos.CENTER_RIGHT
-    filterInput { it.controlNewText.endsWith(" pixels") && it.controlNewText.removeSuffix(" pixels").isInt() }
+    val suffix = " pixels"
+    hgrow = Priority.ALWAYS
+
+    format {
+        val number = it.controlNewText.removeSuffix(suffix)
+        val int: Int? = if (number.isInt()) number.toInt() else null
+
+        if (!it.controlNewText.endsWith(suffix) || (int == null && number.isNotBlank()) || (int != null && int < 0)) {
+            return@format null
+        }
+
+        return@format it.assureSuffix(suffix)
+    }
+
     validator {
         if (it == null || it.removeSuffix(" pixels").isBlank() || it.removeSuffix(" pixels") == "0") {
             error("Please enter a value.")
@@ -96,21 +87,73 @@ fun EventTarget.pixelfield(property: Property<Number>, op: TextField.() -> Unit 
     }
 }
 
+/** Applies several formatting rules to prevent the suffix from being removed or selected, and to prevent more than one leading zero. */
+fun TextFormatter.Change.assureSuffix(suffix: String): TextFormatter.Change? {
+    val number = this.controlNewText.removeSuffix(suffix)
+
+    this.controlNewText.lastIndexOf(suffix).also {
+        if (this.selection.end > it) {
+            // Prevent the user from selecting the suffix.
+            this.selectRange(min(this.selection.start, it), it)
+        }
+    }
+
+    if (number.isBlank() || this.controlNewText.startsWith("0")) {
+        val beforeDecimal = number.takeWhile { char -> char.isDigit() }
+        if (number.isBlank()) {
+            // Replace a blank field with an automatic zero.
+            this.text = "0"
+        } else if (beforeDecimal.all { digit -> digit == '0' } && beforeDecimal != "0") {
+            // Reject input that attempts to add extraneous zeroes.
+            return null
+        } else if (beforeDecimal != "0") {
+            // Trim leading zeroes off numbers that don't consist of only zeroes.
+            this.text = this.text.trimStart('0')
+            this.setRange(0, this.controlNewText.lastIndexOf('0') + 1)
+
+            val suffixIndex = this.controlNewText.lastIndexOf(suffix)
+
+            this.caretPosition = suffixIndex
+            this.anchor = suffixIndex
+        }
+    } else if (this.controlText.removeSuffix(suffix) == "0" && this.isAdded) {
+        if (this.text == ".") {
+            // If text is zero, adding a decimal will always add it to the end.
+            this.setRange(1, 1)
+            this.caretPosition = 2
+            this.anchor = 2
+        } else {
+            // All other digits will replace the zero with that digit.
+            this.setRange(0, 1)
+        }
+    }
+
+    return this
+}
+
+/** Adds a combobox consisting of values from the specified enum. */
+inline fun <reified E : Enum<E>> EventTarget.combobox(property: Property<E>? = null, noinline op: ComboBox<E>.() -> Unit = {}) = combobox(property, enumValues<E>().asList(), op).apply {
+    converter = EnumConverter<E>()
+}
+
 /** Adds a custom text field whose type depends on an accompanying combo box. */
-fun EventTarget.combinedfield(property: Property<Double>, orientation: Orientation = Orientation.VERTICAL, op: TextField.() -> Unit = {}): Pane {
+fun EventTarget.combinedfield(property: Property<Double>, orientation: Orientation = Orientation.HORIZONTAL, onSwitch: (oldValue: FieldType, newValue: FieldType) -> Unit = { oldValue, newValue -> }, op: TextField.() -> Unit = {}): Pane {
     val innerOp: Pane.() -> Unit = {
+        this.useMaxSize = true
         var textField: TextField? = null
         combobox<FieldType> {
+            minWidth = 110.0
             selectionModel.select(if (property.value <= 1.0) FieldType.PERCENTAGE else FieldType.NUMBER)
             selectionModel.selectedItemProperty().addListener { observable, oldValue, newValue ->
                 if (oldValue != newValue && textField != null) {
+                    textField!!.textProperty().unbindBidirectional(property)
+                    onSwitch(oldValue, newValue)
                     val newField = when (newValue) {
                         FieldType.NUMBER -> pixelfield(property as Property<Number>, op = op)
                         FieldType.PERCENTAGE -> percentfield(property, op = op)
                         else -> throw NullPointerException("FieldType cannot be null.")
                     }
 
-                    textField!!.textProperty().unbind()
                     textField!!.replaceWith(newField)
                     textField = newField
                 }
@@ -119,5 +162,5 @@ fun EventTarget.combinedfield(property: Property<Double>, orientation: Orientati
         textField = if (property.value <= 1.0) percentfield(property, op = op) else pixelfield(property as Property<Number>, op = op)
     }
 
-    return if (orientation == Orientation.VERTICAL) vbox(op = innerOp) else hbox(op = innerOp)
+    return if (orientation == Orientation.VERTICAL) vbox { spacing = 10.0; innerOp(this) } else hbox { spacing = 10.0; innerOp(this) }
 }
