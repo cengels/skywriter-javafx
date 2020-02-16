@@ -172,8 +172,11 @@ fun EventTarget.combinedfield(property: Property<Double>, orientation: Orientati
 private const val TIME_MS_BEFORE_FONT_PICKER_AUTO_COMPLETE_RESET: Long = 500
 
 /** Adds a font picker combobox that allows for easy navigation using keyboard inputs and renders each listed font with its actual font family. */
-fun EventTarget.fontpicker(property: Property<String>, op: ComboBox<String>.() -> Unit = {}) = combobox(property, Font.getFamilies()) {
+fun EventTarget.fontpicker(property: Property<String>, fonts: List<String>? = Font.getFamilies(), op: ComboBox<String>.() -> Unit = {}) = combobox(property, fonts) {
     required()
+
+    // This increases performance. Without this, opening the combobox for the first time takes over a second.
+    properties["comboBoxRowsToMeasureWidth"] = 10
 
     // Show the font in its own font family
     setCellFactory {
@@ -217,4 +220,6 @@ fun EventTarget.fontpicker(property: Property<String>, op: ComboBox<String>.() -
             }
         }
     }
+
+    op(this)
 }

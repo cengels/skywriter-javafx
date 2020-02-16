@@ -3,9 +3,16 @@ package com.cengels.skywriter.theming
 import javafx.scene.control.ButtonBar
 import javafx.scene.control.ButtonType
 import javafx.scene.control.ScrollPane
+import javafx.scene.text.Font
 import tornadofx.*
 
 class ThemesView(val themesManager: ThemesManager) : View("Themes") {
+    override fun onDock() {
+        super.onDock()
+
+        themesManager.initializeFonts()
+    }
+
     override val root = borderpane {
         minHeight = 350.0
         minWidth = 500.0

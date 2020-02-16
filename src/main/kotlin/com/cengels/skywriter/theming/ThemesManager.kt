@@ -5,6 +5,8 @@ import com.cengels.skywriter.persistence.AppConfig
 import javafx.beans.property.SimpleListProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.ObservableList
+import javafx.concurrent.Task
+import javafx.scene.text.Font
 import tornadofx.*
 import java.io.File
 import java.io.ObjectInputStream
@@ -15,6 +17,9 @@ import tornadofx.setValue
 class ThemesManager {
     companion object {
         val DEFAULT = Theme(name = "Default", default = true)
+        private var fontsTask: Task<List<String>>? = null
+        val fonts: List<String>?
+            get() = fontsTask?.get()
     }
 
     val themesProperty = SimpleListProperty<Theme>(observableListOf())
@@ -27,6 +32,10 @@ class ThemesManager {
 
     init {
         themes.add(DEFAULT)
+    }
+
+    fun initializeFonts() {
+        fontsTask = runAsync { Font.getFamilies() }
     }
 
     /** Duplicates the selected theme. Throws an exception if no theme is selected. */

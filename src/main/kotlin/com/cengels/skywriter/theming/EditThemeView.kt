@@ -55,7 +55,10 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                     fieldset("Font") {
                         field {
                             (inputContainer as HBox).alignment = Pos.CENTER_LEFT
-                            fontpicker(model.fontFamilyProperty)
+                            fontpicker(model.fontFamilyProperty, ThemesManager.fonts) {
+                                hgrow = Priority.NEVER
+                                prefWidth = 240.0
+                            }
                             numberfield(model.fontSizeProperty).prefWidth = 120.0
                             colorpicker(model.fontColorProperty, ColorPickerMode.Button)
                         }
