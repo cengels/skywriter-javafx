@@ -83,7 +83,7 @@ fun EventTarget.pixelfield(property: Property<Number>, op: TextField.() -> Unit 
     }
 
     validator {
-        if (it == null || it.removeSuffix(" pixels").isBlank() || it.removeSuffix(" pixels") == "0") {
+        if (it == null || it.removeSuffix(" pixels").isBlank()) {
             error("Please enter a value.")
         } else {
             success()
