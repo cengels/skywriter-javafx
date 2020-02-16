@@ -3,18 +3,20 @@ package com.cengels.skywriter.util
 import com.cengels.skywriter.enum.FieldType
 import com.cengels.skywriter.util.convert.EnumConverter
 import com.cengels.skywriter.util.convert.SuffixConverter
+import com.sun.javafx.scene.control.skin.ComboBoxListViewSkin
 import javafx.beans.property.Property
 import javafx.event.EventTarget
 import javafx.geometry.Orientation
 import javafx.geometry.Pos
-import javafx.scene.control.ComboBox
-import javafx.scene.control.TextField
-import javafx.scene.control.TextFormatter
+import javafx.scene.control.*
 import javafx.scene.layout.Pane
 import javafx.scene.layout.Priority
+import javafx.scene.text.Font
 import javafx.util.StringConverter
 import javafx.util.converter.PercentageStringConverter
 import tornadofx.*
+import java.awt.event.KeyEvent
+import java.time.Instant
 import kotlin.math.min
 
 /** Adds a custom text field that only accepts the number type which was passed in. */
@@ -165,4 +167,54 @@ fun EventTarget.combinedfield(property: Property<Double>, orientation: Orientati
     }
 
     return if (orientation == Orientation.VERTICAL) vbox { spacing = 10.0; innerOp(this) } else hbox { spacing = 10.0; innerOp(this) }
+}
+
+private const val TIME_MS_BEFORE_FONT_PICKER_AUTO_COMPLETE_RESET: Long = 500
+
+/** Adds a font picker combobox that allows for easy navigation using keyboard inputs and renders each listed font with its actual font family. */
+fun EventTarget.fontpicker(property: Property<String>, op: ComboBox<String>.() -> Unit = {}) = combobox(property, Font.getFamilies()) {
+    required()
+
+    // Show the font in its own font family
+    setCellFactory {
+        return@setCellFactory object: ListCell<String>() {
+            override fun updateItem(item: String?, empty: Boolean) {
+                super.updateItem(item, empty)
+
+                if (empty || item == null) {
+                    text = null
+                    graphic = null
+                } else {
+                    text = item
+                    font = Font.font(item)
+                }
+            }
+        }
+    }
+
+    // Auto complete
+    var searchString: String = ""
+    var lastInput: Instant = Instant.MIN
+
+    setOnKeyTyped { keyEvent ->
+        val now = Instant.now()
+
+        if (lastInput <= now.minusMillis(TIME_MS_BEFORE_FONT_PICKER_AUTO_COMPLETE_RESET)) {
+            searchString = ""
+        }
+
+        lastInput = now
+
+        if (this.isShowing) {
+            searchString += keyEvent.character
+            this.items.find { it.toLowerCase().startsWith(searchString.toLowerCase()) }.also {
+                if (it != null) {
+                    this.selectionModel.select(it)
+                    (this.skin as ComboBoxListViewSkin<String>).listView.scrollTo(it)
+                } else {
+                    searchString = ""
+                }
+            }
+        }
+    }
 }

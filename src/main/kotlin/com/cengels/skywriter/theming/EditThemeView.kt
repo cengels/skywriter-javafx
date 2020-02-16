@@ -8,6 +8,7 @@ import javafx.beans.binding.DoubleBinding
 import javafx.beans.property.Property
 import javafx.geometry.Pos
 import javafx.scene.control.ButtonBar
+import javafx.scene.control.ListCell
 import javafx.scene.control.OverrunStyle
 import javafx.scene.control.ScrollPane
 import javafx.scene.layout.*
@@ -54,7 +55,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                     fieldset("Font") {
                         field {
                             (inputContainer as HBox).alignment = Pos.CENTER_LEFT
-                            combobox(model.fontFamilyProperty, Font.getFamilies()).required()
+                            fontpicker(model.fontFamilyProperty)
                             numberfield(model.fontSizeProperty).prefWidth = 120.0
                             colorpicker(model.fontColorProperty, ColorPickerMode.Button)
                         }
