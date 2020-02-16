@@ -9,6 +9,8 @@ class GeneralStylesheet : Stylesheet() {
     companion object {
         val titleBar by cssclass()
         val themedView by cssclass()
+        val selected by cssclass()
+        val dataGridCell by cssclass("datagrid-cell")
     }
 
     init {
@@ -17,6 +19,14 @@ class GeneralStylesheet : Stylesheet() {
             maxWidth = Double.POSITIVE_INFINITY.px
             minHeight = 40.px
             maxHeight = 40.px
+        }
+
+        dataGridCell {
+            and(selected) {
+                backgroundColor = MultiValue(arrayOf(Color.CORNFLOWERBLUE))
+            }
+
+            backgroundColor = MultiValue(arrayOf(Color.rgb(244, 244, 244)))
         }
 
         themedView {

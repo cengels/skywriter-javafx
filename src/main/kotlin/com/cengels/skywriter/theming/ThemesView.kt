@@ -1,9 +1,15 @@
 package com.cengels.skywriter.theming
 
+import com.cengels.skywriter.util.convert.ColorConverter
+import com.cengels.skywriter.util.getBackgroundFor
+import javafx.geometry.Pos
 import javafx.scene.control.ButtonBar
 import javafx.scene.control.ButtonType
 import javafx.scene.control.ScrollPane
+import javafx.scene.layout.*
+import javafx.scene.paint.Color
 import javafx.scene.text.Font
+import javafx.scene.text.TextAlignment
 import tornadofx.*
 
 class ThemesView(val themesManager: ThemesManager) : View("Themes") {
@@ -40,13 +46,48 @@ class ThemesView(val themesManager: ThemesManager) : View("Themes") {
                     }
 
                     cellFormat {
-                        addClass("theme-container")
+                        toggleClass(CssRule.c("selected"), this.isSelected)
                     }
 
                     cellCache {
                         vbox {
-                            rectangle(0.0, 0.0, 100.0, 100.0)
-                            label(it.name)
+                            useMaxWidth = true
+                            alignment = Pos.CENTER
+                            gridpane {
+                                this.background =  getBackgroundFor(it!!.windowBackground, it.backgroundImage, it.backgroundImageSizingType)
+                                this.useMaxWidth = true
+                                this.useMaxHeight = true
+                                vgrow = Priority.ALWAYS
+                                this.columnConstraints.addAll(
+                                    ColumnConstraints().apply { this.hgrow = Priority.ALWAYS },
+                                    ColumnConstraints().apply {
+                                        this.percentWidth = if (it.documentWidth <= 1.0) it.documentWidth * 100.0 else this@gridpane.width / it.documentWidth * 100.0
+                                    },
+                                    ColumnConstraints().apply { this.hgrow = Priority.ALWAYS }
+                                )
+                                this.rowConstraints.addAll(
+                                    RowConstraints().apply { this.vgrow = Priority.ALWAYS },
+                                    RowConstraints().apply {
+                                        this.percentHeight = if (it.documentHeight <= 1.0) it.documentHeight * 100.0 else this@gridpane.height / it.documentHeight * 100.0
+                                    },
+                                    RowConstraints().apply { this.vgrow = Priority.ALWAYS }
+                                )
+
+                                label {
+                                    gridpaneConstraints { columnRowIndex(1, 1) }
+                                    useMaxSize = true
+                                    vgrow = Priority.ALWAYS
+                                    background = getBackgroundFor(it.documentBackground)
+                                    text = "A"
+                                    font = Font.font(it.fontFamily, (it.fontSize * 3.0).coerceIn(30.0, 100.0))
+                                    textFill = ColorConverter.convert(it.fontColor)
+                                    alignment = Pos.CENTER
+                                }
+                            }
+                            label(it.name) {
+                                hgrow = Priority.ALWAYS
+                                textAlignment = TextAlignment.CENTER
+                            }
                         }
                     }
                 }
@@ -55,6 +96,7 @@ class ThemesView(val themesManager: ThemesManager) : View("Themes") {
 
         right {
             vbox {
+                spacing = 10.0
                 button("Add").action {
                     openEditDialog(Theme()).result {
                         if (ok) {

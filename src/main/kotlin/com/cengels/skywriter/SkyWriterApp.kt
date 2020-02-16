@@ -1,7 +1,7 @@
 package com.cengels.skywriter
 
 import com.cengels.skywriter.persistence.AppConfig
-import com.cengels.skywriter.style.FormattingStylesheet
+import com.cengels.skywriter.style.*
 import com.cengels.skywriter.writer.WriterView
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCodeCombination
@@ -13,7 +13,7 @@ import java.io.File
 import java.io.IOException
 import javax.swing.filechooser.FileSystemView
 
-class SkyWriterApp : App(WriterView::class, FormattingStylesheet::class) {
+class SkyWriterApp : App(WriterView::class, GeneralStylesheet::class, FormattingStylesheet::class) {
     companion object {
         val userDirectory: String = "${FileSystemView.getFileSystemView().defaultDirectory.path}${File.separator}Skywriter${File.separator}"
     }
