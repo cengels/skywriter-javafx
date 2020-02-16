@@ -2,6 +2,8 @@ package com.cengels.skywriter.theming
 
 import com.cengels.skywriter.SkyWriterApp
 import com.cengels.skywriter.persistence.AppConfig
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import javafx.beans.property.SimpleListProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.ObservableList
@@ -22,13 +24,14 @@ class ThemesManager {
             get() = fontsTask?.get()
     }
 
+    val gson = GsonBuilder().setPrettyPrinting().create()
     val themesProperty = SimpleListProperty<Theme>(observableListOf())
     var themes: ObservableList<Theme> by themesProperty
     val selectedThemeProperty = SimpleObjectProperty<Theme>()
     var selectedTheme by selectedThemeProperty
 
     val file: File
-            get() = File("${SkyWriterApp.userDirectory}user.themes")
+            get() = File("${SkyWriterApp.userDirectory}themes.json")
 
     init {
         themes.add(DEFAULT)
@@ -58,16 +61,9 @@ class ThemesManager {
     /** Loads all themes from file. */
     fun load() {
         if (file.exists()) {
-            file.inputStream().apply {
-                ObjectInputStream(this).apply {
-                    themes.filterNot { it.default }.apply { themes.removeAll(this) }
-                    themes.addAll(this.readObject() as List<Theme>)
-
-                    this.close()
-                }
-
-                this.close()
-            }
+            val input = file.readText()
+            themes.filterNot { it.default }.apply { themes.removeAll(this) }
+            themes.addAll(gson.fromJson(input, Array<Theme>::class.java))
         }
     }
 
@@ -81,14 +77,6 @@ class ThemesManager {
             selectedTheme = this
         }
 
-        file.outputStream().apply {
-            ObjectOutputStream(this).apply {
-                this.writeObject(themes.filter { !it.default }.toList())
-
-                this.close()
-            }
-
-            this.close()
-        }
+        file.writeText(gson.toJson(themes.filter { !it.default }))
     }
 }
