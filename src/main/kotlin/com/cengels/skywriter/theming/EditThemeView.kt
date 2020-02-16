@@ -15,17 +15,23 @@ import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.shape.SVGPath
 import javafx.scene.text.Font
+import javafx.scene.transform.Transform
 import javafx.stage.Screen
 import tornadofx.*
 import java.io.File
+import kotlin.math.ceil
 
 class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialog<Theme>(if (theme.name.isNotEmpty()) "Edit theme" else "Add theme") {
     private val model: EditThemeViewModel = EditThemeViewModel(theme)
+    private var textAreaBox: VBox? = null
 
     override fun onDock() {
         super.onDock()
 
         setWindowMinSize(900.0, 440.0)
+        // During the first layout pass, widthProperty does not fire a changed event.
+        // Therefore, prefHeight will remain unset without the below call.
+        Platform.runLater { textAreaBox?.requestLayout() }
     }
 
     override val root = borderpane {
@@ -177,9 +183,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                     backgroundProperty().bind(model.windowBackgroundProperty.objectBinding(model.backgroundImageProperty, model.backgroundImageSizingTypeProperty) { getBackgroundFor(it!!, model.backgroundImage, model.backgroundImageSizingType) })
                     // 16:9
                     prefHeightProperty().bind(widthProperty().multiply(0.5625))
-                    // During the first layout pass, widthProperty does not fire a changed event.
-                    // Therefore, prefHeight will remain unset without the below call.
-                    Platform.runLater { this.requestLayout() }
+                    textAreaBox = this@textArea
 
                     alignment = Pos.CENTER
 
@@ -206,21 +210,15 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
 
                         label {
                             useMaxWidth = true
-                            loremIpsum()
+                            loremIpsum(LoremIpsum.MAX)
                             textFillProperty().bind(model.fontColorProperty)
                             textAlignmentProperty().bind(model.textAlignmentProperty)
                             lineSpacingProperty().bind(model.lineHeightProperty)
                             isWrapText = true
                             textOverrun = OverrunStyle.CLIP
-                            this@parentContainer.widthProperty().addListener { observable, oldValue, newValue ->
-                                font = Font.font(model.fontFamily, newValue!!.toDouble() / FX.primaryStage.width * model.fontSize * 2)
-                            }
-                            model.fontSizeProperty.addListener { observable, oldValue, newValue ->
-                                font = Font.font(model.fontFamily, this@parentContainer.width / FX.primaryStage.width * model.fontSize * 2)
-                            }
-                            model.fontFamilyProperty.addListener { observable, oldValue, newValue ->
-                                font = Font.font(model.fontFamily, this@parentContainer.width / FX.primaryStage.width * model.fontSize * 2)
-                            }
+                            fontProperty().bind(this@parentContainer.widthProperty().objectBinding(model.fontSizeProperty, model.fontFamilyProperty) {
+                                Font.font(model.fontFamily, this@parentContainer.height / FX.primaryStage.height * model.fontSize)
+                            })
                         }
                     }
                 }

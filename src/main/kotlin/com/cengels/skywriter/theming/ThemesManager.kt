@@ -73,6 +73,14 @@ class ThemesManager {
 
     /** Saves all themes to file. */
     fun save() {
+        // Necessary to force an invalidation of the selectedTheme property, allowing the WriterView to immediately update its properties.
+        // Without this, the theme would not be reflected in the WriterView until the user switched to another theme and back,
+        // or restarted the application.
+        this.selectedTheme.apply {
+            selectedTheme = ThemesManager.DEFAULT
+            selectedTheme = this
+        }
+
         file.outputStream().apply {
             ObjectOutputStream(this).apply {
                 this.writeObject(themes.filter { !it.default }.toList())
