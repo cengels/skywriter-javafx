@@ -28,7 +28,7 @@ Skywriter is specifically designed for writers of manuscripts and supports a num
 - [x] Import from Markdown
 - [x] Export to Markdown
 - [x] Basic formatting
-- [ ] Theming ([#2](https://github.com/cengels/skywriter/issues/2))
+- [x] Theming ([#2](https://github.com/cengels/skywriter/issues/2))
 - [x] Smart quotes ([#4](https://github.com/cengels/skywriter/issues/4))
 - [ ] Find and replace ([#5](https://github.com/cengels/skywriter/issues/5))
 - [ ] Spellcheck ([#7](https://github.com/cengels/skywriter/issues/7))
