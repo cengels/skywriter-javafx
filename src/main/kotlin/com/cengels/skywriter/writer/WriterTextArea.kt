@@ -2,14 +2,11 @@ package com.cengels.skywriter.writer
 
 import com.cengels.skywriter.enum.Heading
 import com.cengels.skywriter.style.FormattingStylesheet
+import com.cengels.skywriter.util.countWords
 import javafx.beans.property.SimpleBooleanProperty
-import javafx.event.Event
-import javafx.event.EventType
 import javafx.scene.control.IndexRange
-import javafx.scene.text.TextAlignment
 import org.fxmisc.richtext.StyleClassedTextArea
 import org.fxmisc.richtext.model.*
-import tornadofx.select
 import tornadofx.getValue
 import tornadofx.setValue
 import java.util.*
@@ -92,6 +89,16 @@ class WriterTextArea : StyleClassedTextArea() {
     fun updateSelection(className: String) {
         val selection: IndexRange = this.selection
         this.toggleStyleClass(selection.start, selection.end, className)
+    }
+
+    /** Counts the number of words in the text area. */
+    fun countWords(): Int {
+        return text.countWords()
+    }
+
+    /** Counts the number of selected words in the text area. */
+    fun countSelectedWords(): Int {
+        return selectedText.countWords()
     }
 
     fun isRangeStyled(start: Int, end: Int, className: String): Boolean {

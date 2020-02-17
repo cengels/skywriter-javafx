@@ -35,6 +35,7 @@ class CsvParser<T : Any>(private val klass: KClass<T>) {
             }
         }
     }
+    private var cachedElements: MutableMap<String, Collection<T>> = mutableMapOf()
 
     init {
         if (klass.visibility != KVisibility.PUBLIC) {
@@ -84,7 +85,29 @@ class CsvParser<T : Any>(private val klass: KClass<T>) {
 
     /** Serializes the specified objects into comma-separated lists of values and appends them to the end of the specified file. */
     fun appendToFile(file: File, objects: Collection<T>) {
-        BufferedWriter(FileWriter(file, true)).apply {
+        writeToFile(file, objects, true)
+    }
+
+    /** Serializes only the objects that were not previously loaded into comma-separated lists of values and appends them to the end of the specified file. For performance reasons, prefer to use this method over [appendToFile] or [writeToFile]. */
+    fun commitToFile(file: File, objects: Collection<T>) {
+        if (cachedElements.containsKey(file.absolutePath)) {
+            writeToFile(file, objects.filterNot { cachedElements[file.absolutePath]!!.contains(it) }, true)
+        } else {
+            writeToFile(file, objects, true)
+        }
+    }
+
+    /** Serializes the specified objects into comma-separated lists of values and writes them to the specified file, replacing all its contents. */
+    fun writeToFile(file: File, objects: Collection<T>) {
+        writeToFile(file, objects, false)
+    }
+
+    private fun writeToFile(file: File, objects: Collection<T>, append: Boolean) {
+        if (objects.isEmpty()) {
+            return
+        }
+
+        BufferedWriter(FileWriter(file, append)).apply {
             if (file.exists()) {
                 this.newLine()
             }
@@ -100,7 +123,9 @@ class CsvParser<T : Any>(private val klass: KClass<T>) {
 
     /** Reads all lines from the specified file and deserializes them into objects. */
     fun readFromFile(file: File): List<T> {
-        return file.readLines().map { deserialize(it) }
+        return file.readLines().map { deserialize(it) }.also {
+            cachedElements[file.absolutePath] = it
+        }
     }
 
     private fun <T2 : Any> convert(from: String?, into: KClass<T2>): T2? {

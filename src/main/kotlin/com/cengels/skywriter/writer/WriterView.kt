@@ -36,6 +36,8 @@ class WriterView : View("Skywriter") {
             model.dirty = true
         }
 
+        it.plainTextChanges().subscribe { _ -> model.updateProgress(it.countWords()) }
+
         it.isWrapText = true
         it.useMaxHeight = true
         it.paddingHorizontalProperty.bind(themesManager.selectedThemeProperty.doubleBinding { it!!.paddingHorizontal.toDouble() })
@@ -54,6 +56,7 @@ class WriterView : View("Skywriter") {
             item("Copy").action { it.copy() }
             item("Paste").action { it.paste() }
             item("Delete").action { it.deleteText(it.selection) }
+            item("Delete Untracked").action { model.updateProgressWithDeletion(it.countSelectedWords()); it.deleteText(it.selection) }
         }
 
         // Doesn't work.
@@ -75,13 +78,16 @@ class WriterView : View("Skywriter") {
     override fun onDock() {
         super.onDock()
 
-        currentWindow!!.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST) {
+        primaryStage.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST) {
             warnOnUnsavedChanges { it.consume() }
 
             if (!it.isConsumed && model.file != null) {
                 AppConfig.lastOpenFile = model.file!!.absolutePath
                 AppConfig.save()
             }
+
+            model.progressTracker?.commit()
+            model.progressTracker?.dispose()
         }
 
         currentStage!!.scene.stylesheets.add(WriterView::class.java.getResource("dynamic.css").toExternalForm())
@@ -124,8 +130,7 @@ class WriterView : View("Skywriter") {
                         action { rename() }
                     }
                     separator()
-                    item("Preferences...", "Ctrl+P")
-                    item("Appearance...").action { ThemesView(themesManager).openModal() }
+                    item("Preferences...", "Ctrl+P").isDisable = true
                     item("Quit", "Ctrl+Alt+F4").action {
                         close()
                     }
@@ -139,9 +144,11 @@ class WriterView : View("Skywriter") {
                     item("Copy", "Ctrl+C").action { textArea.copy() }
                     item("Paste", "Ctrl+V").action { textArea.paste() }
                     item("Paste Unformatted", "Ctrl+Shift+V")
+                    item("Delete").action { textArea.deleteText(textArea.selection) }
+                    item("Delete Untracked").action { model.updateProgressWithDeletion(textArea.countSelectedWords()); textArea.deleteText(textArea.selection) }
                     separator()
                     item("Select Word", "Ctrl+W").action { textArea.selectWord() }
-                    item("Select Sentence")
+                    item("Select Sentence").isDisable = true
                     item("Select Paragraph", "Ctrl+Shift+W").action { textArea.selectParagraph() }
                     item("Select All", "Ctrl+A").action { textArea.selectAll() }
                 }
@@ -158,6 +165,11 @@ class WriterView : View("Skywriter") {
                     item("Heading 4").action { textArea.setHeading(Heading.H4) }
                     item("Heading 5").action { textArea.setHeading(Heading.H5) }
                     item("Heading 6").action { textArea.setHeading(Heading.H6) }
+                }
+
+                menu("Tools") {
+                    item("Appearance...").action { ThemesView(themesManager).openModal() }
+                    item("Progress...").isDisable = true
                 }
             }
         }
@@ -184,16 +196,6 @@ class WriterView : View("Skywriter") {
                     RowConstraints().apply { this.vgrow = Priority.ALWAYS }
                 )
 
-                // vbox {
-                //     this.backgroundProperty().bind(themesManager.selectedThemeProperty.objectBinding { getBackgroundFor(it!!.windowBackground, it.backgroundImage, it.backgroundImageSizingType)  })
-                //     this.useMaxWidth = true
-                //     this.useMaxHeight = true
-                //     gridpaneConstraints {
-                //         columnRowIndex(0, 0)
-                //         columnSpan = 3
-                //     }
-                // }
-
                 this.add(textArea, 1, 1)
             }
         }
@@ -216,15 +218,13 @@ class WriterView : View("Skywriter") {
             return openSaveDialog()
         }
 
-        MarkdownParser(textArea.document).save(model.file!!)
-        model.dirty = false
+        model.save(textArea.document)
     }
 
     private fun open(file: File) {
         model.file = file
-        MarkdownParser(textArea.document).load(file, textArea.segOps).also {
+        model.load(textArea.document, textArea.segOps).also {
             textArea.replace(it)
-            model.dirty = false
         }
     }
 
@@ -238,8 +238,7 @@ class WriterView : View("Skywriter") {
             FileChooserMode.Save).apply {
             if (this.isNotEmpty()) {
                 model.file = this.single()
-                MarkdownParser(textArea.document).save(this.single())
-                model.dirty = false
+                save()
             }
         }
     }
@@ -277,6 +276,7 @@ class WriterView : View("Skywriter") {
                 }
 
                 model.file!!.renameTo(newFile)
+                model.newProgressTracker(textArea.countWords(), newFile)
                 updateTitle()
             }
         }
