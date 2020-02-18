@@ -16,9 +16,9 @@ private const val FIVE_MINUTES_IN_MS: Long = 300000
 
 /** Supplies methods used to manage [ProgressItem]s. */
 class ProgressTracker(private var totalWords: Int, private var file: File? = null) : Disposable {
-    private val csvParser = CsvParser(ProgressItem::class)
     private val csvFile: File
         get() = File("${SkyWriterApp.userDirectory}progress.csv")
+    private val csvParser = CsvParser(ProgressItem::class, csvFile)
     private val _progress: MutableList<ProgressItem> = mutableListOf()
     private var scheduledReset: TimerTask? = null
     private var scheduledAutosave: TimerTask? = null
@@ -84,7 +84,7 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
         val item = current ?: return
         val finalizedItem = finalize(item) ?: return
 
-        csvParser.commitToFile(csvFile, finalizedItem)
+        csvParser.commitToFile(finalizedItem)
 
         // Make sure no other thread has modified current in the meantime.
         if (finalizedItem == current) {
@@ -94,13 +94,13 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
 
     /** Saves all new progress items to the file system. */
     fun save() {
-        csvParser.commitToFile(csvFile, _progress)
+        csvParser.commitToFile(_progress)
     }
 
     /** Loads all [ProgressItem]s stored on this file system into the application. */
     fun load() {
         _progress.clear()
-        _progress.addAll(csvParser.readFromFile(csvFile))
+        _progress.addAll(csvParser.readFromFile())
     }
 
     override fun dispose() {
@@ -129,7 +129,7 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
         val item = current ?: return
         val finalizedItem = finalize(item) ?: return
 
-        csvParser.commitToFile(csvFile, finalizedItem)
+        csvParser.commitToFile(finalizedItem)
 
         scheduleAutosave()
     }

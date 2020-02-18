@@ -23,7 +23,7 @@ import kotlin.reflect.jvm.jvmErasure
  * @param klass The kotlin class of the specified generic type.
  * @param <T> The serialized/deserialized object type. All non-inherited member properties will be serialized/deserialized. Null values will result in an empty CSV section. Beware that the order of declaration will determine the serialization and deserialization order, so moving member properties around after the first serialized object is strongly discouraged.
  */
-class CsvParser<T : Any>(private val klass: KClass<T>) {
+class CsvParser<T : Any>(private val klass: KClass<T>, val file: File? = null) {
     private val vars: Collection<KMutableProperty1<T, Any?>> by lazy<Collection<KMutableProperty1<T, Any?>>> {
         return@lazy klass.declaredMemberProperties.filterIsInstance<KMutableProperty1<T, Any?>>().run {
             return@run klass.findAnnotation<Order>().let {
@@ -35,7 +35,7 @@ class CsvParser<T : Any>(private val klass: KClass<T>) {
             }
         }
     }
-    private var cachedElements: MutableMap<String, Collection<T>> = mutableMapOf()
+    private var cachedElements: Collection<T> = listOf()
 
     init {
         if (klass.visibility != KVisibility.PUBLIC) {
@@ -79,54 +79,58 @@ class CsvParser<T : Any>(private val klass: KClass<T>) {
     }
 
     /** Serializes the specified object into a comma-separated list of values and adds it to the end of the specified file. */
-    fun appendToFile(file: File, obj: T) {
+    fun appendToFile(obj: T) {
+        val file = this.file ?: throw UnsupportedOperationException("To execute file operations, you need to specify a file in the constructor.")
         file.appendText("${if (file.exists()) System.getProperty("line.separator") else ""}${serialize(obj)}")
     }
 
     /** Serializes the specified objects into comma-separated lists of values and appends them to the end of the specified file. */
-    fun appendToFile(file: File, objects: Collection<T>) {
-        writeToFile(file, objects, true)
+    fun appendToFile(objects: Collection<T>) {
+        writeToFile(objects, true)
     }
 
     /** Appends the items to the end of the specified file or rewrites the whole file if any items match the ones that have previously been loaded (it is assumed that they have changed and must be rewritten). For performance reasons, prefer to use this method over [appendToFile] or [writeToFile]. */
-    fun commitToFile(file: File, objects: Collection<T>) {
-        if (cachedElements.containsKey(file.absolutePath) && objects.any { cachedElements[file.absolutePath]?.contains(it) == true }) {
-            writeToFile(file, mergeCached(file, objects), false)
+    fun commitToFile(objects: Collection<T>) {
+        if (objects.any { cachedElements.contains(it) }) {
+            writeToFile(mergeCached(objects), false)
         } else {
-            writeToFile(file, objects, true)
+            writeToFile(objects, true)
         }
     }
 
     /** Serializes an object and either updates or appends it to the specified file, depending on whether it already existed. */
-    fun commitToFile(file: File, obj: T) {
-        if (cachedElements[file.absolutePath]?.contains(obj) == true) {
-            writeToFile(file, mergeCached(file, listOf(obj)), false)
+    fun commitToFile(obj: T) {
+        if (cachedElements.contains(obj)) {
+            writeToFile(mergeCached(listOf(obj)), false)
         } else {
-            writeToFile(file, listOf(obj), true)
+            writeToFile(listOf(obj), true)
         }
     }
 
     /** Serializes the specified objects into comma-separated lists of values and writes them to the specified file, replacing all its contents. */
-    fun writeToFile(file: File, objects: Collection<T>) {
-        writeToFile(file, objects, false)
+    fun writeToFile(objects: Collection<T>) {
+        writeToFile(objects, false)
     }
 
     /** Reads all lines from the specified file and deserializes them into objects. */
-    fun readFromFile(file: File): List<T> {
+    fun readFromFile(): List<T> {
+        val file = this.file ?: throw UnsupportedOperationException("To execute file operations, you need to specify a file in the constructor.")
         return file.readLines().filter { it.isNotBlank() }.map { deserialize(it) }.also {
-            cachedElements[file.absolutePath] = it
+            cachedElements = it
         }
     }
 
-    private fun writeToFile(file: File, objects: Collection<T>, append: Boolean) {
+    private fun writeToFile(objects: Collection<T>, append: Boolean) {
         if (objects.isEmpty()) {
             return
         }
 
-        val sameListAsInput = cachedElements.containsKey(file.absolutePath) && objects === cachedElements[file.absolutePath]
+        val file = this.file ?: throw UnsupportedOperationException("To execute file operations, you need to specify a file in the constructor.")
+
+        val sameListAsInput = objects === cachedElements
 
         if (!sameListAsInput) {
-            mergeCached(file, objects)
+            mergeCached(objects)
         }
 
         BufferedWriter(FileWriter(file, !sameListAsInput && append)).apply {
@@ -139,12 +143,10 @@ class CsvParser<T : Any>(private val klass: KClass<T>) {
         }
     }
 
-    private fun mergeCached(file: File, with: Collection<T>): Collection<T> {
-        cachedElements.merge(file.absolutePath ?: "", with) { collection1: Collection<T>, collection2: Collection<T> ->
-            collection1.union(collection2)
-        }
+    private fun mergeCached(with: Collection<T>): Collection<T> {
+        cachedElements = cachedElements.union(with)
 
-        return cachedElements[file.absolutePath]!!
+        return cachedElements
     }
 
     private fun <T2 : Any> convert(from: String?, into: KClass<T2>): T2? {
