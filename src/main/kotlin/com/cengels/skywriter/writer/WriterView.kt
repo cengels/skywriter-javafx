@@ -35,7 +35,9 @@ class WriterView : View("Skywriter") {
 
     val textArea = WriterTextArea().also {
         it.richChanges().subscribe { change ->
-            model.dirty = true
+            if (isDocked) {
+                model.dirty = true
+            }
         }
 
         it.plainTextChanges().subscribe { _ -> model.updateProgress(it.countWords()) }
