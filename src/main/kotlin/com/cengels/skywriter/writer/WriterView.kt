@@ -105,6 +105,7 @@ class WriterView : View("Skywriter") {
         top {
             useMaxWidth = true
             menubar {
+                managedWhen(primaryStage.fullScreenProperty().not())
                 menu("File") {
                     item("New", "Ctrl+N").action {
                         warnOnUnsavedChanges { return@action }
@@ -129,6 +130,7 @@ class WriterView : View("Skywriter") {
                         action { rename() }
                     }
                     separator()
+                    item("Fullscreen", "F11").action { primaryStage.isFullScreen = !primaryStage.isFullScreen }
                     item("Preferences...", "Ctrl+P").isDisable = true
                     item("Quit", "Ctrl+Alt+F4").action {
                         close()
@@ -204,6 +206,7 @@ class WriterView : View("Skywriter") {
 
             hbox {
                 addClass("status-bar")
+                managedWhen(primaryStage.fullScreenProperty().not())
                 alignment = Pos.CENTER
                 paddingVertical = 5.0
                 label(textArea.textProperty().stringBinding {
