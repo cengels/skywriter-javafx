@@ -43,16 +43,11 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
             throw IllegalStateException("Before starting a new progress item, current must be reset to null.")
         }
 
-        return ProgressItem(file = file?.name ?: "").also {
-            current = it
-            _progress.add(it)
-            schedule()
-        }
-    }
+        scheduledReset?.cancel()
 
-    private fun schedule() {
-        scheduledReset = Timer("scheduledReset", true).schedule(AppConfig.progressTimeout.toMillis()) {
-            current?.let { commit() }
+        return getNewOrLast().also {
+            current = it
+            schedule()
         }
     }
 
@@ -116,5 +111,26 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
     override fun dispose() {
         scheduledReset?.cancel()
         scheduledReset = null
+    }
+
+    /** If the last progress item has not been ended longer than [AppConfig.progressTimeout] ago, gets it. Otherwise creates a new one and adds it to [progress]. */
+    private fun getNewOrLast(): ProgressItem {
+        return _progress.lastOrNull().let {
+            if (it?.file == file?.name && it?.endDate?.isAfter(LocalDateTime.now().minusSeconds(AppConfig.progressTimeout.seconds)) == true) {
+                it.endDate = null
+                return@let it
+            }
+
+            return@let null
+        } ?: ProgressItem(file = file?.name ?: "").also {
+            _progress.add(it)
+        }
+    }
+
+    /** Schedules for the current progress item to be committed if more than [AppConfig.progressTimeout] passes without input. */
+    private fun schedule() {
+        scheduledReset = Timer("scheduledReset", true).schedule(AppConfig.progressTimeout.toMillis()) {
+            current?.let { commit() }
+        }
     }
 }
