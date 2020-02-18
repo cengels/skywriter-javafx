@@ -5,11 +5,14 @@ import com.cengels.skywriter.persistence.AppConfig
 import com.cengels.skywriter.persistence.CsvParser
 import com.cengels.skywriter.util.Disposable
 import java.io.File
+import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.util.*
 import kotlin.concurrent.schedule
+
+private const val FIVE_MINUTES_IN_MS: Long = 300000
 
 /** Supplies methods used to manage [ProgressItem]s. */
 class ProgressTracker(private var totalWords: Int, private var file: File? = null) : Disposable {
@@ -18,6 +21,7 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
         get() = File("${SkyWriterApp.userDirectory}progress.csv")
     private val _progress: MutableList<ProgressItem> = mutableListOf()
     private var scheduledReset: TimerTask? = null
+    private var scheduledAutosave: TimerTask? = null
 
     /** All past progress items. */
     val progress: Collection<ProgressItem>
@@ -47,7 +51,7 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
 
         return getNewOrLast().also {
             current = it
-            schedule()
+            scheduleReset()
         }
     }
 
@@ -59,40 +63,28 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
         item.wordsAdded = (newTotalWords + item.wordsDeleted) - totalWords
 
         current = item
-        schedule()
+        scheduleReset()
     }
 
-    /**  */
+    /** Explicitly tracks the specified word count as deleted words and excludes them from the words added. */
     fun trackDeletion(deletedWords: Int) {
         scheduledReset?.cancel()
         val item = current ?: startNew()
 
         item.wordsDeleted += deletedWords
-        schedule()
+        scheduleReset()
     }
 
     /** Sets [current].endDate to now and saves [current] to the file system and resets it. */
     fun commit() {
         scheduledReset?.cancel()
         val item = current ?: throw NullPointerException("Cannot commit a null progress item.")
+        val finalizedItem = finalize(item) ?: return
 
-        if (item.wordsAdded == 0 && item.wordsDeleted == 0) {
-            current = null
-            return
-        }
-
-        item.endDate = LocalDateTime.now()
-
-        if (item.wordsAdded < 0) {
-            item.wordsDeleted -= item.wordsAdded
-            item.wordsAdded = 0
-        }
-
-        csvParser.appendToFile(csvFile, item)
-        totalWords += item.wordsAdded - item.wordsDeleted
+        csvParser.commitToFile(csvFile, finalizedItem)
 
         // Make sure no other thread has modified current in the meantime.
-        if (item == current) {
+        if (finalizedItem == current) {
             current = null
         }
     }
@@ -115,9 +107,12 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
 
     /** If the last progress item has not been ended longer than [AppConfig.progressTimeout] ago, gets it. Otherwise creates a new one and adds it to [progress]. */
     private fun getNewOrLast(): ProgressItem {
+        scheduleAutosave()
+
         return _progress.lastOrNull().let {
             if (it?.file == file?.name && it?.endDate?.isAfter(LocalDateTime.now().minusSeconds(AppConfig.progressTimeout.seconds)) == true) {
                 it.endDate = null
+                totalWords -= it.wordsAdded + it.wordsDeleted
                 return@let it
             }
 
@@ -127,10 +122,45 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
         }
     }
 
+    private fun autosave() {
+        val item = current ?: return
+        val finalizedItem = finalize(item) ?: return
+
+        csvParser.commitToFile(csvFile, finalizedItem)
+
+        scheduleAutosave()
+    }
+
+    private fun finalize(item: ProgressItem): ProgressItem? {
+        if (item.wordsAdded == 0 && item.wordsDeleted == 0) {
+            current = null
+            return null
+        }
+
+        item.endDate = LocalDateTime.now()
+
+        if (item.wordsAdded < 0) {
+            item.wordsDeleted -= item.wordsAdded
+            item.wordsAdded = 0
+        }
+
+        totalWords += item.wordsAdded - item.wordsDeleted
+
+        return item
+    }
+
     /** Schedules for the current progress item to be committed if more than [AppConfig.progressTimeout] passes without input. */
-    private fun schedule() {
+    private fun scheduleReset() {
+        scheduledReset?.cancel()
         scheduledReset = Timer("scheduledReset", true).schedule(AppConfig.progressTimeout.toMillis()) {
             current?.let { commit() }
+        }
+    }
+
+    private fun scheduleAutosave() {
+        scheduledAutosave?.cancel()
+        scheduledAutosave = Timer("scheduledAutosave", true).schedule(FIVE_MINUTES_IN_MS) {
+            current?.let { autosave() }
         }
     }
 }

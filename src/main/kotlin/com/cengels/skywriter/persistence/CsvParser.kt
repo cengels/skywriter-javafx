@@ -88,12 +88,21 @@ class CsvParser<T : Any>(private val klass: KClass<T>) {
         writeToFile(file, objects, true)
     }
 
-    /** Serializes only the objects that were not previously loaded into comma-separated lists of values and appends them to the end of the specified file. For performance reasons, prefer to use this method over [appendToFile] or [writeToFile]. */
+    /** Appends the items to the end of the specified file or rewrites the whole file if any items match the ones that have previously been loaded (it is assumed that they have changed and must be rewritten). For performance reasons, prefer to use this method over [appendToFile] or [writeToFile]. */
     fun commitToFile(file: File, objects: Collection<T>) {
-        if (cachedElements.containsKey(file.absolutePath)) {
-            writeToFile(file, objects.filterNot { cachedElements[file.absolutePath]!!.contains(it) }, true)
+        if (cachedElements.containsKey(file.absolutePath) && objects.any { cachedElements[file.absolutePath]?.contains(it) == true }) {
+            writeToFile(file, mergeCached(file, objects), false)
         } else {
             writeToFile(file, objects, true)
+        }
+    }
+
+    /** Serializes an object and either updates or appends it to the specified file, depending on whether it already existed. */
+    fun commitToFile(file: File, obj: T) {
+        if (cachedElements[file.absolutePath]?.contains(obj) == true) {
+            writeToFile(file, mergeCached(file, listOf(obj)), false)
+        } else {
+            writeToFile(file, listOf(obj), true)
         }
     }
 
@@ -102,12 +111,25 @@ class CsvParser<T : Any>(private val klass: KClass<T>) {
         writeToFile(file, objects, false)
     }
 
+    /** Reads all lines from the specified file and deserializes them into objects. */
+    fun readFromFile(file: File): List<T> {
+        return file.readLines().map { deserialize(it) }.also {
+            cachedElements[file.absolutePath] = it
+        }
+    }
+
     private fun writeToFile(file: File, objects: Collection<T>, append: Boolean) {
         if (objects.isEmpty()) {
             return
         }
 
-        BufferedWriter(FileWriter(file, append)).apply {
+        val sameListAsInput = cachedElements.containsKey(file.absolutePath) && objects === cachedElements[file.absolutePath]
+
+        if (!sameListAsInput) {
+            mergeCached(file, objects)
+        }
+
+        BufferedWriter(FileWriter(file, !sameListAsInput && append)).apply {
             if (file.exists()) {
                 this.newLine()
             }
@@ -121,11 +143,12 @@ class CsvParser<T : Any>(private val klass: KClass<T>) {
         }
     }
 
-    /** Reads all lines from the specified file and deserializes them into objects. */
-    fun readFromFile(file: File): List<T> {
-        return file.readLines().map { deserialize(it) }.also {
-            cachedElements[file.absolutePath] = it
+    private fun mergeCached(file: File, with: Collection<T>): Collection<T> {
+        cachedElements.merge(file.absolutePath ?: "", with) { collection1: Collection<T>, collection2: Collection<T> ->
+            collection1.union(collection2)
         }
+
+        return cachedElements[file.absolutePath]!!
     }
 
     private fun <T2 : Any> convert(from: String?, into: KClass<T2>): T2? {
