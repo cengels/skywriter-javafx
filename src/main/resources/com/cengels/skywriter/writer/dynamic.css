@@ -14,10 +14,16 @@
 }
 
 .separator .line {
-    /* -fx-background: -text-fill;  */
-    /* -fx-fill: -text-fill;  */
     -fx-border-color: -text-fill transparent transparent transparent;
     -fx-border-insets: 0;
+}
+
+.styled-text-area .caret {
+    -fx-stroke: -text-fill;
+}
+
+.selection {
+    -fx-fill: -document-fill-hover;
 }
 
 .menu-bar, .menu-button, .menu-item, .menu .container, .status-bar {
