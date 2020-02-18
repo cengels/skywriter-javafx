@@ -47,6 +47,7 @@ class WriterViewModel {
         progressTracker?.commit()
         progressTracker?.dispose()
         progressTracker = ProgressTracker(startingWords, file)
+        progressTracker?.load()
     }
 
     /** Updates the current progress item with the current words. */

@@ -7,8 +7,30 @@
     -line-spacing: 5;
 }
 
-.paragraph-text .text {
-    -fx-fill: -fill;
+.paragraph-text .text,
+.menu-bar .text,
+.status-bar .text {
+    -fx-fill: -text-fill;
+}
+
+.separator .line {
+    /* -fx-background: -text-fill;  */
+    /* -fx-fill: -text-fill;  */
+    -fx-border-color: -text-fill transparent transparent transparent;
+    -fx-border-insets: 0;
+}
+
+.menu-bar, .menu-button, .menu-item, .menu .container, .status-bar {
+    -fx-background-color: -document-fill;
+}
+
+.menu-button:hover, .menu-item:hover {
+    -fx-background-color: -document-fill-hover;
+}
+
+.context-menu {
+    -fx-background-color: -document-fill;
+    -fx-background-radius: 0 0 6 6;
 }
 
 .styled-text-area * {

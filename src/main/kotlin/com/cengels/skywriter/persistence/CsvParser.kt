@@ -113,7 +113,7 @@ class CsvParser<T : Any>(private val klass: KClass<T>) {
 
     /** Reads all lines from the specified file and deserializes them into objects. */
     fun readFromFile(file: File): List<T> {
-        return file.readLines().map { deserialize(it) }.also {
+        return file.readLines().filter { it.isNotBlank() }.map { deserialize(it) }.also {
             cachedElements[file.absolutePath] = it
         }
     }
@@ -130,10 +130,6 @@ class CsvParser<T : Any>(private val klass: KClass<T>) {
         }
 
         BufferedWriter(FileWriter(file, !sameListAsInput && append)).apply {
-            if (file.exists()) {
-                this.newLine()
-            }
-
             objects.forEach {
                 this.write(serialize(it))
                 this.newLine()

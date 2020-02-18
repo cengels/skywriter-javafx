@@ -57,6 +57,9 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
 
     /** Adds the difference between the total words and the new word count to the current progress item. If none exists or the file differs, instantiates a new one. */
     fun track(newTotalWords: Int) {
+        if (newTotalWords == totalWords && current == null)
+            return
+
         scheduledReset?.cancel()
         val item = current ?: startNew()
 
@@ -78,7 +81,7 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
     /** Sets [current].endDate to now and saves [current] to the file system and resets it. */
     fun commit() {
         scheduledReset?.cancel()
-        val item = current ?: throw NullPointerException("Cannot commit a null progress item.")
+        val item = current ?: return
         val finalizedItem = finalize(item) ?: return
 
         csvParser.commitToFile(csvFile, finalizedItem)

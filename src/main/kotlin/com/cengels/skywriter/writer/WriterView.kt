@@ -6,9 +6,11 @@ import com.cengels.skywriter.persistence.MarkdownParser
 import com.cengels.skywriter.theming.ThemesManager
 import com.cengels.skywriter.theming.ThemesView
 import com.cengels.skywriter.util.convert.ColorConverter
+import com.cengels.skywriter.util.countWords
 import com.cengels.skywriter.util.getBackgroundFor
 import com.cengels.skywriter.util.onChangeAndNow
 import com.cengels.skywriter.util.toBackground
+import javafx.geometry.Pos
 import javafx.scene.control.ButtonType
 import javafx.scene.layout.ColumnConstraints
 import javafx.scene.layout.Priority
@@ -97,10 +99,7 @@ class WriterView : View("Skywriter") {
         setPrefSize(800.0, 600.0)
 
         themesManager.selectedThemeProperty.onChangeAndNow { theme ->
-            style = "-fill: ${ColorConverter.convert(theme!!.fontColor).css};\n" +
-                    "-text-alignment: ${theme.textAlignment.name.toLowerCase()};\n"
-                    // "-paragraph-spacing: 50;\n" +
-                    // "-line-spacing: ${PercentageStringConverter().toString(theme.lineHeight)};"
+            style = theme?.toStylesheet() ?: ""
         }
 
         top {
@@ -145,7 +144,7 @@ class WriterView : View("Skywriter") {
                     item("Paste", "Ctrl+V").action { textArea.paste() }
                     item("Paste Unformatted", "Ctrl+Shift+V")
                     item("Delete").action { textArea.deleteText(textArea.selection) }
-                    item("Delete Untracked").action { model.updateProgressWithDeletion(textArea.countSelectedWords()); textArea.deleteText(textArea.selection) }
+                    item("Delete Untracked", "Shift+Delete").action { model.updateProgressWithDeletion(textArea.countSelectedWords()); textArea.deleteText(textArea.selection) }
                     separator()
                     item("Select Word", "Ctrl+W").action { textArea.selectWord() }
                     item("Select Sentence").isDisable = true
@@ -202,6 +201,29 @@ class WriterView : View("Skywriter") {
 
         bottom {
             useMaxWidth = true
+
+            hbox {
+                addClass("status-bar")
+                alignment = Pos.CENTER
+                paddingVertical = 5.0
+                label(textArea.textProperty().stringBinding {
+                    val totalWords = it?.countWords() ?: 0
+                    val todaysWords = model.progressTracker?.progressToday?.sumBy { it.wordsAdded }
+                    val todaysDeletedWords = model.progressTracker?.progressToday?.sumBy { it.wordsDeleted }
+
+                    var string = "$totalWords total"
+
+                    if (todaysWords != null) {
+                        string += " • $todaysWords added today"
+                    }
+
+                    if (todaysDeletedWords != null) {
+                        string += " • $todaysDeletedWords deleted today"
+                    }
+
+                    return@stringBinding string
+                })
+            }
         }
     }
 
