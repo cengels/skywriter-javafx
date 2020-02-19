@@ -22,6 +22,11 @@ class WriterViewModel {
     /** Whether the document has been modified since its last save. */
     var dirty by dirtyProperty
 
+    val showStatusBarProperty = SimpleBooleanProperty(false)
+    var showStatusBar by showStatusBarProperty
+    val showMenuBarProperty = SimpleBooleanProperty(false)
+    var showMenuBar by showMenuBarProperty
+
     var progressTracker: ProgressTracker? = null
 
     fun save(document: StyledDocument<MutableCollection<String>, String, MutableCollection<String>>) {

@@ -12,9 +12,11 @@ import com.cengels.skywriter.util.onChangeAndNow
 import com.cengels.skywriter.util.toBackground
 import javafx.geometry.Pos
 import javafx.scene.control.ButtonType
-import javafx.scene.layout.ColumnConstraints
-import javafx.scene.layout.Priority
-import javafx.scene.layout.RowConstraints
+import javafx.scene.control.Menu
+import javafx.scene.control.MenuBar
+import javafx.scene.control.MenuItem
+import javafx.scene.input.MouseEvent
+import javafx.scene.layout.*
 import javafx.stage.FileChooser
 import javafx.stage.WindowEvent
 import tornadofx.*
@@ -24,6 +26,8 @@ import java.io.File
 class WriterView : View("Skywriter") {
     val model = WriterViewModel()
     val themesManager = ThemesManager()
+    lateinit var menuBar: MenuBar
+    lateinit var statusBar: StackPane
 
     init {
         this.updateTitle()
@@ -104,10 +108,18 @@ class WriterView : View("Skywriter") {
             style = theme?.toStylesheet() ?: ""
         }
 
+        setOnMouseMoved { event ->
+            if (primaryStage.isFullScreen) {
+                model.showMenuBar = event.sceneY <= menuBar.layoutY + menuBar.height || menuBar.menus.any { it.isShowing } == true
+                model.showStatusBar = event.sceneY >= statusBar.layoutY
+            }
+        }
+
         top {
             useMaxWidth = true
-            menubar {
-                managedWhen(primaryStage.fullScreenProperty().not())
+            menuBar = menubar {
+                managedWhen(primaryStage.fullScreenProperty().not().or(model.showMenuBarProperty))
+                hiddenWhen(primaryStage.fullScreenProperty().and(model.showMenuBarProperty.not()))
                 menu("File") {
                     item("New", "Ctrl+N").action {
                         warnOnUnsavedChanges { return@action }
@@ -174,6 +186,13 @@ class WriterView : View("Skywriter") {
                     item("Appearance...").action { ThemesView(themesManager).openModal() }
                     item("Progress...").isDisable = true
                 }
+
+
+                menus.forEach { it.showingProperty().addListener { observable, oldValue, newValue ->
+                    if (!newValue) {
+                        model.showMenuBar = false
+                    }
+                } }
             }
         }
 
@@ -206,9 +225,10 @@ class WriterView : View("Skywriter") {
         bottom {
             useMaxWidth = true
 
-            stackpane {
+            statusBar = stackpane {
                 addClass("status-bar")
-                managedWhen(primaryStage.fullScreenProperty().not())
+                managedWhen(primaryStage.fullScreenProperty().not().or(model.showStatusBarProperty))
+                hiddenWhen(primaryStage.fullScreenProperty().and(model.showStatusBarProperty.not()))
 
                 hbox {
                     isPickOnBounds = false
