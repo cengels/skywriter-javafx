@@ -19,6 +19,9 @@ data class ProgressItem(
     var wordsDeleted: Int = 0
 ) {
     /** The duration of this session. */
-    val duration: Duration
-        get() = Duration.between(startDate, endDate)
+    val duration: Duration?
+        get() = if (endDate != null) Duration.between(startDate, endDate) else null
+
+    val wordsPerHour: Double
+        get() = if (endDate != null) wordsAdded.toDouble() / duration!!.seconds / 60 / 60 else 0.0
 }
