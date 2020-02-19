@@ -61,6 +61,8 @@ data class Theme (
                "-window-fill: ${ColorConverter.convert(windowBackground).css};\n" +
                "-document-fill: ${ColorConverter.convert(documentBackground).css};\n" +
                "-document-fill-hover: ${ColorConverter.convert(documentBackground).brighter().css};\n" +
+               "-document-fill-lighter: ${ColorConverter.convert(documentBackground).deriveColor(0.0, 1.0, 1.05, 1.0).css};\n" +
+               "-document-fill-darker: ${ColorConverter.convert(documentBackground).deriveColor(0.0, 1.0, 0.95, 1.0).css};\n" +
                "-text-alignment: ${textAlignment.name.toLowerCase()};\n" +
                "-paragraph-spacing: 50;\n" +
                "-first-line-indent: ${firstLineIndent}px;\n" +

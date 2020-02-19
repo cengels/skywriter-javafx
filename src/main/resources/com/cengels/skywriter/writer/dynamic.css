@@ -26,12 +26,25 @@
     -fx-fill: -document-fill-hover;
 }
 
-.menu-bar, .menu-button, .menu-item, .menu .container, .status-bar {
-    -fx-background-color: -document-fill;
+.menu-item, .menu .container {
+    -fx-background-color: -document-fill-lighter;
 }
 
 .menu-button:hover, .menu-item:hover {
     -fx-background-color: -document-fill-hover;
+}
+
+.menu-bar, .menu-button, .status-bar {
+    -fx-background-color: -document-fill-darker;
+}
+
+.status-bar .label {
+    -fx-padding: 3px 6px;
+}
+
+.status-bar .label:hover {
+    -fx-background-color: -document-fill-hover;
+    -fx-cursor: hand;
 }
 
 .context-menu {

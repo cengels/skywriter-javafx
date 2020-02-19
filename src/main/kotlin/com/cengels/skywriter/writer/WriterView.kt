@@ -206,28 +206,40 @@ class WriterView : View("Skywriter") {
         bottom {
             useMaxWidth = true
 
-            hbox {
+            stackpane {
                 addClass("status-bar")
                 managedWhen(primaryStage.fullScreenProperty().not())
-                alignment = Pos.CENTER
-                paddingVertical = 5.0
-                label(textArea.textProperty().stringBinding {
-                    val totalWords = it?.countWords() ?: 0
-                    val todaysWords = model.progressTracker?.progressToday?.sumBy { it.wordsAdded }
-                    val todaysDeletedWords = model.progressTracker?.progressToday?.sumBy { it.wordsDeleted }
 
-                    var string = "$totalWords total"
+                hbox {
+                    isPickOnBounds = false
+                    useMaxWidth = false
+                    alignment = Pos.CENTER
+                    spacing = 9.0
+                    label(textArea.textProperty().stringBinding {
+                        "${model.progressTracker?.progressToday?.sumBy { it.wordsAdded }} added today"
+                    })
+                    label(textArea.textProperty().stringBinding {
+                        "${model.progressTracker?.progressToday?.sumBy { it.wordsDeleted }} deleted today"
+                    })
+                }
 
-                    if (todaysWords != null) {
-                        string += " • $todaysWords added today"
-                    }
-
-                    if (todaysDeletedWords != null) {
-                        string += " • $todaysDeletedWords deleted today"
-                    }
-
-                    return@stringBinding string
-                })
+                hbox {
+                    isPickOnBounds = false
+                    alignment = Pos.CENTER_RIGHT
+                    spacing = 9.0
+                    label(textArea.textProperty().stringBinding {
+                        "${it?.countWords() ?: 0} words"
+                    })
+                    label(textArea.textProperty().stringBinding {
+                        "${(it?.countWords() ?: 0) / 250} pages"
+                    })
+                    label(textArea.textProperty().stringBinding {
+                        "${textArea.paragraphs.size} paragraphs"
+                    })
+                    label(textArea.textProperty().stringBinding {
+                        "${it?.length} characters"
+                    })
+                }
             }
         }
     }
