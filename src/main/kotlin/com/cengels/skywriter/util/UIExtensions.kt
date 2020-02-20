@@ -1,11 +1,13 @@
 package com.cengels.skywriter.util
 
 import com.cengels.skywriter.enum.ImageSizingType
+import com.cengels.skywriter.theming.ThemesManager
 import com.cengels.skywriter.util.convert.ColorConverter
 import javafx.beans.binding.Binding
 import javafx.beans.property.Property
 import javafx.geometry.Insets
 import javafx.geometry.Side
+import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.scene.image.Image
 import javafx.scene.layout.*
@@ -61,4 +63,8 @@ fun javafx.scene.paint.Color.shiftBy(value: Double): javafx.scene.paint.Color {
 fun <T> Property<T>.onChangeAndNow(op: (it: T?) -> Unit) {
     this.onChange(op)
     op(this.value)
+}
+
+fun Node.initializeStyle() {
+    this.styleProperty().bind(ThemesManager.selectedThemeProperty.stringBinding { it!!.toStylesheet() })
 }

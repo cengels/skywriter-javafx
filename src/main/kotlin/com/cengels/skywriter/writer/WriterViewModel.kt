@@ -28,6 +28,9 @@ class WriterViewModel {
     var showMenuBar by showMenuBarProperty
 
     var progressTracker: ProgressTracker? = null
+    var wordsAddedToday: Int
+        get() = progressTracker?.progressToday?.sumBy { it.wordsAdded } ?: 0
+        set(value) = progressTracker?.current?.wordsAdded
 
     fun save(document: StyledDocument<MutableCollection<String>, String, MutableCollection<String>>) {
         if (file == null) {

@@ -78,6 +78,16 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
         scheduleReset()
     }
 
+    /** Creates a new progress item with the specified number of words added and commits it. */
+    fun addWords(value: Int) {
+
+    }
+
+    /** Creates a new progress item with the specified number of words deleted and commits it. */
+    fun deletedWords(value: Int) {
+
+    }
+
     /** Sets [current].endDate to now and saves [current] to the file system and resets it. */
     fun commit() {
         scheduledReset?.cancel()

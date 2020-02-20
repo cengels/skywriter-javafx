@@ -8,14 +8,17 @@ import javafx.beans.property.Property
 import javafx.event.EventTarget
 import javafx.geometry.Orientation
 import javafx.geometry.Pos
+import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.layout.Pane
 import javafx.scene.layout.Priority
+import javafx.scene.layout.VBox
 import javafx.scene.text.Font
+import javafx.stage.Popup
+import javafx.stage.PopupWindow
 import javafx.util.StringConverter
 import javafx.util.converter.PercentageStringConverter
 import tornadofx.*
-import java.awt.event.KeyEvent
 import java.time.Instant
 import kotlin.math.min
 
@@ -222,4 +225,35 @@ fun EventTarget.fontpicker(property: Property<String>, fonts: List<String>? = Fo
     }
 
     op(this)
+}
+
+fun Node.popup(op: VBox.() -> Unit = {}) = Popup().apply {
+    isAutoHide = true
+    isAutoFix = false
+    anchorLocation = PopupWindow.AnchorLocation.CONTENT_BOTTOM_LEFT
+
+    content.add(VBox().apply {
+        initializeStyle()
+        useMaxSize = true
+        addClass("popup-box")
+        op(this)
+    })
+
+    val position = this@popup.localToScreen(this@popup.boundsInLocal)
+
+    show(this@popup, position.minX, position.minY - 10)
+}
+
+private fun <T> Node.popupToEdit(label: String, property: Property<T>) {
+    popup {
+        label(label)
+
+        if (property.value is Number) {
+            numberfield(property as Property<Number>)
+        } else if (property.value is String) {
+            textfield(property as Property<String>)
+        } else {
+            throw UnsupportedOperationException("Can only use numbers and strings for an editable popup.")
+        }
+    }
 }

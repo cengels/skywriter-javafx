@@ -4,15 +4,15 @@ import com.cengels.skywriter.enum.Heading
 import com.cengels.skywriter.persistence.AppConfig
 import com.cengels.skywriter.theming.ThemesManager
 import com.cengels.skywriter.theming.ThemesView
-import com.cengels.skywriter.util.countWords
-import com.cengels.skywriter.util.getBackgroundFor
-import com.cengels.skywriter.util.onChangeAndNow
-import com.cengels.skywriter.util.toBackground
+import com.cengels.skywriter.util.*
 import javafx.geometry.Pos
+import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.input.KeyCode
 import javafx.scene.layout.*
 import javafx.stage.FileChooser
+import javafx.stage.Popup
+import javafx.stage.PopupWindow
 import javafx.stage.WindowEvent
 import org.fxmisc.flowless.VirtualizedScrollPane
 import tornadofx.*
@@ -21,14 +21,11 @@ import java.time.LocalTime
 
 class WriterView : View("Skywriter") {
     val model = WriterViewModel()
-    val themesManager = ThemesManager()
     lateinit var menuBar: MenuBar
     lateinit var statusBar: StackPane
 
     init {
         this.updateTitle()
-        themesManager.load()
-        themesManager.selectedTheme = themesManager.themes.find { it.name == AppConfig.activeTheme } ?: ThemesManager.DEFAULT
         model.fileProperty.onChange { this.updateTitle() }
         model.dirtyProperty.onChange { this.updateTitle() }
     }
@@ -58,11 +55,11 @@ class WriterView : View("Skywriter") {
 
         it.isWrapText = true
         it.useMaxHeight = true
-        it.paddingHorizontalProperty.bind(themesManager.selectedThemeProperty.doubleBinding { it!!.paddingHorizontal.toDouble() })
-        it.paddingVerticalProperty.bind(themesManager.selectedThemeProperty.doubleBinding { it!!.paddingVertical.toDouble() })
-        it.backgroundProperty().bind(themesManager.selectedThemeProperty.objectBinding { it!!.documentBackground.toBackground() })
+        it.paddingHorizontalProperty.bind(ThemesManager.selectedThemeProperty.doubleBinding { it!!.paddingHorizontal.toDouble() })
+        it.paddingVerticalProperty.bind(ThemesManager.selectedThemeProperty.doubleBinding { it!!.paddingVertical.toDouble() })
+        it.backgroundProperty().bind(ThemesManager.selectedThemeProperty.objectBinding { it!!.documentBackground.toBackground() })
 
-        themesManager.selectedThemeProperty.onChangeAndNow { theme ->
+        ThemesManager.selectedThemeProperty.onChangeAndNow { theme ->
             it.style {
                 fontSize = theme!!.fontSize.pt
                 fontFamily = theme.fontFamily
@@ -107,16 +104,11 @@ class WriterView : View("Skywriter") {
             model.progressTracker?.commit()
             model.progressTracker?.dispose()
         }
-
-        currentStage!!.scene.stylesheets.add(WriterView::class.java.getResource("dynamic.css").toExternalForm())
     }
 
     override val root = borderpane {
         setPrefSize(800.0, 600.0)
-
-        themesManager.selectedThemeProperty.onChangeAndNow { theme ->
-            style = theme?.toStylesheet() ?: ""
-        }
+        initializeStyle()
 
         setOnMouseMoved { event ->
             if (primaryStage.isFullScreen) {
@@ -193,7 +185,7 @@ class WriterView : View("Skywriter") {
                 }
 
                 menu("Tools") {
-                    item("Appearance...").action { ThemesView(themesManager).openModal() }
+                    item("Appearance...").action { ThemesView(ThemesManager).openModal() }
                     item("Progress...").isDisable = true
                 }
 
@@ -208,22 +200,22 @@ class WriterView : View("Skywriter") {
 
         center {
             gridpane {
-                this.backgroundProperty().bind(themesManager.selectedThemeProperty.objectBinding { getBackgroundFor(it!!.windowBackground, it.backgroundImage, it.backgroundImageSizingType)  })
+                this.backgroundProperty().bind(ThemesManager.selectedThemeProperty.objectBinding { getBackgroundFor(it!!.windowBackground, it.backgroundImage, it.backgroundImageSizingType)  })
                 this.useMaxWidth = true
                 this.useMaxHeight = true
                 this.columnConstraints.addAll(
                     ColumnConstraints().apply { this.hgrow = Priority.ALWAYS },
                     ColumnConstraints().apply {
-                        this.percentWidthProperty().bind(themesManager.selectedThemeProperty.doubleBinding { if (it!!.documentWidth <= 1.0) it.documentWidth * 100.0 else -1.0 })
-                        this.prefWidthProperty().bind(themesManager.selectedThemeProperty.doubleBinding { if (it!!.documentWidth > 1.0) it.documentWidth else -1.0 })
+                        this.percentWidthProperty().bind(ThemesManager.selectedThemeProperty.doubleBinding { if (it!!.documentWidth <= 1.0) it.documentWidth * 100.0 else -1.0 })
+                        this.prefWidthProperty().bind(ThemesManager.selectedThemeProperty.doubleBinding { if (it!!.documentWidth > 1.0) it.documentWidth else -1.0 })
                     },
                     ColumnConstraints().apply { this.hgrow = Priority.ALWAYS }
                 )
                 this.rowConstraints.addAll(
                     RowConstraints().apply { this.vgrow = Priority.ALWAYS },
                     RowConstraints().apply {
-                        this.percentHeightProperty().bind(themesManager.selectedThemeProperty.doubleBinding { if (it!!.documentHeight <= 1.0) it.documentHeight * 100.0 else -1.0 })
-                        this.prefHeightProperty().bind(themesManager.selectedThemeProperty.doubleBinding { if (it!!.documentHeight > 1.0) it.documentHeight else -1.0 })
+                        this.percentHeightProperty().bind(ThemesManager.selectedThemeProperty.doubleBinding { if (it!!.documentHeight <= 1.0) it.documentHeight * 100.0 else -1.0 })
+                        this.prefHeightProperty().bind(ThemesManager.selectedThemeProperty.doubleBinding { if (it!!.documentHeight > 1.0) it.documentHeight else -1.0 })
                     },
                     RowConstraints().apply { this.vgrow = Priority.ALWAYS }
                 )
@@ -249,10 +241,16 @@ class WriterView : View("Skywriter") {
                     spacing = 9.0
                     label(textArea.textProperty().stringBinding {
                         "${model.progressTracker?.progressToday?.sumBy { it.wordsAdded }} added today"
-                    })
+                    }) {
+                        addClass("clickable")
+                        setOnMouseClicked { popupToEdit() }
+                    }
                     label(textArea.textProperty().stringBinding {
                         "${model.progressTracker?.progressToday?.sumBy { it.wordsDeleted }} deleted today"
-                    })
+                    }) {
+                        addClass("clickable")
+                        setOnMouseClicked { popupToEdit { label("test 2") } }
+                    }
                 }
 
                 hbox {
@@ -328,6 +326,10 @@ class WriterView : View("Skywriter") {
                 open(this.single())
             }
         }
+    }
+
+    private fun openProgressView() {
+
     }
 
     private fun rename() {
