@@ -21,6 +21,19 @@ object AppConfig {
     var activeTheme by StringConfigProperty()
     var progressResetTime by TimeConfigProperty(LocalTime.of(6, 0))
     var progressTimeout by DurationConfigProperty(Duration.ofMinutes(5))
+    private var commentTokensProperty by StringConfigProperty("[,]")
+    var commentTokens: List<Pair<String, String>>
+        get() = commentTokensProperty?.split(';')?.fold(listOf()) { acc, item ->
+            val split = item.split(',')
+            acc.plus(Pair(split.first(), split.getOrNull(1) ?: ""))
+        } ?: listOf()
+        set(value) { commentTokensProperty = value.joinToString(";") {
+            if (it.second.isBlank()) {
+                it.first
+            } else {
+                "${it.first},${it.second}"
+            }
+        } }
 
     fun initialize(config: ConfigProperties) {
         this.config = config
@@ -62,21 +75,21 @@ object AppConfig {
         abstract override operator fun getValue(thisRef: AppConfig, property: KProperty<*>): T
     }
 
-    class DoubleConfigProperty : ConfigProperty<Double?>() {
+    class DoubleConfigProperty(private val default: Double? = null) : ConfigProperty<Double?>() {
         override operator fun getValue(thisRef: AppConfig, property: KProperty<*>): Double? {
-            return config.double(property.name)
+            return config.double(property.name) ?: default
         }
     }
 
-    class BooleanConfigProperty : ConfigProperty<Boolean?>() {
+    class BooleanConfigProperty(private val default: Boolean? = null) : ConfigProperty<Boolean?>() {
         override operator fun getValue(thisRef: AppConfig, property: KProperty<*>): Boolean? {
-            return config.boolean(property.name)
+            return config.boolean(property.name) ?: default
         }
     }
 
-    class StringConfigProperty : ConfigProperty<String?>() {
+    class StringConfigProperty(private val default: String? = null) : ConfigProperty<String?>() {
         override operator fun getValue(thisRef: AppConfig, property: KProperty<*>): String? {
-            return config.string(property.name)
+            return config.string(property.name) ?: default
         }
     }
 
