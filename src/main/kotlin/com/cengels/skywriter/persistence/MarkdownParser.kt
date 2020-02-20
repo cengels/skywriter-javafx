@@ -22,14 +22,12 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
         val DOCUMENT_CODEC = object: PlainTextCodec<StyledDocument<MutableCollection<String>, String, MutableCollection<String>>, BufferedReader> {
             override fun encode(writer: BufferedWriter, element: StyledDocument<MutableCollection<String>, String, MutableCollection<String>>) {
                 element.paragraphs.forEachIndexed { index, paragraph ->
-                    if (paragraph.text.trim().isNotEmpty()) {
-                        PARAGRAPH_CODEC.encode(writer, paragraph.paragraphStyle)
-                        SEGMENT_CODEC.encode(writer, paragraph.styledSegments)
+                    PARAGRAPH_CODEC.encode(writer, paragraph.paragraphStyle)
+                    SEGMENT_CODEC.encode(writer, paragraph.styledSegments)
 
-                        if (index != element.paragraphs.lastIndex) {
-                            writer.newLine()
-                            writer.newLine()
-                        }
+                    if (index != element.paragraphs.lastIndex) {
+                        writer.newLine()
+                        writer.newLine()
                     }
                 }
             }
@@ -49,6 +47,9 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
                             }
 
                             segmentText += if (segmentText.isEmpty()) line else " $line"
+                        } else if (paragraphBreak) {
+                            line = input.readLine()
+                            break
                         } else {
                             paragraphBreak = true
                         }

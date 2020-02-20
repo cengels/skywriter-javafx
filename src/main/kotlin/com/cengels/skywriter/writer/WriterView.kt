@@ -2,58 +2,93 @@ package com.cengels.skywriter.writer
 
 import com.cengels.skywriter.enum.Heading
 import com.cengels.skywriter.persistence.AppConfig
-import com.cengels.skywriter.persistence.MarkdownParser
 import com.cengels.skywriter.theming.ThemesManager
 import com.cengels.skywriter.theming.ThemesView
-import com.cengels.skywriter.util.convert.ColorConverter
-import com.cengels.skywriter.util.getBackgroundFor
-import com.cengels.skywriter.util.onChangeAndNow
-import com.cengels.skywriter.util.toBackground
-import javafx.scene.control.ButtonType
-import javafx.scene.layout.ColumnConstraints
-import javafx.scene.layout.Priority
-import javafx.scene.layout.RowConstraints
+import com.cengels.skywriter.util.*
+import javafx.geometry.Pos
+import javafx.scene.control.*
+import javafx.scene.input.KeyCode
+import javafx.scene.layout.*
 import javafx.stage.FileChooser
 import javafx.stage.WindowEvent
+import org.fxmisc.flowless.VirtualizedScrollPane
 import tornadofx.*
 import java.io.File
 
-
 class WriterView : View("Skywriter") {
     val model = WriterViewModel()
-    val themesManager = ThemesManager()
+    lateinit var menuBar: MenuBar
+    lateinit var statusBar: StackPane
 
     init {
         this.updateTitle()
-        themesManager.load()
-        themesManager.selectedTheme = themesManager.themes.find { it.name == AppConfig.activeTheme } ?: ThemesManager.DEFAULT
         model.fileProperty.onChange { this.updateTitle() }
         model.dirtyProperty.onChange { this.updateTitle() }
     }
 
     val textArea = WriterTextArea().also {
         it.richChanges().subscribe { change ->
-            model.dirty = true
+            if (isDocked) {
+                model.dirty = true
+            }
+        }
+
+        it.wordCountProperty.addListener { observable, oldValue, newValue ->
+            model.updateProgress(it.wordCount)
+        }
+
+        it.setOnKeyReleased { event ->
+            when (event.code) {
+                KeyCode.END -> it.moveTo(it.text.lastIndex)
+                KeyCode.HOME -> it.moveTo(0)
+                else -> return@setOnKeyReleased
+            }
+        }
+
+        it.caretPositionProperty().addListener { _, _, _ ->
+            it.requestFollowCaret()
         }
 
         it.isWrapText = true
         it.useMaxHeight = true
-        it.paddingHorizontalProperty.bind(themesManager.selectedThemeProperty.doubleBinding { it!!.paddingHorizontal.toDouble() })
-        it.paddingVerticalProperty.bind(themesManager.selectedThemeProperty.doubleBinding { it!!.paddingVertical.toDouble() })
-        it.backgroundProperty().bind(themesManager.selectedThemeProperty.objectBinding { it!!.documentBackground.toBackground() })
+        it.paddingHorizontalProperty.bind(ThemesManager.selectedThemeProperty.doubleBinding { it!!.paddingHorizontal.toDouble() })
+        it.paddingVerticalProperty.bind(ThemesManager.selectedThemeProperty.doubleBinding { it!!.paddingVertical.toDouble() })
+        it.backgroundProperty().bind(ThemesManager.selectedThemeProperty.objectBinding { it!!.documentBackground.toBackground() })
 
-        themesManager.selectedThemeProperty.onChangeAndNow { theme ->
+        ThemesManager.selectedThemeProperty.onChangeAndNow { theme ->
             it.style {
                 fontSize = theme!!.fontSize.pt
                 fontFamily = theme.fontFamily
             }
         }
 
-        contextmenu {
-            item("Cut").action { it.cut() }
-            item("Copy").action { it.copy() }
+        it.contextMenu = contextmenu {
+            item("Cut") {
+                this.enableWhen(it.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
+                this.action { it.cut() }
+            }
+            item("Copy") {
+                this.enableWhen(it.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
+                this.action { it.copy() }
+            }
             item("Paste").action { it.paste() }
-            item("Delete").action { it.deleteText(it.selection) }
+            item("Paste Untracked").action {
+                val wordCountBefore = it.wordCount
+                it.paste()
+                model.correct(it.wordCount - wordCountBefore)
+            }
+            item("Delete") {
+                this.enableWhen(it.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
+                action { it.deleteText(it.selection) }
+            }
+            item("Delete Untracked") {
+                this.enableWhen(it.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
+                action {
+                    val wordCountBefore = it.wordCount
+                    it.deleteText(it.selection)
+                    model.correct(it.wordCount - wordCountBefore)
+                }
+            }
         }
 
         // Doesn't work.
@@ -75,31 +110,35 @@ class WriterView : View("Skywriter") {
     override fun onDock() {
         super.onDock()
 
-        currentWindow!!.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST) {
+        primaryStage.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST) {
             warnOnUnsavedChanges { it.consume() }
 
             if (!it.isConsumed && model.file != null) {
                 AppConfig.lastOpenFile = model.file!!.absolutePath
                 AppConfig.save()
             }
-        }
 
-        currentStage!!.scene.stylesheets.add(WriterView::class.java.getResource("dynamic.css").toExternalForm())
+            model.progressTracker?.commit()
+            model.progressTracker?.dispose()
+        }
     }
 
     override val root = borderpane {
         setPrefSize(800.0, 600.0)
+        initializeStyle()
 
-        themesManager.selectedThemeProperty.onChangeAndNow { theme ->
-            style = "-fill: ${ColorConverter.convert(theme!!.fontColor).css};\n" +
-                    "-text-alignment: ${theme.textAlignment.name.toLowerCase()};\n"
-                    // "-paragraph-spacing: 50;\n" +
-                    // "-line-spacing: ${PercentageStringConverter().toString(theme.lineHeight)};"
+        setOnMouseMoved { event ->
+            if (primaryStage.isFullScreen) {
+                model.showMenuBar = event.sceneY <= menuBar.layoutY + menuBar.height || menuBar.menus.any { it.isShowing } == true
+                model.showStatusBar = event.sceneY >= statusBar.layoutY
+            }
         }
 
         top {
             useMaxWidth = true
-            menubar {
+            menuBar = menubar {
+                managedWhen(visibleProperty())
+                hiddenWhen(primaryStage.fullScreenProperty().and(model.showMenuBarProperty.not()))
                 menu("File") {
                     item("New", "Ctrl+N").action {
                         warnOnUnsavedChanges { return@action }
@@ -124,24 +163,53 @@ class WriterView : View("Skywriter") {
                         action { rename() }
                     }
                     separator()
-                    item("Preferences...", "Ctrl+P")
-                    item("Appearance...").action { ThemesView(themesManager).openModal() }
+                    item("Fullscreen", "F11").action { primaryStage.isFullScreen = !primaryStage.isFullScreen }
+                    item("Preferences...", "Ctrl+P").isDisable = true
                     item("Quit", "Ctrl+Alt+F4").action {
                         close()
                     }
                 }
 
                 menu("Edit") {
-                    item("Undo", "Ctrl+Z").action { textArea.undo() }
-                    item("Redo", "Ctrl+Y").action { textArea.redo() }
+                    item("Undo", "Ctrl+Z") {
+                        enableWhen { textArea.undoAvailableProperty() }
+                        action { textArea.undo() }
+                    }
+                    item("Redo", "Ctrl+Y") {
+                        enableWhen { textArea.redoAvailableProperty() }
+                        action { textArea.redo() }
+                    }
                     separator()
-                    item("Cut", "Ctrl+X").action { textArea.cut() }
-                    item("Copy", "Ctrl+C").action { textArea.copy() }
+                    item("Cut", "Ctrl+X") {
+                        this.enableWhen(textArea.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
+                        action { textArea.cut() }
+                    }
+                    item("Copy", "Ctrl+C") {
+                        this.enableWhen(textArea.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
+                        action { textArea.copy() }
+                    }
                     item("Paste", "Ctrl+V").action { textArea.paste() }
                     item("Paste Unformatted", "Ctrl+Shift+V")
+                    item("Paste Untracked").action {
+                        val wordCountBefore = textArea.wordCount
+                        textArea.paste()
+                        model.correct(textArea.wordCount - wordCountBefore)
+                    }
+                    item("Delete") {
+                        this.enableWhen(textArea.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
+                        action { textArea.deleteText(textArea.selection) }
+                    }
+                    item("Delete Untracked", "Shift+Delete") {
+                        this.enableWhen(textArea.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
+                        action  {
+                            val wordCountBefore = textArea.wordCount
+                            textArea.deleteText(textArea.selection)
+                            model.correct(textArea.wordCount - wordCountBefore)
+                        }
+                    }
                     separator()
                     item("Select Word", "Ctrl+W").action { textArea.selectWord() }
-                    item("Select Sentence")
+                    item("Select Sentence").isDisable = true
                     item("Select Paragraph", "Ctrl+Shift+W").action { textArea.selectParagraph() }
                     item("Select All", "Ctrl+A").action { textArea.selectAll() }
                 }
@@ -159,47 +227,97 @@ class WriterView : View("Skywriter") {
                     item("Heading 5").action { textArea.setHeading(Heading.H5) }
                     item("Heading 6").action { textArea.setHeading(Heading.H6) }
                 }
+
+                menu("Tools") {
+                    item("Appearance...").action { ThemesView(ThemesManager).openModal() }
+                    item("Progress...").isDisable = true
+                }
+
+
+                menus.forEach { menu -> menu.showingProperty().addListener { observable, oldValue, newValue ->
+                    if (primaryStage.isFullScreen && !menuBar.isHover && menuBar.menus.none { it.isShowing }) {
+                        model.showMenuBar = false
+                    }
+                } }
             }
         }
 
         center {
             gridpane {
-                this.backgroundProperty().bind(themesManager.selectedThemeProperty.objectBinding { getBackgroundFor(it!!.windowBackground, it.backgroundImage, it.backgroundImageSizingType)  })
+                this.backgroundProperty().bind(ThemesManager.selectedThemeProperty.objectBinding { getBackgroundFor(it!!.windowBackground, it.backgroundImage, it.backgroundImageSizingType)  })
                 this.useMaxWidth = true
                 this.useMaxHeight = true
                 this.columnConstraints.addAll(
                     ColumnConstraints().apply { this.hgrow = Priority.ALWAYS },
                     ColumnConstraints().apply {
-                        this.percentWidthProperty().bind(themesManager.selectedThemeProperty.doubleBinding { if (it!!.documentWidth <= 1.0) it.documentWidth * 100.0 else -1.0 })
-                        this.prefWidthProperty().bind(themesManager.selectedThemeProperty.doubleBinding { if (it!!.documentWidth > 1.0) it.documentWidth else -1.0 })
+                        this.percentWidthProperty().bind(ThemesManager.selectedThemeProperty.doubleBinding { if (it!!.documentWidth <= 1.0) it.documentWidth * 100.0 else -1.0 })
+                        this.prefWidthProperty().bind(ThemesManager.selectedThemeProperty.doubleBinding { if (it!!.documentWidth > 1.0) it.documentWidth else -1.0 })
                     },
                     ColumnConstraints().apply { this.hgrow = Priority.ALWAYS }
                 )
                 this.rowConstraints.addAll(
                     RowConstraints().apply { this.vgrow = Priority.ALWAYS },
                     RowConstraints().apply {
-                        this.percentHeightProperty().bind(themesManager.selectedThemeProperty.doubleBinding { if (it!!.documentHeight <= 1.0) it.documentHeight * 100.0 else -1.0 })
-                        this.prefHeightProperty().bind(themesManager.selectedThemeProperty.doubleBinding { if (it!!.documentHeight > 1.0) it.documentHeight else -1.0 })
+                        this.percentHeightProperty().bind(ThemesManager.selectedThemeProperty.doubleBinding { if (it!!.documentHeight <= 1.0) it.documentHeight * 100.0 else -1.0 })
+                        this.prefHeightProperty().bind(ThemesManager.selectedThemeProperty.doubleBinding { if (it!!.documentHeight > 1.0) it.documentHeight else -1.0 })
                     },
                     RowConstraints().apply { this.vgrow = Priority.ALWAYS }
                 )
 
-                // vbox {
-                //     this.backgroundProperty().bind(themesManager.selectedThemeProperty.objectBinding { getBackgroundFor(it!!.windowBackground, it.backgroundImage, it.backgroundImageSizingType)  })
-                //     this.useMaxWidth = true
-                //     this.useMaxHeight = true
-                //     gridpaneConstraints {
-                //         columnRowIndex(0, 0)
-                //         columnSpan = 3
-                //     }
-                // }
-
-                this.add(textArea, 1, 1)
+                this.add(VirtualizedScrollPane(textArea, ScrollPane.ScrollBarPolicy.NEVER, ScrollPane.ScrollBarPolicy.AS_NEEDED).also { scrollPane ->
+                    scrollPane.vbarPolicyProperty().bind(primaryStage.fullScreenProperty().objectBinding { if (it == true) ScrollPane.ScrollBarPolicy.NEVER else ScrollPane.ScrollBarPolicy.AS_NEEDED })
+                }, 1, 1)
             }
         }
 
         bottom {
             useMaxWidth = true
+
+            statusBar = stackpane {
+                addClass("status-bar")
+                managedWhen(visibleProperty())
+                hiddenWhen(primaryStage.fullScreenProperty().and(model.showStatusBarProperty.not()))
+
+                hbox {
+                    isPickOnBounds = false
+                    useMaxWidth = false
+                    alignment = Pos.CENTER
+                    spacing = 9.0
+                    label(model.wordsTodayProperty.stringBinding {
+                        "${model.wordsToday} added today"
+                    }) {
+                        addClass("clickable")
+                        setOnMouseClicked { popup { popup ->
+                            label("Enter a new word count")
+
+                            numberfield(model.wordsToday) {
+                                this.focusedProperty().addListener { observable, oldValue, newValue ->
+                                    model.setWords(getDefaultConverter<Int>()!!.fromString(this.text))
+                                }
+                                this.setOnAction { popup.hide() }
+                            }
+                        } }
+                    }
+                }
+
+                hbox {
+                    isPickOnBounds = false
+                    alignment = Pos.CENTER_RIGHT
+                    spacing = 9.0
+                    label(textArea.textProperty().stringBinding {
+                        "${it?.countWords() ?: 0} words"
+                    })
+                    label(textArea.textProperty().stringBinding {
+                        "${(it?.countWords() ?: 0) / 250} pages"
+                    })
+                    label(textArea.textProperty().stringBinding {
+                        "${textArea.paragraphs.size} paragraphs"
+                    })
+                    label(textArea.textProperty().stringBinding {
+                        "${it?.length} characters"
+                    })
+                }
+            }
         }
     }
 
@@ -216,16 +334,15 @@ class WriterView : View("Skywriter") {
             return openSaveDialog()
         }
 
-        MarkdownParser(textArea.document).save(model.file!!)
-        model.dirty = false
+        model.save(textArea.document)
     }
 
     private fun open(file: File) {
         model.file = file
-        MarkdownParser(textArea.document).load(file, textArea.segOps).also {
+        model.load(textArea.document, textArea.segOps).also {
             textArea.replace(it)
-            model.dirty = false
         }
+        textArea.undoManager.forgetHistory()
     }
 
     private fun openSaveDialog() {
@@ -238,8 +355,7 @@ class WriterView : View("Skywriter") {
             FileChooserMode.Save).apply {
             if (this.isNotEmpty()) {
                 model.file = this.single()
-                MarkdownParser(textArea.document).save(this.single())
-                model.dirty = false
+                save()
             }
         }
     }
@@ -260,6 +376,10 @@ class WriterView : View("Skywriter") {
         }
     }
 
+    private fun openProgressView() {
+
+    }
+
     private fun rename() {
         chooseFile(
             "Rename...",
@@ -277,6 +397,7 @@ class WriterView : View("Skywriter") {
                 }
 
                 model.file!!.renameTo(newFile)
+                model.newProgressTracker(textArea.wordCount, newFile)
                 updateTitle()
             }
         }

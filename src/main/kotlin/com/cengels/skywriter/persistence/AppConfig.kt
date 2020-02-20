@@ -3,6 +3,8 @@ package com.cengels.skywriter.persistence
 import javafx.stage.Stage
 import tornadofx.*
 import java.io.File
+import java.time.Duration
+import java.time.LocalTime
 import javax.swing.filechooser.FileSystemView
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
@@ -17,6 +19,8 @@ object AppConfig {
     var windowY by DoubleConfigProperty()
     var lastOpenFile by StringConfigProperty()
     var activeTheme by StringConfigProperty()
+    var progressResetTime by TimeConfigProperty(LocalTime.of(6, 0))
+    var progressTimeout by DurationConfigProperty(Duration.ofMinutes(5))
 
     fun initialize(config: ConfigProperties) {
         this.config = config
@@ -73,6 +77,22 @@ object AppConfig {
     class StringConfigProperty : ConfigProperty<String?>() {
         override operator fun getValue(thisRef: AppConfig, property: KProperty<*>): String? {
             return config.string(property.name)
+        }
+    }
+
+    class TimeConfigProperty(private val default: LocalTime) : ConfigProperty<LocalTime>() {
+        override operator fun getValue(thisRef: AppConfig, property: KProperty<*>): LocalTime {
+            return config.string(property.name)?.let { LocalTime.parse(it) } ?: default
+        }
+    }
+
+    class DurationConfigProperty(private val default: Duration) : ConfigProperty<Duration>() {
+        override operator fun setValue(thisRef: AppConfig, property: KProperty<*>, value: Duration) {
+            config.set(property.name to value.seconds)
+        }
+
+        override operator fun getValue(thisRef: AppConfig, property: KProperty<*>): Duration {
+            return config.int(property.name)?.let { Duration.ofSeconds(it.toLong()) } ?: default
         }
     }
 }

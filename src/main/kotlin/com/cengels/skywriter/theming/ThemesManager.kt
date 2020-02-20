@@ -16,18 +16,16 @@ import java.io.ObjectOutputStream
 import tornadofx.getValue
 import tornadofx.setValue
 
-class ThemesManager {
-    companion object {
-        val DEFAULT = Theme(name = "Default", default = true)
-        private var fontsTask: Task<List<String>>? = null
-        val fonts: List<String>?
-            get() = fontsTask?.get()
-    }
+object ThemesManager {
+    val DEFAULT = Theme(name = "Default", default = true)
+    private var fontsTask: Task<List<String>>? = null
+    val fonts: List<String>?
+        get() = fontsTask?.get()
 
     val gson = GsonBuilder().setPrettyPrinting().create()
     val themesProperty = SimpleListProperty<Theme>(observableListOf())
     var themes: ObservableList<Theme> by themesProperty
-    val selectedThemeProperty = SimpleObjectProperty<Theme>()
+    val selectedThemeProperty = SimpleObjectProperty<Theme>(DEFAULT)
     var selectedTheme by selectedThemeProperty
 
     val file: File

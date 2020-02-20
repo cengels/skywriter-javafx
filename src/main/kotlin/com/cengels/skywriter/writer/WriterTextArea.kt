@@ -2,14 +2,18 @@ package com.cengels.skywriter.writer
 
 import com.cengels.skywriter.enum.Heading
 import com.cengels.skywriter.style.FormattingStylesheet
+import com.cengels.skywriter.util.countWords
+import javafx.beans.property.Property
 import javafx.beans.property.SimpleBooleanProperty
-import javafx.event.Event
-import javafx.event.EventType
+import javafx.beans.property.SimpleIntegerProperty
+import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.control.IndexRange
-import javafx.scene.text.TextAlignment
+import javafx.scene.input.MouseButton
 import org.fxmisc.richtext.StyleClassedTextArea
 import org.fxmisc.richtext.model.*
-import tornadofx.select
+import org.fxmisc.wellbehaved.event.EventPattern
+import org.fxmisc.wellbehaved.event.InputMap
+import org.fxmisc.wellbehaved.event.Nodes
 import tornadofx.getValue
 import tornadofx.setValue
 import java.util.*
@@ -17,9 +21,10 @@ import java.util.*
 class WriterTextArea : StyleClassedTextArea() {
     var insertionStyle: MutableCollection<String>? = null
     val smartReplacer: SmartReplacer = SmartReplacer(SmartReplacer.DEFAULT_QUOTES_MAP, SmartReplacer.DEFAULT_SYMBOL_MAP)
+    val wordCountProperty = SimpleIntegerProperty(this.countWords())
+    val wordCount by wordCountProperty
     val readyProperty = SimpleBooleanProperty(false)
-    var ready by readyProperty
-        private set
+    val ready by readyProperty
     private var midChange: Boolean = false
     private val queue: Queue<() -> Unit> = LinkedList<() -> Unit>()
 
@@ -29,6 +34,8 @@ class WriterTextArea : StyleClassedTextArea() {
                 midChange = true
                 applyInsertionStyle(change)
             }
+
+            wordCountProperty.set(this.countWords())
         }
 
         this.beingUpdatedProperty().addListener { observable, oldValue, newValue ->
@@ -36,10 +43,10 @@ class WriterTextArea : StyleClassedTextArea() {
                 if (midChange) {
                     midChange = false
                 } else {
-                    ready = true
+                    readyProperty.set(true)
                 }
             } else {
-                ready = false
+                readyProperty.set(false)
             }
         }
 
@@ -53,6 +60,16 @@ class WriterTextArea : StyleClassedTextArea() {
         }
 
         smartReplacer.observe(this)
+
+        // Nodes.addInputMap(this,
+        //     InputMap.consume(
+        //         EventPattern.mouseClicked(MouseButton.SECONDARY),
+        //         { e ->
+        //     // show the area using the mouse event's screen x & y values
+        //     menu.show(area, e.getScreenX(), e.getScreenY());
+        // }
+        // )
+        // );
     }
 
     /** Queues the specified action until after the document has completed all its queued changes and is ready to accept new ones. */
@@ -92,6 +109,16 @@ class WriterTextArea : StyleClassedTextArea() {
     fun updateSelection(className: String) {
         val selection: IndexRange = this.selection
         this.toggleStyleClass(selection.start, selection.end, className)
+    }
+
+    /** Counts the number of words in the text area. */
+    private fun countWords(): Int {
+        return text.countWords()
+    }
+
+    /** Counts the number of selected words in the text area. */
+    fun countSelectedWords(): Int {
+        return selectedText.countWords()
     }
 
     fun isRangeStyled(start: Int, end: Int, className: String): Boolean {

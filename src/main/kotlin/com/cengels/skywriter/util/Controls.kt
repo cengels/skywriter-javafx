@@ -8,20 +8,39 @@ import javafx.beans.property.Property
 import javafx.event.EventTarget
 import javafx.geometry.Orientation
 import javafx.geometry.Pos
+import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.layout.Pane
 import javafx.scene.layout.Priority
+import javafx.scene.layout.VBox
 import javafx.scene.text.Font
+import javafx.stage.Popup
+import javafx.stage.PopupWindow
 import javafx.util.StringConverter
 import javafx.util.converter.PercentageStringConverter
 import tornadofx.*
-import java.awt.event.KeyEvent
 import java.time.Instant
 import kotlin.math.min
+import kotlin.properties.ReadWriteProperty
 
 /** Adds a custom text field that only accepts the number type which was passed in. */
 inline fun <reified T : Any> EventTarget.numberfield(property: Property<T>, noinline op: TextField.() -> Unit = {}) = textfield(property, getDefaultConverter()!!, op).apply {
     required()
+    alignment = Pos.CENTER_RIGHT
+    filterInput {
+        when (T::class.javaPrimitiveType ?: T::class) {
+            Int::class.javaPrimitiveType -> it.controlNewText.isInt()
+            Long::class.javaPrimitiveType -> it.controlNewText.isLong()
+            Double::class.javaPrimitiveType -> it.controlNewText.isDouble()
+            Float::class.javaPrimitiveType -> it.controlNewText.isFloat()
+            else -> throw TypeCastException("Invalid type parameter.")
+        }
+    }
+}
+
+/** Adds a custom text field that only accepts the number type which was passed in. */
+inline fun <reified T : Any> EventTarget.numberfield(value: T, noinline op: TextField.() -> Unit = {}) = textfield(
+    getDefaultConverter<T>()!!.toString(value), op).apply {
     alignment = Pos.CENTER_RIGHT
     filterInput {
         when (T::class.javaPrimitiveType ?: T::class) {
@@ -222,4 +241,23 @@ fun EventTarget.fontpicker(property: Property<String>, fonts: List<String>? = Fo
     }
 
     op(this)
+}
+
+fun Node.popup(op: VBox.(popup: Popup) -> Unit = {}) = Popup().apply {
+    isAutoHide = true
+    isAutoFix = false
+    anchorLocation = PopupWindow.AnchorLocation.CONTENT_BOTTOM_LEFT
+    val popup = this
+
+    content.add(VBox().apply {
+        initializeStyle()
+        spacing = 7.5
+        useMaxSize = true
+        addClass("popup-box")
+        op(this, popup)
+    })
+
+    val position = this@popup.localToScreen(this@popup.boundsInLocal)
+
+    show(this@popup, position.minX, position.minY - 10)
 }

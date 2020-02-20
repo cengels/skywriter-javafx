@@ -1,14 +1,69 @@
 /* Contains selectors and rules with dynamically computed values. */
 
 .root {
-    -fill: black;
+    -font-size: 12pt;
+    -font-family: Times New Roman;
+    -text-fill: black;
+    -window-fill: #D3D3D3;
+    -document-fill: #F8F8F8;
+    -document-fill-hover: #E8E8E8;
+    -document-fill-light: #F5F5F5;
+    -document-fill-lighter: #F0F0F0;
+    -document-fill-lightest: #E8E8E8;
+    -document-fill-dark: #F5F5F5;
+    -document-fill-darker: #F0F0F0;
+    -document-fill-darkest: #E8E8E8;
     -text-alignment: left;
-    /* -paragraph-spacing: 50; */
-    -line-spacing: 5;
+    -paragraph-spacing: 50;
+    -first-line-indent: 0;
+    -line-spacing: 0.0;
 }
 
-.paragraph-text .text {
-    -fx-fill: -fill;
+.paragraph-text .text,
+.menu-bar .text,
+.status-bar .text {
+    -fx-fill: -text-fill;
+}
+
+.separator .line {
+    -fx-border-color: -text-fill transparent transparent transparent;
+    -fx-border-insets: 0;
+}
+
+.styled-text-area .caret {
+    -fx-stroke: -text-fill;
+}
+
+.selection {
+    -fx-fill: -document-fill-hover;
+}
+
+.menu-button:hover, .menu-item:hover {
+    -fx-background-color: -document-fill-hover;
+}
+
+.menu-bar, .menu-button, .status-bar, .menu-item, .menu .container {
+    -fx-background-color: -document-fill-dark;
+}
+
+.status-bar .label {
+    -fx-padding: 3px 6px;
+}
+
+.status-bar .label.clickable:hover {
+    -fx-background-color: -document-fill-hover;
+    -fx-cursor: hand;
+}
+
+.context-menu {
+    -fx-font-size: 10pt;
+    -fx-background-color: -document-fill-dark;
+    -fx-background-radius: 0 0 6 6;
+}
+
+.context-menu * {
+    -fx-fill: -text-fill;
+    -fx-text-fill: -text-fill;
 }
 
 .styled-text-area * {
@@ -22,4 +77,39 @@
 
 .caret {
     -fx-stroke: -fill;
+}
+
+.scroll-bar, .track-background {
+    -fx-background-color: transparent;
+}
+
+.thumb {
+    width: 100%;
+    -fx-background-color: -document-fill-lightest;
+}
+
+.thumb:hover, .scroll-bar.active .thumb {
+    -fx-background-color: -document-fill-hover;
+}
+
+.increment-button, .decrement-button {
+    -fx-height: 0.0;
+    -fx-opacity: 0.0;
+}
+
+.popup-box {
+    -fx-padding: 10px 20px;
+    -fx-background-color: -document-fill-darker;
+    -fx-background-radius: 20;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 20, 0, 3, 3);
+}
+
+.popup-box * {
+    -fx-fill: -text-fill;
+    -fx-text-fill: -text-fill;
+}
+
+.popup-box .text-field {
+    -fx-font-size: 14pt;
+    -fx-background-color: -document-fill-darkest;
 }

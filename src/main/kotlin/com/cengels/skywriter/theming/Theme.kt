@@ -1,7 +1,11 @@
 package com.cengels.skywriter.theming
 
 import com.cengels.skywriter.enum.ImageSizingType
+import com.cengels.skywriter.util.convert.ColorConverter
+import com.cengels.skywriter.util.shiftBy
 import javafx.scene.text.TextAlignment
+import javafx.util.converter.PercentageStringConverter
+import tornadofx.css
 import java.awt.Color
 import java.io.Serializable
 
@@ -48,5 +52,25 @@ data class Theme (
 ) : Cloneable, Serializable {
     public override fun clone(): Theme {
         return this.copy(default = false)
+    }
+
+    /** Creates a number of CSS variables that can be appended to a stylesheet and used freely. */
+    fun toStylesheet(): String {
+        return "-font-size: ${fontSize}pt;\n" +
+               "-font-family: $fontFamily;\n" +
+               "-text-fill: ${ColorConverter.convert(fontColor).css};\n" +
+               "-window-fill: ${ColorConverter.convert(windowBackground).css};\n" +
+               "-document-fill: ${ColorConverter.convert(documentBackground).css};\n" +
+               "-document-fill-hover: ${ColorConverter.convert(documentBackground).brighter().css};\n" +
+               "-document-fill-light: ${ColorConverter.convert(documentBackground).shiftBy(0.05).css};\n" +
+               "-document-fill-lighter: ${ColorConverter.convert(documentBackground).shiftBy(0.1).css};\n" +
+               "-document-fill-lightest: ${ColorConverter.convert(documentBackground).shiftBy(0.15).css};\n" +
+               "-document-fill-dark: ${ColorConverter.convert(documentBackground).shiftBy(-0.05).css};\n" +
+               "-document-fill-darker: ${ColorConverter.convert(documentBackground).shiftBy(-0.10).css};\n" +
+               "-document-fill-darkest: ${ColorConverter.convert(documentBackground).shiftBy(-0.15).css};\n" +
+               "-text-alignment: ${textAlignment.name.toLowerCase()};\n" +
+               "-paragraph-spacing: 50;\n" +
+               "-first-line-indent: ${firstLineIndent}px;\n" +
+               "-line-spacing: ${PercentageStringConverter().toString(lineHeight)};"
     }
 }

@@ -2,6 +2,7 @@ package com.cengels.skywriter
 
 import com.cengels.skywriter.persistence.AppConfig
 import com.cengels.skywriter.style.*
+import com.cengels.skywriter.theming.ThemesManager
 import com.cengels.skywriter.writer.WriterView
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCodeCombination
@@ -33,6 +34,9 @@ class SkyWriterApp : App(WriterView::class, GeneralStylesheet::class, Formatting
             AppConfig.storeStage(stage)
         }
 
+        ThemesManager.load()
+        ThemesManager.selectedTheme = ThemesManager.themes.find { it.name == AppConfig.activeTheme } ?: ThemesManager.DEFAULT
+
         File(userDirectory).apply {
             if (!this.exists()) {
                 if (!this.mkdir()) {
@@ -42,5 +46,7 @@ class SkyWriterApp : App(WriterView::class, GeneralStylesheet::class, Formatting
         }
 
         super.start(stage)
+
+        stage.scene.stylesheets.add(WriterView::class.java.getResource("dynamic.css").toExternalForm())
     }
 }
