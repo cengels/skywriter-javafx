@@ -2,6 +2,7 @@ package com.cengels.skywriter.theming
 
 import com.cengels.skywriter.enum.ImageSizingType
 import com.cengels.skywriter.util.convert.ColorConverter
+import com.cengels.skywriter.util.shiftBy
 import javafx.scene.text.TextAlignment
 import javafx.util.converter.PercentageStringConverter
 import tornadofx.css
@@ -61,8 +62,12 @@ data class Theme (
                "-window-fill: ${ColorConverter.convert(windowBackground).css};\n" +
                "-document-fill: ${ColorConverter.convert(documentBackground).css};\n" +
                "-document-fill-hover: ${ColorConverter.convert(documentBackground).brighter().css};\n" +
-               "-document-fill-lighter: ${ColorConverter.convert(documentBackground).deriveColor(0.0, 1.0, 1.05, 1.0).css};\n" +
-               "-document-fill-darker: ${ColorConverter.convert(documentBackground).deriveColor(0.0, 1.0, 0.95, 1.0).css};\n" +
+               "-document-fill-light: ${ColorConverter.convert(documentBackground).shiftBy(0.05).css};\n" +
+               "-document-fill-lighter: ${ColorConverter.convert(documentBackground).shiftBy(0.1).css};\n" +
+               "-document-fill-lightest: ${ColorConverter.convert(documentBackground).shiftBy(0.15).css};\n" +
+               "-document-fill-dark: ${ColorConverter.convert(documentBackground).shiftBy(-0.05).css};\n" +
+               "-document-fill-darker: ${ColorConverter.convert(documentBackground).shiftBy(-0.10).css};\n" +
+               "-document-fill-darkest: ${ColorConverter.convert(documentBackground).shiftBy(-0.15).css};\n" +
                "-text-alignment: ${textAlignment.name.toLowerCase()};\n" +
                "-paragraph-spacing: 50;\n" +
                "-first-line-indent: ${firstLineIndent}px;\n" +

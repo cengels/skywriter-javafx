@@ -51,6 +51,12 @@ fun getBackgroundFor(color: Color, image: String? = null, imageSizingType: Image
     return getBackgroundFor(ColorConverter.convert(color), image, imageSizingType)
 }
 
+/** Shifts the brightness of this color by the specified value. If the brightness is already at its bounds (meaning pure white or pure black), the shift is inverted instead. */
+fun javafx.scene.paint.Color.shiftBy(value: Double): javafx.scene.paint.Color {
+    val invert = this.brightness == 0.0 || this.brightness == 1.0
+    return deriveColor(0.0, 1.0, 1.0 + (if (invert) -value else value), 1.0)
+}
+
 /** Adds a change listener to the selected Property<T> and calls it immediately. */
 fun <T> Property<T>.onChangeAndNow(op: (it: T?) -> Unit) {
     this.onChange(op)

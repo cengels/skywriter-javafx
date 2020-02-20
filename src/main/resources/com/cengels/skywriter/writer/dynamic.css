@@ -26,16 +26,12 @@
     -fx-fill: -document-fill-hover;
 }
 
-.menu-item, .menu .container {
-    -fx-background-color: -document-fill-lighter;
-}
-
 .menu-button:hover, .menu-item:hover {
     -fx-background-color: -document-fill-hover;
 }
 
-.menu-bar, .menu-button, .status-bar {
-    -fx-background-color: -document-fill-darker;
+.menu-bar, .menu-button, .status-bar, .menu-item, .menu .container {
+    -fx-background-color: -document-fill-dark;
 }
 
 .status-bar .label {
@@ -48,7 +44,7 @@
 }
 
 .context-menu {
-    -fx-background-color: -document-fill;
+    -fx-background-color: -document-fill-dark;
     -fx-background-radius: 0 0 6 6;
 }
 
@@ -63,4 +59,22 @@
 
 .caret {
     -fx-stroke: -fill;
+}
+
+.scroll-bar, .track-background {
+    -fx-background-color: transparent;
+}
+
+.thumb {
+    width: 100%;
+    -fx-background-color: -document-fill-lightest;
+}
+
+.thumb:hover, .scroll-bar.active .thumb {
+    -fx-background-color: -document-fill-hover;
+}
+
+.increment-button, .decrement-button {
+    -fx-height: 0.0;
+    -fx-opacity: 0.0;
 }
