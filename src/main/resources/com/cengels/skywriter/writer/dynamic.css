@@ -56,8 +56,14 @@
 }
 
 .context-menu {
+    -fx-font-size: 10pt;
     -fx-background-color: -document-fill-dark;
     -fx-background-radius: 0 0 6 6;
+}
+
+.context-menu * {
+    -fx-fill: -text-fill;
+    -fx-text-fill: -text-fill;
 }
 
 .styled-text-area * {
@@ -98,6 +104,12 @@
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 20, 0, 3, 3);
 }
 
-.popup-box .text {
+.popup-box * {
     -fx-fill: -text-fill;
+    -fx-text-fill: -text-fill;
+}
+
+.popup-box .text-field {
+    -fx-font-size: 14pt;
+    -fx-background-color: -document-fill-darkest;
 }

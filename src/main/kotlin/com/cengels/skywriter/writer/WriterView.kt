@@ -6,18 +6,14 @@ import com.cengels.skywriter.theming.ThemesManager
 import com.cengels.skywriter.theming.ThemesView
 import com.cengels.skywriter.util.*
 import javafx.geometry.Pos
-import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.input.KeyCode
 import javafx.scene.layout.*
 import javafx.stage.FileChooser
-import javafx.stage.Popup
-import javafx.stage.PopupWindow
 import javafx.stage.WindowEvent
 import org.fxmisc.flowless.VirtualizedScrollPane
 import tornadofx.*
 import java.io.File
-import java.time.LocalTime
 
 class WriterView : View("Skywriter") {
     val model = WriterViewModel()
@@ -37,8 +33,8 @@ class WriterView : View("Skywriter") {
             }
         }
 
-        it.plainTextChanges().subscribe { _ ->
-            model.updateProgress(it.countWords())
+        it.wordCountProperty.addListener { observable, oldValue, newValue ->
+            model.updateProgress(it.wordCount)
         }
 
         it.setOnKeyReleased { event ->
@@ -66,12 +62,33 @@ class WriterView : View("Skywriter") {
             }
         }
 
-        contextmenu {
-            item("Cut").action { it.cut() }
-            item("Copy").action { it.copy() }
+        it.contextMenu = contextmenu {
+            item("Cut") {
+                this.enableWhen(it.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
+                this.action { it.cut() }
+            }
+            item("Copy") {
+                this.enableWhen(it.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
+                this.action { it.copy() }
+            }
             item("Paste").action { it.paste() }
-            item("Delete").action { it.deleteText(it.selection) }
-            item("Delete Untracked").action { model.updateProgressWithDeletion(it.countSelectedWords()); it.deleteText(it.selection) }
+            item("Paste Untracked").action {
+                val wordCountBefore = it.wordCount
+                it.paste()
+                model.correct(it.wordCount - wordCountBefore)
+            }
+            item("Delete") {
+                this.enableWhen(it.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
+                action { it.deleteText(it.selection) }
+            }
+            item("Delete Untracked") {
+                this.enableWhen(it.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
+                action {
+                    val wordCountBefore = it.wordCount
+                    it.deleteText(it.selection)
+                    model.correct(it.wordCount - wordCountBefore)
+                }
+            }
         }
 
         // Doesn't work.
@@ -154,15 +171,42 @@ class WriterView : View("Skywriter") {
                 }
 
                 menu("Edit") {
-                    item("Undo", "Ctrl+Z").action { textArea.undo() }
-                    item("Redo", "Ctrl+Y").action { textArea.redo() }
+                    item("Undo", "Ctrl+Z") {
+                        enableWhen { textArea.undoAvailableProperty() }
+                        action { textArea.undo() }
+                    }
+                    item("Redo", "Ctrl+Y") {
+                        enableWhen { textArea.redoAvailableProperty() }
+                        action { textArea.redo() }
+                    }
                     separator()
-                    item("Cut", "Ctrl+X").action { textArea.cut() }
-                    item("Copy", "Ctrl+C").action { textArea.copy() }
+                    item("Cut", "Ctrl+X") {
+                        this.enableWhen(textArea.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
+                        action { textArea.cut() }
+                    }
+                    item("Copy", "Ctrl+C") {
+                        this.enableWhen(textArea.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
+                        action { textArea.copy() }
+                    }
                     item("Paste", "Ctrl+V").action { textArea.paste() }
                     item("Paste Unformatted", "Ctrl+Shift+V")
-                    item("Delete").action { textArea.deleteText(textArea.selection) }
-                    item("Delete Untracked", "Shift+Delete").action { model.updateProgressWithDeletion(textArea.countSelectedWords()); textArea.deleteText(textArea.selection) }
+                    item("Paste Untracked").action {
+                        val wordCountBefore = textArea.wordCount
+                        textArea.paste()
+                        model.correct(textArea.wordCount - wordCountBefore)
+                    }
+                    item("Delete") {
+                        this.enableWhen(textArea.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
+                        action { textArea.deleteText(textArea.selection) }
+                    }
+                    item("Delete Untracked", "Shift+Delete") {
+                        this.enableWhen(textArea.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
+                        action  {
+                            val wordCountBefore = textArea.wordCount
+                            textArea.deleteText(textArea.selection)
+                            model.correct(textArea.wordCount - wordCountBefore)
+                        }
+                    }
                     separator()
                     item("Select Word", "Ctrl+W").action { textArea.selectWord() }
                     item("Select Sentence").isDisable = true
@@ -239,17 +283,20 @@ class WriterView : View("Skywriter") {
                     useMaxWidth = false
                     alignment = Pos.CENTER
                     spacing = 9.0
-                    label(textArea.textProperty().stringBinding {
-                        "${model.progressTracker?.progressToday?.sumBy { it.wordsAdded }} added today"
+                    label(model.wordsTodayProperty.stringBinding {
+                        "${model.wordsToday} added today"
                     }) {
                         addClass("clickable")
-                        setOnMouseClicked { popupToEdit() }
-                    }
-                    label(textArea.textProperty().stringBinding {
-                        "${model.progressTracker?.progressToday?.sumBy { it.wordsDeleted }} deleted today"
-                    }) {
-                        addClass("clickable")
-                        setOnMouseClicked { popupToEdit { label("test 2") } }
+                        setOnMouseClicked { popup { popup ->
+                            label("Enter a new word count")
+
+                            numberfield(model.wordsToday) {
+                                this.focusedProperty().addListener { observable, oldValue, newValue ->
+                                    model.setWords(getDefaultConverter<Int>()!!.fromString(this.text))
+                                }
+                                this.setOnAction { popup.hide() }
+                            }
+                        } }
                     }
                 }
 
@@ -295,6 +342,7 @@ class WriterView : View("Skywriter") {
         model.load(textArea.document, textArea.segOps).also {
             textArea.replace(it)
         }
+        textArea.undoManager.forgetHistory()
     }
 
     private fun openSaveDialog() {
@@ -349,7 +397,7 @@ class WriterView : View("Skywriter") {
                 }
 
                 model.file!!.renameTo(newFile)
-                model.newProgressTracker(textArea.countWords(), newFile)
+                model.newProgressTracker(textArea.wordCount, newFile)
                 updateTitle()
             }
         }

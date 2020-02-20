@@ -4,8 +4,8 @@ import com.cengels.skywriter.SkyWriterApp
 import com.cengels.skywriter.persistence.AppConfig
 import com.cengels.skywriter.persistence.CsvParser
 import com.cengels.skywriter.util.Disposable
+import javafx.beans.property.SimpleIntegerProperty
 import java.io.File
-import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -40,6 +40,8 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
     /** Gets the current progress item. If the user hasn't typed in a while, [current] will be null. */
     var current: ProgressItem? = null
         private set
+    /** How many words should be added or subtracted from the word count of the [current] progress item before it is committed. */
+    private var correction: Int = 0
 
     /** Starts a new progress item. This will throw an exception if [current] is not null. */
     fun startNew(): ProgressItem {
@@ -63,29 +65,25 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
         scheduledReset?.cancel()
         val item = current ?: startNew()
 
-        item.wordsAdded = (newTotalWords + item.wordsDeleted) - totalWords
+        item.words = (newTotalWords - correction) - totalWords
 
         current = item
         scheduleReset()
     }
 
-    /** Explicitly tracks the specified word count as deleted words and excludes them from the words added. */
-    fun trackDeletion(deletedWords: Int) {
+    /** Explicitly "untracks" the specified number of words, excluding them from the [current]'s word count. */
+    fun correct(correction: Int) {
         scheduledReset?.cancel()
         val item = current ?: startNew()
 
-        item.wordsDeleted += deletedWords
+        this.correction += correction
+        item.words -= correction
         scheduleReset()
     }
 
-    /** Creates a new progress item with the specified number of words added and commits it. */
-    fun addWords(value: Int) {
-
-    }
-
-    /** Creates a new progress item with the specified number of words deleted and commits it. */
-    fun deletedWords(value: Int) {
-
+    /** Manually sets the word count of [current]. */
+    fun setWords(newWords: Int) {
+        (current ?: startNew()).words = newWords
     }
 
     /** Sets [current].endDate to now and saves [current] to the file system and resets it. */
@@ -125,7 +123,7 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
         return _progress.lastOrNull().let {
             if (it?.file == file?.name && it?.endDate?.isAfter(LocalDateTime.now().minusSeconds(AppConfig.progressTimeout.seconds)) == true) {
                 it.endDate = null
-                totalWords -= it.wordsAdded + it.wordsDeleted
+                totalWords -= it.words
                 return@let it
             }
 
@@ -145,19 +143,15 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
     }
 
     private fun finalize(item: ProgressItem): ProgressItem? {
-        if (item.wordsAdded == 0 && item.wordsDeleted == 0) {
+        if (item.words == 0) {
             current = null
             return null
         }
 
         item.endDate = LocalDateTime.now()
 
-        if (item.wordsAdded < 0) {
-            item.wordsDeleted -= item.wordsAdded
-            item.wordsAdded = 0
-        }
-
-        totalWords += item.wordsAdded - item.wordsDeleted
+        totalWords += item.words + correction
+        correction = 0
 
         return item
     }

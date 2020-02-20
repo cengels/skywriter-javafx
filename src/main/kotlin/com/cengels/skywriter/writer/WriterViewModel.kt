@@ -4,6 +4,7 @@ import com.cengels.skywriter.persistence.MarkdownParser
 import com.cengels.skywriter.progress.ProgressTracker
 import com.cengels.skywriter.util.countWords
 import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import org.fxmisc.richtext.model.SegmentOps
 import org.fxmisc.richtext.model.StyledDocument
@@ -28,9 +29,12 @@ class WriterViewModel {
     var showMenuBar by showMenuBarProperty
 
     var progressTracker: ProgressTracker? = null
-    var wordsAddedToday: Int
-        get() = progressTracker?.progressToday?.sumBy { it.wordsAdded } ?: 0
-        set(value) = progressTracker?.current?.wordsAdded
+    val wordsTodayProperty: SimpleIntegerProperty = SimpleIntegerProperty(getTodaysWords())
+    val wordsToday by wordsTodayProperty
+
+    private fun getTodaysWords(): Int {
+        return progressTracker?.progressToday?.sumBy { it.words } ?: 0
+    }
 
     fun save(document: StyledDocument<MutableCollection<String>, String, MutableCollection<String>>) {
         if (file == null) {
@@ -52,19 +56,29 @@ class WriterViewModel {
 
     /** Updates the progress tracker with the new file. */
     fun newProgressTracker(startingWords: Int, file: File? = null) {
-        progressTracker?.commit()
-        progressTracker?.dispose()
-        progressTracker = ProgressTracker(startingWords, file)
-        progressTracker?.load()
+        progressTracker?.apply {
+            this.commit()
+            this.dispose()
+        }
+
+        progressTracker = ProgressTracker(startingWords, file).apply {
+            this.load()
+        }
     }
 
     /** Updates the current progress item with the current words. */
     fun updateProgress(newTotalWords: Int) {
         progressTracker?.track(newTotalWords)
+        wordsTodayProperty.set(getTodaysWords())
     }
 
-    /** Updates the current progress item with a number of deleted words that should not be counted. */
-    fun updateProgressWithDeletion(deletedWords: Int) {
-        progressTracker?.trackDeletion(deletedWords)
+    fun correct(correction: Int) {
+        progressTracker?.correct(correction)
+        wordsTodayProperty.set(getTodaysWords())
+    }
+
+    fun setWords(newTotalWords: Int) {
+        progressTracker?.setWords(newTotalWords - wordsToday + (progressTracker?.current?.words ?: 0))
+        wordsTodayProperty.set(getTodaysWords())
     }
 }
