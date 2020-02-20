@@ -10,6 +10,7 @@ import com.cengels.skywriter.util.onChangeAndNow
 import com.cengels.skywriter.util.toBackground
 import javafx.geometry.Pos
 import javafx.scene.control.*
+import javafx.scene.input.KeyCode
 import javafx.scene.layout.*
 import javafx.stage.FileChooser
 import javafx.stage.WindowEvent
@@ -41,6 +42,17 @@ class WriterView : View("Skywriter") {
 
         it.plainTextChanges().subscribe { _ ->
             model.updateProgress(it.countWords())
+        }
+
+        it.setOnKeyReleased { event ->
+            when (event.code) {
+                KeyCode.END -> it.moveTo(it.text.lastIndex)
+                KeyCode.HOME -> it.moveTo(0)
+                else -> return@setOnKeyReleased
+            }
+        }
+
+        it.caretPositionProperty().addListener { _, _, _ ->
             it.requestFollowCaret()
         }
 
@@ -111,8 +123,6 @@ class WriterView : View("Skywriter") {
                 model.showMenuBar = event.sceneY <= menuBar.layoutY + menuBar.height || menuBar.menus.any { it.isShowing } == true
                 model.showStatusBar = event.sceneY >= statusBar.layoutY
             }
-
-            println("${LocalTime.now()} ${model.showMenuBar}")
         }
 
         top {
