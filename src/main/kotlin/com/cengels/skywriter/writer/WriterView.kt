@@ -258,7 +258,20 @@ class WriterView : View("Skywriter") {
                 )
 
                 this.add(VirtualizedScrollPane(textArea, ScrollPane.ScrollBarPolicy.NEVER, ScrollPane.ScrollBarPolicy.AS_NEEDED).also { scrollPane ->
-                    scrollPane.vbarPolicyProperty().bind(primaryStage.fullScreenProperty().objectBinding { if (it == true) ScrollPane.ScrollBarPolicy.NEVER else ScrollPane.ScrollBarPolicy.AS_NEEDED })
+                    primaryStage.fullScreenProperty().onChangeAndNow { isFullscreen ->
+                        if (isFullscreen == true) {
+                            scrollPane.getChildList()?.filterIsInstance<ScrollBar>()?.forEach { scrollbar ->
+                                scrollbar.style = "-fx-opacity: 0;"
+                                scrollbar.onHover {
+                                    if (it) {
+                                        scrollbar.style = "-fx-opacity: 1;"
+                                    } else {
+                                        scrollbar.style = "-fx-opacity: 0;"
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }, 1, 1)
             }
         }

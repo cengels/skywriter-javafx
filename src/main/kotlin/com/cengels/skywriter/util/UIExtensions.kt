@@ -5,6 +5,7 @@ import com.cengels.skywriter.theming.ThemesManager
 import com.cengels.skywriter.util.convert.ColorConverter
 import javafx.beans.binding.Binding
 import javafx.beans.property.Property
+import javafx.beans.property.ReadOnlyProperty
 import javafx.geometry.Insets
 import javafx.geometry.Side
 import javafx.scene.Node
@@ -60,7 +61,7 @@ fun javafx.scene.paint.Color.shiftBy(value: Double): javafx.scene.paint.Color {
 }
 
 /** Adds a change listener to the selected Property<T> and calls it immediately. */
-fun <T> Property<T>.onChangeAndNow(op: (it: T?) -> Unit) {
+fun <T> ReadOnlyProperty<T>.onChangeAndNow(op: (it: T?) -> Unit) {
     this.onChange(op)
     op(this.value)
 }
