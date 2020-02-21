@@ -209,7 +209,6 @@ class WriterView : View("Skywriter") {
                     }
                     separator()
                     item("Select Word", "Ctrl+W").action { textArea.selectWord() }
-                    item("Select Sentence").isDisable = true
                     item("Select Paragraph", "Ctrl+Shift+W").action { textArea.selectParagraph() }
                     item("Select All", "Ctrl+A").action { textArea.selectAll() }
                 }

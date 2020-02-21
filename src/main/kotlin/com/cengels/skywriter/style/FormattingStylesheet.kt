@@ -34,31 +34,37 @@ class FormattingStylesheet : Stylesheet() {
         h1 {
             fontSize = 22.pt
             fontWeight = FontWeight.BOLD
+            textAlignment = TextAlignment.CENTER
         }
 
         h2 {
             fontSize = 20.pt
             fontWeight = FontWeight.BOLD
+            textAlignment = TextAlignment.CENTER
         }
 
         h3 {
             fontSize = 18.pt
             fontWeight = FontWeight.BOLD
+            textAlignment = TextAlignment.CENTER
         }
 
         h4 {
             fontSize = 16.pt
             fontWeight = FontWeight.BOLD
+            textAlignment = TextAlignment.CENTER
         }
 
         h5 {
             fontSize = 14.pt
             fontWeight = FontWeight.BOLD
+            textAlignment = TextAlignment.CENTER
         }
 
         h6 {
             fontSize = 12.pt
             fontWeight = FontWeight.BOLD
+            textAlignment = TextAlignment.CENTER
         }
 
         bold {

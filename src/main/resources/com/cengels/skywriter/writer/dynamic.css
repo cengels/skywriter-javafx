@@ -4,6 +4,7 @@
     -font-size: 12pt;
     -font-family: Times New Roman;
     -text-fill: black;
+    -text-fill-desaturated: #383838;
     -window-fill: #D3D3D3;
     -document-fill: #F8F8F8;
     -document-fill-hover: #E8E8E8;
@@ -23,6 +24,10 @@
 .menu-bar .text,
 .status-bar .text {
     -fx-fill: -text-fill;
+}
+
+.paragraph-text .text.comment {
+    -fx-fill: -text-fill-desaturated;
 }
 
 .separator .line {
