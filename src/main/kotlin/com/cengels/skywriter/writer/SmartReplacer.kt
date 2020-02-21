@@ -1,10 +1,6 @@
 package com.cengels.skywriter.writer
 
-import org.fxmisc.richtext.GenericStyledArea
-import org.fxmisc.richtext.TextEditingArea
 import org.fxmisc.richtext.model.PlainTextChange
-import org.fxmisc.richtext.model.ReadOnlyStyledDocument
-import org.fxmisc.richtext.model.StyledDocument
 import org.fxmisc.richtext.model.TwoDimensional
 import java.util.*
 

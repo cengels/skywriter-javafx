@@ -96,7 +96,7 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
 
         val SEGMENT_CODEC = object: PlainTextCodec<List<StyledSegment<String, MutableCollection<String>>>, String> {
             override fun encode(writer: BufferedWriter, element: List<StyledSegment<String, MutableCollection<String>>>) {
-                element.forEach {
+                element.forEachIndexed { index, it ->
                     val escapedText: String = escape(it.segment)
 
                     var text: String = escapedText
@@ -109,6 +109,10 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
                                 }
                             }
                         }
+                    }
+
+                    if (index == 0 && text.startsWith('#')) {
+                        text = text.replaceFirst("#", "\\#")
                     }
 
                     writer.write(text)
@@ -229,10 +233,9 @@ private fun getSegment(input: String, delimiter: String, className: String): Sty
 
 /** Escapes symbols reserved for Markdown from the specified String. */
 private fun escape(string: String): String {
-    return string.replace("*", "\\*")
+    return string.replace("\\", "\\\\")
+        .replace("*", "\\*")
         .replace("_", "\\_")
-        .replace("#", "\\#")
-        .replace("\\", "\\\\")
 }
 
 /** Unescapes symbols reserved for Markdown from the specified String. */
