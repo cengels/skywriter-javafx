@@ -307,7 +307,7 @@ class WriterView : View("Skywriter") {
                         "${it ?: 0} words"
                     })
                     label(textArea.wordCountProperty.stringBinding {
-                        "${(it?.toInt() ?: 0) / 250} pages"
+                        "${((it?.toInt() ?: 0) / 250) + 1} pages"
                     })
                     label(textArea.textProperty().stringBinding {
                         "${textArea.paragraphs.size} paragraphs"
@@ -340,6 +340,9 @@ class WriterView : View("Skywriter") {
         model.file = file
         model.load(textArea.document, textArea.segOps).also {
             textArea.replace(it)
+            textArea.wordCountProperty.onChangeOnce { number ->
+                model.newProgressTracker(number!!.toInt(), file)
+            }
         }
         textArea.undoManager.forgetHistory()
     }

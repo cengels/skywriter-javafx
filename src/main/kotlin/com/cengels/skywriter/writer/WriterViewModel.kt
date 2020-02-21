@@ -2,7 +2,6 @@ package com.cengels.skywriter.writer
 
 import com.cengels.skywriter.persistence.MarkdownParser
 import com.cengels.skywriter.progress.ProgressTracker
-import com.cengels.skywriter.util.countWords
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
@@ -50,7 +49,6 @@ class WriterViewModel {
 
         return MarkdownParser(document).load(file, segmentOps).also {
             dirty = false
-            newProgressTracker(it.text.countWords(), file)
         }
     }
 
@@ -64,6 +62,8 @@ class WriterViewModel {
         progressTracker = ProgressTracker(startingWords, file).apply {
             this.load()
         }
+
+        wordsTodayProperty.set(getTodaysWords())
     }
 
     /** Updates the current progress item with the current words. */

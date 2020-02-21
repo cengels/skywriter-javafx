@@ -1,15 +1,20 @@
 package com.cengels.skywriter.writer
 
 import com.cengels.skywriter.enum.Heading
+import com.cengels.skywriter.enum.TextSelectionMode
 import com.cengels.skywriter.persistence.AppConfig
 import com.cengels.skywriter.style.FormattingStylesheet
-import com.cengels.skywriter.util.countWords
+import com.cengels.skywriter.util.findWordBoundaries
+import com.cengels.skywriter.util.splitWords
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
+import javafx.concurrent.Task
 import javafx.scene.control.IndexRange
+import org.fxmisc.richtext.NavigationActions
 import org.fxmisc.richtext.StyleClassedTextArea
 import org.fxmisc.richtext.model.*
 import tornadofx.getValue
+import tornadofx.onChange
 import tornadofx.runAsync
 import tornadofx.ui
 import java.util.*
@@ -23,10 +28,11 @@ class WriterTextArea : StyleClassedTextArea() {
     val ready by readyProperty
     private var midChange: Boolean = false
     private val queue: Queue<() -> Unit> = LinkedList<() -> Unit>()
+    private var textSelectionMode: TextSelectionMode = TextSelectionMode.None
 
     init {
         this.plainTextChanges().subscribe { change ->
-            var updatingStyles: Boolean = false
+            var updatingStyles = false
             if (change.inserted.isNotEmpty()) {
                 midChange = true
 
@@ -39,7 +45,7 @@ class WriterTextArea : StyleClassedTextArea() {
             }
 
             if (!updatingStyles) {
-                wordCountProperty.set(this.countWords() - this.countCommentWords())
+                wordCountProperty.set(this.countWordsWithoutComments())
             }
         }
 
@@ -64,6 +70,28 @@ class WriterTextArea : StyleClassedTextArea() {
             }
         }
 
+        this.setOnMousePressed {
+            if (it.clickCount == 1) {
+                textSelectionMode = TextSelectionMode.Character
+            } else if (it.clickCount == 2) {
+                textSelectionMode = TextSelectionMode.Word
+            } else if (it.clickCount >= 3) {
+                textSelectionMode = TextSelectionMode.Line
+            }
+        }
+
+        this.setOnMouseReleased {
+            textSelectionMode = TextSelectionMode.None
+        }
+
+        this.setOnNewSelectionDrag {
+            // By default, RichTextFX has no special behaviour for double or triple click selections, so it's
+            // manually implemented here.
+            updateSelection(hit(it.x, it.y).insertionIndex)
+        }
+
+        this.setOnNewSelectionDragFinished { /* overridden so the selection doesn't change on mouse release */ }
+
         smartReplacer.observe(this)
     }
 
@@ -78,85 +106,22 @@ class WriterTextArea : StyleClassedTextArea() {
 
     /** Gets the paragraph at the specified absolute character position. */
     fun getParagraphAt(characterPosition: Int): Paragraph<MutableCollection<String>, String, MutableCollection<String>> {
-        return getParagraph(this.offsetToPosition(characterPosition, TwoDimensional.Bias.Backward).major)
+        return getParagraph(getParagraphIndexAt(characterPosition))
     }
 
-    /** Skims the text for any tokens that define a style range and applies the style. */
-    private fun updateStyles() {
-        runAsync { } ui {
-            clearStyle(0, text.lastIndex, "comment")
-            AppConfig.commentTokens.forEach { token ->
-                var startIndex = text.indexOf(token.first)
-
-                while (startIndex != -1) {
-                    var endIndex = text.indexOf(if (token.second.isBlank()) "\\n" else token.second, startIndex)
-                    val found = endIndex != -1
-
-                    if (endIndex == -1 && paragraphs.lastIndex == offsetToPosition(startIndex, TwoDimensional.Bias.Backward).major) {
-                        endIndex = text.lastIndex
-                    }
-
-                    if (endIndex != -1) {
-                        toggleStyleClass(startIndex, endIndex + 1, "comment")
-
-                        if (caretPosition == endIndex + 1 && found) {
-                            insertionStyle = mutableListOf("comment")
-                        }
-                    }
-
-                    startIndex = text.indexOf(token.first, startIndex + 1)
-                }
-            }
-
-            wordCountProperty.set(this.countWords() - this.countCommentWords())
-        }
+    /** Gets the paragraph index at the specified absolute character position. */
+    fun getParagraphIndexAt(characterPosition: Int): Int {
+        return this.offsetToPosition(characterPosition, TwoDimensional.Bias.Backward).major
     }
 
-    private fun applyInsertionStyle(change: PlainTextChange) {
-        if (insertionStyle != null) {
-            val from = change.position
-            val length = change.inserted.length
-
-            val styles = getStyleAtPosition(from).toMutableList()
-
-            insertionStyle!!.forEach {
-                if (styles.contains(it)) {
-                    styles.remove(it)
-                } else {
-                    styles.add(it)
-                }
-            }
-
-            setStyle(from, from + length, styles)
-            insertionStyle = null
-        }
-    }
-
-    fun updateSelection(className: String) {
+    fun updateSelectionWith(className: String) {
         val selection: IndexRange = this.selection
         this.toggleStyleClass(selection.start, selection.end, className)
     }
 
-    /** Counts the number of words in the text area. */
-    private fun countWords(): Int {
-        return text.countWords()
-    }
-
-    private fun countCommentWords(): Int {
-        var index = 0
-        return getStyleSpans(0, text.lastIndex).sumBy { styleSpan ->
-            if (styleSpan.style.contains("comment")) {
-                text.slice(index..index + styleSpan.length).countWords().also { index += styleSpan.length }
-            } else {
-                index += styleSpan.length
-                0
-            }
-        }
-    }
-
     /** Counts the number of selected words in the text area. */
     fun countSelectedWords(): Int {
-        return selectedText.countWords()
+        return selectedText.splitWords().size
     }
 
     fun isRangeStyled(start: Int, end: Int, className: String): Boolean {
@@ -192,7 +157,7 @@ class WriterTextArea : StyleClassedTextArea() {
     /** If text is selected, styles the selected text with the specified class. Otherwise, starts a new segment with the specified style class. */
     fun activateStyle(className: String) {
         if (selection.length > 0) {
-            updateSelection(className)
+            updateSelectionWith(className)
         } else {
             if (insertionStyle == null) {
                 insertionStyle = mutableListOf(className)
@@ -222,4 +187,113 @@ class WriterTextArea : StyleClassedTextArea() {
     /** Gets the index range of selected paragraphs. If only one paragraph is selected, start and end will be the same. */
     fun getSelectedParagraphs(): IndexRange =
         IndexRange(this.caretSelectionBind.startParagraphIndex, this.caretSelectionBind.endParagraphIndex)
+
+    /** Selects the specified range plus the words immediately surrounding the start and end points. */
+    fun selectWords(anchorPosition: Int, caretPosition: Int) {
+        val anchorWord = text.findWordBoundaries(anchorPosition)
+        val caretWord = text.findWordBoundaries(caretPosition)
+
+        println("anchor at $anchorPosition finds $anchorWord AND caret at $caretPosition finds $caretWord")
+
+        if (caretPosition > anchorPosition || anchorWord == caretWord) {
+            selectRange(anchorWord.first, caretWord.last)
+        } else {
+            selectRange(anchorWord.last, caretWord.first)
+        }
+    }
+
+    /** Selects the lines between the specified start and end points. */
+    fun selectLines(anchorPosition: Int, caretPosition: Int) {
+        if (caretPosition > anchorPosition) {
+            val caretParagraph = getParagraphIndexAt(caretPosition)
+            selectRange(getParagraphIndexAt(anchorPosition), 0, caretParagraph, getParagraphLength(caretParagraph))
+        } else {
+            val anchorParagraph = getParagraphIndexAt(anchorPosition)
+            selectRange(anchorParagraph, getParagraphLength(anchorParagraph), getParagraphIndexAt(caretPosition), 0)
+        }
+    }
+
+    /** Skims the text for any tokens that define a style range and applies the style. */
+    private fun updateStyles(): Task<Unit> {
+        return runAsync { } ui {
+            clearStyle(0, text.lastIndex, "comment")
+            AppConfig.commentTokens.forEach { token ->
+                var startIndex = text.indexOf(token.first)
+
+                while (startIndex != -1) {
+                    var endIndex = text.indexOf(if (token.second.isBlank()) "\\n" else token.second, startIndex)
+                    val found = endIndex != -1
+
+                    if (endIndex == -1 && paragraphs.lastIndex == offsetToPosition(startIndex, TwoDimensional.Bias.Backward).major) {
+                        endIndex = text.lastIndex
+                    }
+
+                    if (endIndex != -1) {
+                        toggleStyleClass(startIndex, endIndex + 1, "comment")
+
+                        if (caretPosition == endIndex + 1 && found) {
+                            insertionStyle = mutableListOf("comment")
+                        }
+                    }
+
+                    startIndex = text.indexOf(token.first, startIndex + 1)
+                }
+            }
+
+            wordCountProperty.set(this.countWordsWithoutComments())
+        }
+    }
+
+    private fun applyInsertionStyle(change: PlainTextChange) {
+        if (insertionStyle != null) {
+            val from = change.position
+            val length = change.inserted.length
+
+            val styles = getStyleAtPosition(from).toMutableList()
+
+            insertionStyle!!.forEach {
+                if (styles.contains(it)) {
+                    styles.remove(it)
+                } else {
+                    styles.add(it)
+                }
+            }
+
+            setStyle(from, from + length, styles)
+            insertionStyle = null
+        }
+    }
+
+    /** Counts the number of words in the text area. */
+    private fun countWords(): Int {
+        return text.splitWords().size
+    }
+
+    /** Counts the number of words in the text area, minus any comments. */
+    private fun countWordsWithoutComments(): Int {
+        return getTextWithoutComments().splitWords().size
+    }
+
+    private fun getTextWithoutComments(): String {
+        var index = 0
+        return getStyleSpans(0, text.lastIndex).fold("") { acc, styleSpan ->
+            if (styleSpan.style.contains("comment")) {
+                index += styleSpan.length
+                acc
+            } else {
+                acc + getText(index, index + styleSpan.length).also {
+                    index += styleSpan.length
+                }
+            }
+        }
+    }
+
+    private fun updateSelection(hit: Int) {
+        when (textSelectionMode) {
+            TextSelectionMode.Character -> moveTo(hit, NavigationActions.SelectionPolicy.ADJUST)
+            TextSelectionMode.Word -> selectWords(anchor, hit)
+            TextSelectionMode.Line -> selectLines(anchor, hit)
+            else -> return
+        }
+    }
 }
