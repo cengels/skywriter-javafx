@@ -19,19 +19,13 @@
     -line-spacing: 0.0;
 }
 
+
+/* document-wide rules */
+
 .paragraph-text .text,
 .menu-bar .text,
 .status-bar .text {
     -fx-fill: -text-fill;
-}
-
-.paragraph-text .text.comment {
-    -fx-fill: -text-fill-desaturated;
-}
-
-.separator .line {
-    -fx-border-color: -text-fill transparent transparent transparent;
-    -fx-border-insets: 0;
 }
 
 .styled-text-area .caret {
@@ -42,11 +36,27 @@
     -fx-fill: -document-fill-hover;
 }
 
-.h1, .h2, .h3, .h4, .h5, .h6 {
-    -fx-font-weight: bold;
+.styled-text-area * {
+    -fx-text-alignment: -text-alignment;
 }
 
-.h1 *, .h2 *, .h3 *, .h4 *, .h5 *, .h6 * {
+.paragraph-text {
+    -fx-line-spacing: -line-spacing;
+    -fx-padding: 0 0 20 0;
+}
+
+.caret {
+    -fx-stroke: -fill;
+}
+
+/* token-specific rules */
+
+.paragraph-text .text.comment {
+    -fx-fill: -text-fill-desaturated;
+}
+
+.styled-text-area .h1, .styled-text-area .h2, .styled-text-area .h3, .styled-text-area .h4, .styled-text-area .h5, .styled-text-area .h6 {
+    -fx-font-weight: bold;
     -fx-text-alignment: center;
 }
 
@@ -72,6 +82,13 @@
 
 .h6 {
     -fx-font-size: 1.1em;
+}
+
+/* gui rules */
+
+.separator .line {
+    -fx-border-color: -text-fill transparent transparent transparent;
+    -fx-border-insets: 0;
 }
 
 .menu-button:hover, .menu-item:hover {
@@ -100,19 +117,6 @@
 .context-menu * {
     -fx-fill: -text-fill;
     -fx-text-fill: -text-fill;
-}
-
-.styled-text-area * {
-    -fx-text-alignment: -text-alignment;
-}
-
-.paragraph-text {
-    -fx-line-spacing: -line-spacing;
-    -fx-padding: 0 0 20 0;
-}
-
-.caret {
-    -fx-stroke: -fill;
 }
 
 .scroll-bar, .track-background {
