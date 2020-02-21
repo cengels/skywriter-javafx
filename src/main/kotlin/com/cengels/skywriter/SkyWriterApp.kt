@@ -49,6 +49,6 @@ class SkyWriterApp : App(WriterView::class, GeneralStylesheet::class, Formatting
         super.start(stage)
 
         stage.scene.stylesheets.add(WriterView::class.java.getResource("dynamic.css").toExternalForm())
-        stage.icons.add(Image(this::class.java.getResourceAsStream("air-thin.png")))
+        stage.icons.add(Image(this::class.java.getResourceAsStream("air.png")))
     }
 }
