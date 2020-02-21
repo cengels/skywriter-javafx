@@ -17,7 +17,7 @@ class SmartReplacer(
 
     companion object {
         val DEFAULT_QUOTES_MAP = mutableMapOf('"' to ('“' to '”'), '\'' to ('‘' to '’'))
-        val DEFAULT_SYMBOL_MAP = mutableMapOf("---" to "—", "--" to "–", "#" to "*").toSortedMap(compareBy<String> { -it.length }.thenBy { it })
+        val DEFAULT_SYMBOL_MAP = mutableMapOf("---" to "—", "--" to "–").toSortedMap(compareBy<String> { -it.length }.thenBy { it })
         private val SYMBOLS_BEFORE_OPENING_QUOTE = arrayOf(' ', '-', '–', '—')
     }
 
