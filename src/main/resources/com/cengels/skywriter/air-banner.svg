@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   sodipodi:docname="air-logo.svg"
+   inkscape:version="1.0beta2 (67a1df9, 2020-02-20)"
+   id="svg8"
+   version="1.1"
+   viewBox="0 0 751.8825 227.05589"
+   height="227.05589mm"
+   width="751.88251mm"
+   inkscape:export-filename="E:\Projects\skywriter\src\main\resources\com\cengels\skywriter\air-large.png"
+   inkscape:export-xdpi="28.637882"
+   inkscape:export-ydpi="28.637882">
+  <defs
+     id="defs2">
+    <inkscape:path-effect
+       lpeversion="0"
+       miter_limit="50"
+       jointype="extrapolated"
+       smoothing="0.4"
+       end_offset="0.94911186"
+       attach_start="4.2049969"
+       stroke_width="23"
+       is_visible="true"
+       id="path-effect4536"
+       effect="taper_stroke" />
+  </defs>
+  <sodipodi:namedview
+     inkscape:document-rotation="0"
+     inkscape:window-maximized="1"
+     inkscape:window-y="-8"
+     inkscape:window-x="-8"
+     inkscape:window-height="1017"
+     inkscape:window-width="1920"
+     showgrid="false"
+     inkscape:current-layer="layer1"
+     inkscape:document-units="mm"
+     inkscape:cy="256.21699"
+     inkscape:cx="1660.3933"
+     inkscape:zoom="0.24748738"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     borderopacity="1.0"
+     bordercolor="#666666"
+     pagecolor="#ffffff"
+     id="base" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Layer 2"
+     transform="translate(6.0856094,8.7582932)">
+    <circle
+       cx="107.44234"
+       cy="104.76965"
+       r="113.52795"
+       style="fill:#584c8d;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:5.47382;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:markers fill stroke"
+       id="path843" />
+  </g>
+  <g
+     transform="translate(6.0856094,-78.241707)"
+     id="layer1"
+     inkscape:groupmode="layer"
+     inkscape:label="Layer 1">
+    <path
+       inkscape:original-d="m 79.771963,252.37523 c 14.989401,-2.83364 10.232561,-20.02844 1.209415,-24.58905 -5.165343,-2.61075 -10.288451,-3.34923 -16.80824,0.35627 -16.177887,8.99437 -12.147944,30.30465 -1.493109,39.76896 7.683432,6.82492 18.820322,12.10328 30.9034,9.48071 50.471491,-10.95459 -9.003584,-84.22322 11.508331,-132.87858 -5.386702,33.76436 14.39951,58.60155 28.40066,74.52354 27.76603,34.66188 9.11664,62.90816 -16.122,71.98579"
+       inkscape:path-effect="#path-effect4536"
+       sodipodi:nodetypes="cscssccc"
+       inkscape:connector-curvature="0"
+       id="path4534"
+       d="m 101.74715,259.21118 c -0.58189,1.44653 -1.58256,2.89736 -2.810472,3.88345 -1.548754,1.47734 -4.283487,2.49796 -7.688091,3.54008 -3.361047,1.01027 -7.435275,0.95 -11.386648,-0.0681 -3.775297,-0.97543 -7.556168,-2.95023 -11.06557,-5.54095 -4.054155,-2.80814 -7.066784,-8.08503 -7.933249,-13.48644 -0.390575,-2.71492 -0.27874,-5.4454 0.580416,-7.7623 0.855356,-2.63614 2.911979,-5.09637 5.376606,-6.9257 2.102918,-1.46811 4.164691,-2.5687 6.186752,-2.76368 1.892192,-0.31407 4.15357,0.20875 6.324931,0.96225 1.874769,0.57965 3.617353,2.02234 5.001235,3.63369 1.606515,1.94006 2.664266,4.07666 3.112986,6.20912 0,0 -10e-7,0 -10e-7,0 0.506443,2.46892 0.197951,4.73046 -0.765422,6.44875 -2.492601,4.74019 -6.90866,5.03385 -6.90866,5.03385 0,0 4.268157,0.98999 8.654349,-3.75844 1.647889,-1.86235 2.883588,-4.68221 2.890394,-8.05277 -3e-6,0 0,-1e-5 0,-1e-5 0.02598,-2.82838 -0.657966,-5.94144 -2.235901,-8.94002 -1.306153,-2.56338 -3.373991,-5.17895 -6.449866,-7.10144 -2.508348,-1.61217 -5.666294,-3.00453 -9.467481,-3.41868 -4.048617,-0.2995 -8.086262,0.5834 -11.637324,2.32978 -4.496006,2.0401 -8.747579,5.4892 -11.736756,10.42926 -2.511379,4.32554 -3.855162,9.27346 -3.923873,14.29924 -0.253203,9.40122 3.241506,19.21442 10.698184,26.63498 4.566608,4.58336 10.127946,8.42449 16.538096,11.02538 7.113626,2.86788 15.004722,3.74084 22.816486,2.32702 5.562459,-0.90448 11.372269,-3.07337 16.829919,-6.93768 4.72447,-3.55152 8.20122,-8.18823 10.30078,-13.32703 12.97417,-31.86358 -22.0339,-84.09755 -7.36039,-118.90392 l -21.953204,-6.27914 c -6.266956,39.28188 16.728504,67.56229 31.121094,83.92942 l -0.33943,-0.40434 c 1.23621,1.54322 2.35145,3.05218 3.35468,4.52487 3.58059,5.43907 7.44401,11.41693 9.20289,17.76523 1.44346,4.8563 1.85342,10.18031 0.83758,15.252 -1.49781,8.48924 -6.97837,15.68215 -11.81239,20.36767 -4.85539,4.70624 -8.72938,6.88626 -8.72938,6.88626 0,0 4.40661,-0.17615 11.27534,-2.8188 6.76497,-2.60273 16.18262,-8.04898 22.62967,-18.94951 3.87389,-6.83576 5.91161,-15.04325 5.42226,-23.57391 -0.71277,-10.87674 -4.70793,-20.56322 -9.81748,-27.87797 -1.35241,-1.98525 -2.8227,-3.97083 -4.41241,-5.95536 a 103.32993,103.32993 0 0 0 -0.17146,-0.21345 379.44026,379.44026 0 0 1 -0.16797,-0.19089 C 128.51866,195.96613 111.9417,174.57216 116.44814,146.32532 a 62.171174,62.171174 0 0 1 28.86156,-43.18487 60.703325,60.703325 0 0 0 -50.814764,36.90573 c -17.940555,42.55595 15.545644,98.79695 7.252214,119.165 z"
+       style="fill:#e7e0ff;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke markers fill" />
+    <text
+       id="text844"
+       y="219.20975"
+       x="274.45767"
+       style="font-style:normal;font-weight:normal;font-size:105.833px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#584c8d;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       xml:space="preserve"><tspan
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Nunito;-inkscape-font-specification:Nunito;fill:#584c8d;fill-opacity:1;stroke-width:0.264583"
+         y="219.20975"
+         x="274.45767"
+         id="tspan842"
+         sodipodi:role="line">Skywriter</tspan></text>
+  </g>
+</svg>

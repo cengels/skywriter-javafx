@@ -1,5 +1,10 @@
-# Skywriter
-A lightweight distraction-free writing software for writers built on top of TornadoFX (Java) that exports to Markdown for easy integration with version control.
+<p align="center">
+    <img alt="skywriter" src="https://github.com/cengels/skywriter/blob/master/src/main/resources/com/cengels/skywriter/air-banner.png">
+</p>
+
+<h4 align="center">
+    A distraction-free writer for writing books in Markdown
+</h4>
 
 ## Why Skywriter?
 
@@ -32,8 +37,8 @@ Skywriter is specifically designed for writers of manuscripts and supports a num
 - [x] Smart quotes ([#4](https://github.com/cengels/skywriter/issues/4))
 - [ ] Find and replace ([#5](https://github.com/cengels/skywriter/issues/5))
 - [ ] Spellcheck ([#7](https://github.com/cengels/skywriter/issues/7))
-- [ ] Tracker for words written per day ([#9](https://github.com/cengels/skywriter/issues/9))
-- [ ] Tracker for time written per day ([#10](https://github.com/cengels/skywriter/issues/10))
+- [x] Tracker for words written per day ([#9](https://github.com/cengels/skywriter/issues/9))
+- [x] Tracker for time written per day ([#10](https://github.com/cengels/skywriter/issues/10))
 
 ## Download
 
