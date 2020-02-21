@@ -49,6 +49,14 @@
     -fx-stroke: -fill;
 }
 
+.styled-text-area .paragraph-box:first-paragraph {
+    -fx-padding: 1000 0 20 0;
+}
+
+.styled-text-area .paragraph-box:last-paragraph {
+    -fx-padding: 0 0 1000 0;
+}
+
 /* token-specific rules */
 
 .paragraph-text .text.comment {
