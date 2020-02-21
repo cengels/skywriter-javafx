@@ -6,6 +6,7 @@ buildscript {
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'no.tornado:fxlauncher-gradle-plugin:1.0.20'
     }
 }
 
@@ -15,6 +16,7 @@ plugins {
 
 // apply the kotlin-gradle plugin
 apply plugin: "kotlin"
+apply plugin: 'no.tornado.fxlauncher'
 
 version '0.1'
 
@@ -43,4 +45,11 @@ compileKotlin {
 }
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
+}
+
+fxlauncher {
+    applicationVendor 'cengels'
+    applicationUrl 'file://E:/Projects/skywriter/build/fxlauncher'
+    applicationMainClass 'com.cengels.skywriter.SkyWriterApp'
+    acceptDowngrade false
 }
