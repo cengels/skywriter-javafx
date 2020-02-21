@@ -59,6 +59,7 @@ data class Theme (
         return "-font-size: ${fontSize}pt;\n" +
                "-font-family: $fontFamily;\n" +
                "-text-fill: ${ColorConverter.convert(fontColor).css};\n" +
+               "-text-fill-desaturated: ${ColorConverter.convert(fontColor).shiftBy(-0.25).css};\n" +
                "-window-fill: ${ColorConverter.convert(windowBackground).css};\n" +
                "-document-fill: ${ColorConverter.convert(documentBackground).css};\n" +
                "-document-fill-hover: ${ColorConverter.convert(documentBackground).brighter().css};\n" +

@@ -209,7 +209,6 @@ class WriterView : View("Skywriter") {
                     }
                     separator()
                     item("Select Word", "Ctrl+W").action { textArea.selectWord() }
-                    item("Select Sentence").isDisable = true
                     item("Select Paragraph", "Ctrl+Shift+W").action { textArea.selectParagraph() }
                     item("Select All", "Ctrl+A").action { textArea.selectAll() }
                 }
@@ -304,11 +303,11 @@ class WriterView : View("Skywriter") {
                     isPickOnBounds = false
                     alignment = Pos.CENTER_RIGHT
                     spacing = 9.0
-                    label(textArea.textProperty().stringBinding {
-                        "${it?.countWords() ?: 0} words"
+                    label(textArea.wordCountProperty.stringBinding {
+                        "${it ?: 0} words"
                     })
-                    label(textArea.textProperty().stringBinding {
-                        "${(it?.countWords() ?: 0) / 250} pages"
+                    label(textArea.wordCountProperty.stringBinding {
+                        "${(it?.toInt() ?: 0) / 250} pages"
                     })
                     label(textArea.textProperty().stringBinding {
                         "${textArea.paragraphs.size} paragraphs"

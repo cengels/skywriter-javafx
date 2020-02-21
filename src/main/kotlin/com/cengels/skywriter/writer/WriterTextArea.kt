@@ -1,21 +1,17 @@
 package com.cengels.skywriter.writer
 
 import com.cengels.skywriter.enum.Heading
+import com.cengels.skywriter.persistence.AppConfig
 import com.cengels.skywriter.style.FormattingStylesheet
 import com.cengels.skywriter.util.countWords
-import javafx.beans.property.Property
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
-import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.control.IndexRange
-import javafx.scene.input.MouseButton
 import org.fxmisc.richtext.StyleClassedTextArea
 import org.fxmisc.richtext.model.*
-import org.fxmisc.wellbehaved.event.EventPattern
-import org.fxmisc.wellbehaved.event.InputMap
-import org.fxmisc.wellbehaved.event.Nodes
 import tornadofx.getValue
-import tornadofx.setValue
+import tornadofx.runAsync
+import tornadofx.ui
 import java.util.*
 
 class WriterTextArea : StyleClassedTextArea() {
@@ -30,12 +26,21 @@ class WriterTextArea : StyleClassedTextArea() {
 
     init {
         this.plainTextChanges().subscribe { change ->
+            var updatingStyles: Boolean = false
             if (change.inserted.isNotEmpty()) {
                 midChange = true
+
                 applyInsertionStyle(change)
+
+                if (AppConfig.commentTokens.any { change.inserted.contains(it.first) || change.inserted.contains(if (it.second.isBlank()) "\\n" else it.second) }) {
+                    updatingStyles = true
+                    updateStyles()
+                }
             }
 
-            wordCountProperty.set(this.countWords())
+            if (!updatingStyles) {
+                wordCountProperty.set(this.countWords() - this.countCommentWords())
+            }
         }
 
         this.beingUpdatedProperty().addListener { observable, oldValue, newValue ->
@@ -60,16 +65,6 @@ class WriterTextArea : StyleClassedTextArea() {
         }
 
         smartReplacer.observe(this)
-
-        // Nodes.addInputMap(this,
-        //     InputMap.consume(
-        //         EventPattern.mouseClicked(MouseButton.SECONDARY),
-        //         { e ->
-        //     // show the area using the mouse event's screen x & y values
-        //     menu.show(area, e.getScreenX(), e.getScreenY());
-        // }
-        // )
-        // );
     }
 
     /** Queues the specified action until after the document has completed all its queued changes and is ready to accept new ones. */
@@ -84,6 +79,37 @@ class WriterTextArea : StyleClassedTextArea() {
     /** Gets the paragraph at the specified absolute character position. */
     fun getParagraphAt(characterPosition: Int): Paragraph<MutableCollection<String>, String, MutableCollection<String>> {
         return getParagraph(this.offsetToPosition(characterPosition, TwoDimensional.Bias.Backward).major)
+    }
+
+    /** Skims the text for any tokens that define a style range and applies the style. */
+    private fun updateStyles() {
+        runAsync { } ui {
+            clearStyle(0, text.lastIndex, "comment")
+            AppConfig.commentTokens.forEach { token ->
+                var startIndex = text.indexOf(token.first)
+
+                while (startIndex != -1) {
+                    var endIndex = text.indexOf(if (token.second.isBlank()) "\\n" else token.second, startIndex)
+                    val found = endIndex != -1
+
+                    if (endIndex == -1 && paragraphs.lastIndex == offsetToPosition(startIndex, TwoDimensional.Bias.Backward).major) {
+                        endIndex = text.lastIndex
+                    }
+
+                    if (endIndex != -1) {
+                        toggleStyleClass(startIndex, endIndex + 1, "comment")
+
+                        if (caretPosition == endIndex + 1 && found) {
+                            insertionStyle = mutableListOf("comment")
+                        }
+                    }
+
+                    startIndex = text.indexOf(token.first, startIndex + 1)
+                }
+            }
+
+            wordCountProperty.set(this.countWords() - this.countCommentWords())
+        }
     }
 
     private fun applyInsertionStyle(change: PlainTextChange) {
@@ -116,6 +142,18 @@ class WriterTextArea : StyleClassedTextArea() {
         return text.countWords()
     }
 
+    private fun countCommentWords(): Int {
+        var index = 0
+        return getStyleSpans(0, text.lastIndex).sumBy { styleSpan ->
+            if (styleSpan.style.contains("comment")) {
+                text.slice(index..index + styleSpan.length).countWords().also { index += styleSpan.length }
+            } else {
+                index += styleSpan.length
+                0
+            }
+        }
+    }
+
     /** Counts the number of selected words in the text area. */
     fun countSelectedWords(): Int {
         return selectedText.countWords()
@@ -128,21 +166,27 @@ class WriterTextArea : StyleClassedTextArea() {
     }
 
     fun toggleStyleClass(start: Int, end: Int, className: String) {
-        val styleSpans = this.getStyleSpans(start, end)
-
         if (this.isRangeStyled(start, end, className)) {
-            setStyleSpans(start, StyleSpansBuilder<MutableCollection<String>>().addAll(styleSpans.map {
-                styleSpan -> StyleSpan<MutableCollection<String>>(styleSpan.style.filter {
-                    style -> style != className
-                }.toMutableList(), styleSpan.length)
-            }).create())
+            clearStyle(start, end, className)
         } else {
-            setStyleSpans(start, StyleSpansBuilder<MutableCollection<String>>().addAll(styleSpans.map {
-                styleSpan -> StyleSpan<MutableCollection<String>>(styleSpan.style.filter {
-                    style -> style != className
-                }.plus(className).toMutableList(), styleSpan.length)
-            }).create())
+            addStyle(start, end, className)
         }
+    }
+
+    fun clearStyle(start: Int, end: Int, className: String) {
+        setStyleSpans(start, StyleSpansBuilder<MutableCollection<String>>().addAll(getStyleSpans(start, end).map { styleSpan ->
+            StyleSpan<MutableCollection<String>>(styleSpan.style.filter {
+                    style -> style != className
+            }.toMutableList(), styleSpan.length)
+        }).create())
+    }
+
+    fun addStyle(start: Int, end: Int, className: String) {
+        setStyleSpans(start, StyleSpansBuilder<MutableCollection<String>>().addAll(getStyleSpans(start, end).map { styleSpan ->
+            StyleSpan<MutableCollection<String>>(styleSpan.style.filter {
+                    style -> style != className
+            }.plus(className).toMutableList(), styleSpan.length)
+        }).create())
     }
 
     /** If text is selected, styles the selected text with the specified class. Otherwise, starts a new segment with the specified style class. */
@@ -178,17 +222,4 @@ class WriterTextArea : StyleClassedTextArea() {
     /** Gets the index range of selected paragraphs. If only one paragraph is selected, start and end will be the same. */
     fun getSelectedParagraphs(): IndexRange =
         IndexRange(this.caretSelectionBind.startParagraphIndex, this.caretSelectionBind.endParagraphIndex)
-
-    /** Selects the sentence around the caret. */
-    fun selectSentence() {
-        throw NotImplementedError()
-        val caretPosition = this.caretPosition
-        val paragraph = this.currentParagraph
-        val paragraphText = this.getParagraph(paragraph).text
-//        this.selectRange()
-    }
-
-    fun toMarkdown() {
-        println(this.document)
-    }
 }

@@ -1,5 +1,6 @@
 package com.cengels.skywriter.persistence
 
+import com.cengels.skywriter.util.surround
 import org.fxmisc.richtext.model.*
 import java.io.*
 import java.util.*
@@ -248,25 +249,6 @@ private fun unescape(string: String): String {
     }
 
     return result
-}
-
-fun String.surround(with: String): String = "$with$this$with"
-
-/** Splits the string at the specified exclusive positions. */
-fun String.split(vararg at: Int): Collection<String> {
-    if (at.isEmpty()) {
-        return mutableListOf(this)
-    }
-
-    val splitString: MutableCollection<String> = mutableListOf(this.slice(0 until at.first()))
-
-    if (at.size > 1) {
-        (0 until at.size - 1).mapTo(splitString) { this.slice(at[it]..at[it + 1]) }
-    }
-
-    splitString.add(this.slice(at.last() until this.length))
-
-    return splitString
 }
 
 /** Checks whether the character at the specified index is escaped. */
