@@ -50,7 +50,7 @@
 }
 
 .styled-text-area .paragraph-box:first-paragraph {
-    -fx-padding: 1000 0 20 0;
+    -fx-padding: 1000 0 0 0;
 }
 
 .styled-text-area .paragraph-box:last-paragraph {

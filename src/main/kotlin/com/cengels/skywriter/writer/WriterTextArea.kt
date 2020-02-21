@@ -15,9 +15,7 @@ import javafx.scene.input.KeyCode
 import org.fxmisc.richtext.NavigationActions
 import org.fxmisc.richtext.StyleClassedTextArea
 import org.fxmisc.richtext.model.*
-import tornadofx.getValue
-import tornadofx.runAsync
-import tornadofx.ui
+import tornadofx.*
 import java.util.*
 
 class WriterTextArea : StyleClassedTextArea() {
@@ -205,6 +203,16 @@ class WriterTextArea : StyleClassedTextArea() {
     /** Gets the index range of selected paragraphs. If only one paragraph is selected, start and end will be the same. */
     fun getSelectedParagraphs(): IndexRange =
         IndexRange(this.caretSelectionBind.startParagraphIndex, this.caretSelectionBind.endParagraphIndex)
+
+    /** Vertically centers the caret in the viewport. */
+    fun centerCaret() {
+        this.caretSelectionBind.underlyingCaret.boundsInLocal.let { bounds ->
+            val y = this.caretSelectionBind.underlyingCaret.localToScene(bounds.minX, bounds.minY).y
+            val center = (scene ?: FX.primaryStage.scene).height / 2
+            val difference = if (y > center) (y - center) else -(center - y)
+            scrollYBy(difference)
+        }
+    }
 
     /** Selects the specified range plus the words immediately surrounding the start and end points. */
     fun selectWords(anchorPosition: Int, caretPosition: Int) {

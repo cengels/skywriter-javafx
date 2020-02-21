@@ -113,8 +113,14 @@ class WriterView : View("Skywriter") {
             model.progressTracker?.commit()
             model.progressTracker?.dispose()
         }
+    }
 
-        textArea.requestFollowCaret()
+    override fun onBeforeShow() {
+        super.onBeforeShow()
+
+        runAsync { } ui {
+            textArea.centerCaret()
+        }
     }
 
     override val root = borderpane {
