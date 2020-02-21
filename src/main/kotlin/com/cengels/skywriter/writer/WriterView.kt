@@ -28,7 +28,7 @@ class WriterView : View("Skywriter") {
 
     val textArea = WriterTextArea().also {
         it.richChanges().subscribe { change ->
-            if (isDocked) {
+            if (it.initialized) {
                 model.dirty = true
             }
         }
@@ -37,19 +37,6 @@ class WriterView : View("Skywriter") {
             model.updateProgress(it.wordCount)
         }
 
-        it.setOnKeyReleased { event ->
-            when (event.code) {
-                KeyCode.END -> it.moveTo(it.text.lastIndex)
-                KeyCode.HOME -> it.moveTo(0)
-                else -> return@setOnKeyReleased
-            }
-        }
-
-        it.caretPositionProperty().addListener { _, _, _ ->
-            it.requestFollowCaret()
-        }
-
-        it.isWrapText = true
         it.useMaxHeight = true
         it.paddingHorizontalProperty.bind(ThemesManager.selectedThemeProperty.doubleBinding { it!!.paddingHorizontal.toDouble() })
         it.paddingVerticalProperty.bind(ThemesManager.selectedThemeProperty.doubleBinding { it!!.paddingVertical.toDouble() })
@@ -98,10 +85,14 @@ class WriterView : View("Skywriter") {
     }
 
     init {
-        if (AppConfig.lastOpenFile != null) {
-            File(AppConfig.lastOpenFile!!).apply {
+        AppConfig.lastOpenFile?.let { lastOpenFile ->
+            File(lastOpenFile).apply {
                 if (this.exists()) {
                     open(this)
+
+                    AppConfig.lastCaretPosition?.let { lastCaretPosition ->
+                        textArea.moveTo(lastCaretPosition)
+                    }
                 }
             }
         }
@@ -115,12 +106,15 @@ class WriterView : View("Skywriter") {
 
             if (!it.isConsumed && model.file != null) {
                 AppConfig.lastOpenFile = model.file!!.absolutePath
+                AppConfig.lastCaretPosition = textArea.caretPosition
                 AppConfig.save()
             }
 
             model.progressTracker?.commit()
             model.progressTracker?.dispose()
         }
+
+        textArea.requestFollowCaret()
     }
 
     override val root = borderpane {

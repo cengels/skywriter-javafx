@@ -10,11 +10,11 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.concurrent.Task
 import javafx.scene.control.IndexRange
+import javafx.scene.input.KeyCode
 import org.fxmisc.richtext.NavigationActions
 import org.fxmisc.richtext.StyleClassedTextArea
 import org.fxmisc.richtext.model.*
 import tornadofx.getValue
-import tornadofx.onChange
 import tornadofx.runAsync
 import tornadofx.ui
 import java.util.*
@@ -26,11 +26,20 @@ class WriterTextArea : StyleClassedTextArea() {
     val wordCount by wordCountProperty
     val readyProperty = SimpleBooleanProperty(false)
     val ready by readyProperty
+    var onInitialized: ((textArea: WriterTextArea) -> Unit)? = null
+    var initialized: Boolean = false
+        private set
     private var midChange: Boolean = false
     private val queue: Queue<() -> Unit> = LinkedList<() -> Unit>()
     private var textSelectionMode: TextSelectionMode = TextSelectionMode.None
 
     init {
+        this.isWrapText = true
+
+        this.caretPositionProperty().addListener { _, _, _ ->
+            this.requestFollowCaret()
+        }
+
         this.plainTextChanges().subscribe { change ->
             var updatingStyles = false
             if (change.inserted.isNotEmpty()) {
@@ -67,6 +76,14 @@ class WriterTextArea : StyleClassedTextArea() {
                     val queuedElement = this.queue.poll()
                     queuedElement?.invoke()
                 } while (queuedElement != null)
+            }
+        }
+
+        this.setOnKeyReleased { event ->
+            when (event.code) {
+                KeyCode.END -> this.moveTo(this.text.lastIndex)
+                KeyCode.HOME -> this.moveTo(0)
+                else -> return@setOnKeyReleased
             }
         }
 
@@ -241,6 +258,8 @@ class WriterTextArea : StyleClassedTextArea() {
             }
 
             wordCountProperty.set(this.countWordsWithoutComments())
+            initialized = true
+            onInitialized?.invoke(this)
         }
     }
 

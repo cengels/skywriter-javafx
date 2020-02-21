@@ -18,6 +18,7 @@ object AppConfig {
     var windowX by DoubleConfigProperty()
     var windowY by DoubleConfigProperty()
     var lastOpenFile by StringConfigProperty()
+    var lastCaretPosition by IntConfigProperty()
     var activeTheme by StringConfigProperty()
     var progressResetTime by TimeConfigProperty(LocalTime.of(6, 0))
     var progressTimeout by DurationConfigProperty(Duration.ofMinutes(5))
@@ -78,6 +79,12 @@ object AppConfig {
     class DoubleConfigProperty(private val default: Double? = null) : ConfigProperty<Double?>() {
         override operator fun getValue(thisRef: AppConfig, property: KProperty<*>): Double? {
             return config.double(property.name) ?: default
+        }
+    }
+
+    class IntConfigProperty(private val default: Int? = null) : ConfigProperty<Int?>() {
+        override operator fun getValue(thisRef: AppConfig, property: KProperty<*>): Int? {
+            return config.int(property.name) ?: default
         }
     }
 
