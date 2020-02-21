@@ -2,9 +2,11 @@
     <img alt="skywriter" src="https://github.com/cengels/skywriter/blob/master/src/main/resources/com/cengels/skywriter/air-banner.png">
 </p>
 
-<h4 align="center">
+<h3 align="center">
     A distraction-free writer for writing books in Markdown
-</h4>
+</h3>
+
+<br />
 
 ## Why Skywriter?
 
