@@ -26,17 +26,21 @@ class WriterTextArea : StyleClassedTextArea() {
 
     init {
         this.plainTextChanges().subscribe { change ->
+            var updatingStyles: Boolean = false
             if (change.inserted.isNotEmpty()) {
                 midChange = true
 
                 applyInsertionStyle(change)
 
                 if (AppConfig.commentTokens.any { change.inserted.contains(it.first) || change.inserted.contains(if (it.second.isBlank()) "\\n" else it.second) }) {
+                    updatingStyles = true
                     updateStyles()
                 }
             }
 
-            wordCountProperty.set(this.countWords())
+            if (!updatingStyles) {
+                wordCountProperty.set(this.countWords() - this.countCommentWords())
+            }
         }
 
         this.beingUpdatedProperty().addListener { observable, oldValue, newValue ->
@@ -103,6 +107,8 @@ class WriterTextArea : StyleClassedTextArea() {
                     startIndex = text.indexOf(token.first, startIndex + 1)
                 }
             }
+
+            wordCountProperty.set(this.countWords() - this.countCommentWords())
         }
     }
 
@@ -134,6 +140,18 @@ class WriterTextArea : StyleClassedTextArea() {
     /** Counts the number of words in the text area. */
     private fun countWords(): Int {
         return text.countWords()
+    }
+
+    private fun countCommentWords(): Int {
+        var index = 0
+        return getStyleSpans(0, text.lastIndex).sumBy { styleSpan ->
+            if (styleSpan.style.contains("comment")) {
+                text.slice(index..index + styleSpan.length).countWords().also { index += styleSpan.length }
+            } else {
+                index += styleSpan.length
+                0
+            }
+        }
     }
 
     /** Counts the number of selected words in the text area. */
