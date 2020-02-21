@@ -4,6 +4,7 @@ import com.cengels.skywriter.persistence.AppConfig
 import com.cengels.skywriter.style.*
 import com.cengels.skywriter.theming.ThemesManager
 import com.cengels.skywriter.writer.WriterView
+import javafx.scene.image.Image
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCodeCombination
 import javafx.scene.input.KeyCombination
@@ -48,5 +49,6 @@ class SkyWriterApp : App(WriterView::class, GeneralStylesheet::class, Formatting
         super.start(stage)
 
         stage.scene.stylesheets.add(WriterView::class.java.getResource("dynamic.css").toExternalForm())
+        stage.icons.add(Image(this::class.java.getResourceAsStream("air-thin.png")))
     }
 }
