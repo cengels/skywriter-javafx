@@ -4,6 +4,7 @@ import com.cengels.skywriter.enum.Heading
 import com.cengels.skywriter.enum.TextSelectionMode
 import com.cengels.skywriter.persistence.AppConfig
 import com.cengels.skywriter.style.FormattingStylesheet
+import com.cengels.skywriter.util.countWords
 import com.cengels.skywriter.util.findWordBoundaries
 import com.cengels.skywriter.util.splitWords
 import javafx.beans.property.SimpleBooleanProperty
@@ -138,7 +139,7 @@ class WriterTextArea : StyleClassedTextArea() {
 
     /** Counts the number of selected words in the text area. */
     fun countSelectedWords(): Int {
-        return selectedText.splitWords().size
+        return selectedText.countWords()
     }
 
     fun isRangeStyled(start: Int, end: Int, className: String): Boolean {
@@ -209,8 +210,6 @@ class WriterTextArea : StyleClassedTextArea() {
     fun selectWords(anchorPosition: Int, caretPosition: Int) {
         val anchorWord = text.findWordBoundaries(anchorPosition)
         val caretWord = text.findWordBoundaries(caretPosition)
-
-        println("anchor at $anchorPosition finds $anchorWord AND caret at $caretPosition finds $caretWord")
 
         if (caretPosition > anchorPosition || anchorWord == caretWord) {
             selectRange(anchorWord.first, caretWord.last)
@@ -285,12 +284,12 @@ class WriterTextArea : StyleClassedTextArea() {
 
     /** Counts the number of words in the text area. */
     private fun countWords(): Int {
-        return text.splitWords().size
+        return text.countWords()
     }
 
     /** Counts the number of words in the text area, minus any comments. */
     private fun countWordsWithoutComments(): Int {
-        return getTextWithoutComments().splitWords().size
+        return getTextWithoutComments().countWords()
     }
 
     private fun getTextWithoutComments(): String {

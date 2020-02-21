@@ -310,8 +310,8 @@ class WriterView : View("Skywriter") {
                     isPickOnBounds = false
                     alignment = Pos.CENTER_RIGHT
                     spacing = 9.0
-                    label(textArea.wordCountProperty.stringBinding {
-                        "${it ?: 0} words"
+                    label(textArea.wordCountProperty.stringBinding(textArea.selectionProperty()) {
+                        "${it ?: 0} words" + if (textArea.selection.length > 0) " (${textArea.countSelectedWords()} selected)" else ""
                     })
                     label(textArea.wordCountProperty.stringBinding {
                         "${((it?.toInt() ?: 0) / 250) + 1} pages"

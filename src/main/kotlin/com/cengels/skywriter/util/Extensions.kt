@@ -9,6 +9,10 @@ fun String.splitWords(): List<String> {
     return this.split(WORD_REGEX)
 }
 
+fun String.countWords(): Int {
+    return this.splitWords().size - 1
+}
+
 fun String.surround(with: String): String = "$with$this$with"
 
 /** Splits the string at the specified exclusive positions. */
@@ -34,5 +38,5 @@ fun String.findWordBoundaries(at: Int): IntRange {
     val first = splitString.first().indexOfLast { c -> c == ' ' || c == '\n' || c == '\r' }
     val second = splitString.last().indexOfFirst { c -> c == ' ' || c == '\n' || c == '\r' }
 
-    return max(first + 1, 0)..if (second == -1) this.length - 1 else second + at
+    return max(first + 1, 0)..if (second == -1) this.length else second + at
 }
