@@ -346,6 +346,7 @@ class WriterView : View("Skywriter") {
     private fun open(file: File) {
         model.file = file
         model.load(textArea.document, textArea.segOps).also {
+            model.progressTracker = null
             textArea.replace(it)
             textArea.wordCountProperty.onChangeOnce { number ->
                 model.newProgressTracker(number!!.toInt(), file)

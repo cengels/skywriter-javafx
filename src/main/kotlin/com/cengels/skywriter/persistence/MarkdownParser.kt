@@ -76,7 +76,7 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
 
         val PARAGRAPH_CODEC = object: PlainTextCodec<MutableCollection<String>, String> {
             override fun encode(writer: BufferedWriter, element: MutableCollection<String>) {
-                val hashCount: Int? = element.find { it.matches(Regex("h\\d")) }?.last()?.toInt()
+                val hashCount: Int? = Character.getNumericValue(element.find { it.matches(Regex("h\\d")) }?.last() ?: '0')
 
                 if (hashCount != null) {
                     writer.append("#".repeat(hashCount))

@@ -9,12 +9,6 @@ import tornadofx.*
 
 class FormattingStylesheet : Stylesheet() {
     companion object {
-        val h1 by cssclass()
-        val h2 by cssclass()
-        val h3 by cssclass()
-        val h4 by cssclass()
-        val h5 by cssclass()
-        val h6 by cssclass()
         val bold by cssclass()
         val italic by cssclass()
         val strikethrough by cssclass()
@@ -31,42 +25,6 @@ class FormattingStylesheet : Stylesheet() {
     }
 
     init {
-        h1 {
-            fontSize = 22.pt
-            fontWeight = FontWeight.BOLD
-            textAlignment = TextAlignment.CENTER
-        }
-
-        h2 {
-            fontSize = 20.pt
-            fontWeight = FontWeight.BOLD
-            textAlignment = TextAlignment.CENTER
-        }
-
-        h3 {
-            fontSize = 18.pt
-            fontWeight = FontWeight.BOLD
-            textAlignment = TextAlignment.CENTER
-        }
-
-        h4 {
-            fontSize = 16.pt
-            fontWeight = FontWeight.BOLD
-            textAlignment = TextAlignment.CENTER
-        }
-
-        h5 {
-            fontSize = 14.pt
-            fontWeight = FontWeight.BOLD
-            textAlignment = TextAlignment.CENTER
-        }
-
-        h6 {
-            fontSize = 12.pt
-            fontWeight = FontWeight.BOLD
-            textAlignment = TextAlignment.CENTER
-        }
-
         bold {
             fontWeight = FontWeight.BOLD
         }

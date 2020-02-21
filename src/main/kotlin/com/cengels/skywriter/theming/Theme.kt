@@ -56,8 +56,7 @@ data class Theme (
 
     /** Creates a number of CSS variables that can be appended to a stylesheet and used freely. */
     fun toStylesheet(): String {
-        return "-font-size: ${fontSize}pt;\n" +
-               "-font-family: $fontFamily;\n" +
+        return "-font-family: $fontFamily;\n" +
                "-text-fill: ${ColorConverter.convert(fontColor).css};\n" +
                "-text-fill-desaturated: ${ColorConverter.convert(fontColor).shiftBy(-0.25).css};\n" +
                "-window-fill: ${ColorConverter.convert(windowBackground).css};\n" +

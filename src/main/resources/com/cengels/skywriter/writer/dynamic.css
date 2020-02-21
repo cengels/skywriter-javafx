@@ -1,7 +1,6 @@
 /* Contains selectors and rules with dynamically computed values. */
 
 .root {
-    -font-size: 12pt;
     -font-family: Times New Roman;
     -text-fill: black;
     -text-fill-desaturated: #383838;
@@ -41,6 +40,38 @@
 
 .selection {
     -fx-fill: -document-fill-hover;
+}
+
+.h1, .h2, .h3, .h4, .h5, .h6 {
+    -fx-font-weight: bold;
+}
+
+.h1 *, .h2 *, .h3 *, .h4 *, .h5 *, .h6 * {
+    -fx-text-alignment: center;
+}
+
+.h1 {
+    -fx-font-size: 1.6em;
+}
+
+.h2 {
+    -fx-font-size: 1.5em;
+}
+
+.h3 {
+    -fx-font-size: 1.4em;
+}
+
+.h4 {
+    -fx-font-size: 1.3em;
+}
+
+.h5 {
+    -fx-font-size: 1.2em;
+}
+
+.h6 {
+    -fx-font-size: 1.1em;
 }
 
 .menu-button:hover, .menu-item:hover {
