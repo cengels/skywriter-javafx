@@ -356,8 +356,9 @@ class WriterView : View("Skywriter") {
         model.load(textArea.document, textArea.segOps).also {
             model.progressTracker = null
             textArea.replace(it)
-            textArea.wordCountProperty.onChangeOnce { number ->
-                model.newProgressTracker(number!!.toInt(), file)
+            runAsync {} ui {
+                model.newProgressTracker(textArea.wordCount, file)
+                model.dirty = false
             }
         }
         textArea.undoManager.forgetHistory()
