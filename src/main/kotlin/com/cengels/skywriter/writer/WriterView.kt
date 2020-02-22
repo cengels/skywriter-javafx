@@ -91,7 +91,9 @@ class WriterView : View("Skywriter") {
                     open(this)
 
                     AppConfig.lastCaretPosition?.let { lastCaretPosition ->
-                        textArea.moveTo(lastCaretPosition)
+                        if (lastCaretPosition < textArea.text.length) {
+                            textArea.moveTo(lastCaretPosition)
+                        }
                     }
                 }
             }

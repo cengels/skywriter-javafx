@@ -12,6 +12,7 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.concurrent.Task
 import javafx.scene.control.IndexRange
 import javafx.scene.input.KeyCode
+import javafx.scene.layout.VBox
 import org.fxmisc.richtext.NavigationActions
 import org.fxmisc.richtext.StyleClassedTextArea
 import org.fxmisc.richtext.model.*
@@ -109,6 +110,11 @@ class WriterTextArea : StyleClassedTextArea() {
         this.setOnNewSelectionDragFinished { /* overridden so the selection doesn't change on mouse release */ }
 
         smartReplacer.observe(this)
+
+        runAsync {} ui {
+            initialized = true
+            onInitialized?.invoke(this)
+        }
     }
 
     /** Queues the specified action until after the document has completed all its queued changes and is ready to accept new ones. */
@@ -206,11 +212,16 @@ class WriterTextArea : StyleClassedTextArea() {
 
     /** Vertically centers the caret in the viewport. */
     fun centerCaret() {
-        this.caretSelectionBind.underlyingCaret.boundsInLocal.let { bounds ->
-            val y = this.caretSelectionBind.underlyingCaret.localToScene(bounds.minX, bounds.minY).y
-            val center = (scene ?: FX.primaryStage.scene).height / 2
-            val difference = if (y > center) (y - center) else -(center - y)
-            scrollYBy(difference)
+        this.showParagraphAtBottom(currentParagraph)
+        // Async because otherwise the visible paragraphs will not have been updated yet.
+        runAsync {} ui {
+            this.caretSelectionBind.underlyingCaret.let { caret ->
+                val sceneCaretBounds = caret.localToScene(caret.boundsInLocal)
+                val center = (scene ?: FX.primaryStage.scene).height / 2
+                val caretCenter = sceneCaretBounds.minY + sceneCaretBounds.height / 2
+                val offset = center - caretCenter
+                scrollYBy(-offset)
+            }
         }
     }
 
@@ -265,8 +276,6 @@ class WriterTextArea : StyleClassedTextArea() {
             }
 
             wordCountProperty.set(this.countWordsWithoutComments())
-            initialized = true
-            onInitialized?.invoke(this)
         }
     }
 
