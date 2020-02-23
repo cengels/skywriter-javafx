@@ -113,8 +113,7 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
         scheduleAutosave()
 
         return _progress.lastOrNull().let {
-            // if (it?.file == file?.name && it?.endDate?.isAfter(LocalDateTime.now().minusSeconds(AppConfig.progressTimeout.seconds)) == true) {
-            if (it?.file == file?.name && it?.endDate?.isAfter(LocalDateTime.now().minusSeconds(10)) == true) {
+            if (it?.file == file?.name && it?.endDate?.isAfter(LocalDateTime.now().minusSeconds(AppConfig.progressTimeout.seconds)) == true) {
                 it.endDate = null
                 totalWords -= it.words
                 return@let it
@@ -152,8 +151,7 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
     /** Schedules for the current progress item to be committed if more than [AppConfig.progressTimeout] passes without input. */
     fun scheduleReset() {
         scheduledReset?.cancel(true)
-        // scheduledReset = scheduler.schedule({ current?.let { commit() }}, AppConfig.progressTimeout.toMillis(), TimeUnit.MILLISECONDS)
-        scheduledReset = scheduler.schedule({ current?.let { commit() }}, 10, TimeUnit.SECONDS)
+        scheduledReset = scheduler.schedule({ current?.let { commit() }}, AppConfig.progressTimeout.toMillis(), TimeUnit.MILLISECONDS)
     }
 
     private fun scheduleAutosave() {
