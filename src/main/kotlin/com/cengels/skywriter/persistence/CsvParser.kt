@@ -91,7 +91,7 @@ class CsvParser<T : Any>(private val klass: KClass<T>, val file: File? = null) {
 
     /** Appends the items to the end of the specified file or rewrites the whole file if any items match the ones that have previously been loaded (it is assumed that they have changed and must be rewritten). For performance reasons, prefer to use this method over [appendToFile] or [writeToFile]. */
     fun commitToFile(objects: Collection<T>) {
-        if (objects.any { cachedElements.contains(it) }) {
+        if (objects.any { obj -> cachedElements.any { obj === it } }) {
             writeToFile(mergeCached(objects), false)
         } else {
             writeToFile(objects, true)
@@ -100,7 +100,8 @@ class CsvParser<T : Any>(private val klass: KClass<T>, val file: File? = null) {
 
     /** Serializes an object and either updates or appends it to the specified file, depending on whether it already existed. */
     fun commitToFile(obj: T) {
-        if (cachedElements.contains(obj)) {
+        // contains fails here, most likely because the hash was mutated after the item was first stored
+        if (cachedElements.any { it === obj }) {
             writeToFile(mergeCached(listOf(obj)), false)
         } else {
             writeToFile(listOf(obj), true)

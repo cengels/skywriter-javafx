@@ -9,6 +9,7 @@ import com.cengels.skywriter.util.findWordBoundaries
 import com.cengels.skywriter.util.splitWords
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
+import javafx.beans.property.SimpleObjectProperty
 import javafx.concurrent.Task
 import javafx.scene.control.IndexRange
 import javafx.scene.input.KeyCode
@@ -17,6 +18,7 @@ import org.fxmisc.richtext.NavigationActions
 import org.fxmisc.richtext.StyleClassedTextArea
 import org.fxmisc.richtext.model.*
 import tornadofx.*
+import java.time.LocalDateTime
 import java.util.*
 
 class WriterTextArea : StyleClassedTextArea() {

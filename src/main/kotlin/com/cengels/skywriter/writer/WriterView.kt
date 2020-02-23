@@ -14,6 +14,7 @@ import javafx.stage.WindowEvent
 import org.fxmisc.flowless.VirtualizedScrollPane
 import tornadofx.*
 import java.io.File
+import java.time.LocalDateTime
 
 class WriterView : View("Skywriter") {
     val model = WriterViewModel()
@@ -31,6 +32,9 @@ class WriterView : View("Skywriter") {
             if (it.initialized) {
                 model.dirty = true
             }
+
+            model.progressTracker?.lastChange = LocalDateTime.now()
+            model.progressTracker?.scheduleReset()
         }
 
         it.wordCountProperty.addListener { observable, oldValue, newValue ->

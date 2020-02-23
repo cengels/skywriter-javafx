@@ -10,9 +10,10 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.util.*
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 import kotlin.concurrent.schedule
-
-private const val FIVE_MINUTES_IN_MS: Long = 300000
 
 /** Supplies methods used to manage [ProgressItem]s. */
 class ProgressTracker(private var totalWords: Int, private var file: File? = null) : Disposable {
@@ -20,8 +21,9 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
         get() = File("${SkyWriterApp.userDirectory}progress.csv")
     private val csvParser = CsvParser(ProgressItem::class, csvFile)
     private val _progress: MutableList<ProgressItem> = mutableListOf()
-    private var scheduledReset: TimerTask? = null
-    private var scheduledAutosave: TimerTask? = null
+    private val scheduler = Executors.newScheduledThreadPool(3)
+    private var scheduledReset: ScheduledFuture<*>? = null
+    private var scheduledAutosave: ScheduledFuture<*>? = null
 
     /** All past progress items. */
     val progress: Collection<ProgressItem>
@@ -37,6 +39,7 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
                 it.startDate.isAfter(AppConfig.progressResetTime.atDate(LocalDate.now()))
             }
         }
+    var lastChange = LocalDateTime.MIN
     /** Gets the current progress item. If the user hasn't typed in a while, [current] will be null. */
     var current: ProgressItem? = null
         private set
@@ -49,11 +52,8 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
             throw IllegalStateException("Before starting a new progress item, current must be reset to null.")
         }
 
-        scheduledReset?.cancel()
-
         return getNewOrLast().also {
             current = it
-            scheduleReset()
         }
     }
 
@@ -62,23 +62,20 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
         if (newTotalWords == totalWords && current == null)
             return
 
-        scheduledReset?.cancel()
         val item = current ?: startNew()
 
         item.words = (newTotalWords - correction) - totalWords
 
         current = item
-        scheduleReset()
     }
 
     /** Explicitly "untracks" the specified number of words, excluding them from the [current]'s word count. */
     fun correct(correction: Int) {
-        scheduledReset?.cancel()
         val item = current ?: startNew()
 
         this.correction += correction
         item.words -= correction
-        scheduleReset()
+        lastChange = LocalDateTime.now()
     }
 
     /** Manually sets the word count of [current]. */
@@ -88,7 +85,7 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
 
     /** Sets [current].endDate to now and saves [current] to the file system and resets it. */
     fun commit() {
-        scheduledReset?.cancel()
+        scheduledReset?.cancel(true)
         val item = current ?: return
         val finalizedItem = finalize(item) ?: return
 
@@ -111,17 +108,13 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
         _progress.addAll(csvParser.readFromFile())
     }
 
-    override fun dispose() {
-        scheduledReset?.cancel()
-        scheduledReset = null
-    }
-
     /** If the last progress item has not been ended longer than [AppConfig.progressTimeout] ago, gets it. Otherwise creates a new one and adds it to [progress]. */
     private fun getNewOrLast(): ProgressItem {
         scheduleAutosave()
 
         return _progress.lastOrNull().let {
-            if (it?.file == file?.name && it?.endDate?.isAfter(LocalDateTime.now().minusSeconds(AppConfig.progressTimeout.seconds)) == true) {
+            // if (it?.file == file?.name && it?.endDate?.isAfter(LocalDateTime.now().minusSeconds(AppConfig.progressTimeout.seconds)) == true) {
+            if (it?.file == file?.name && it?.endDate?.isAfter(LocalDateTime.now().minusSeconds(10)) == true) {
                 it.endDate = null
                 totalWords -= it.words
                 return@let it
@@ -148,7 +141,7 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
             return null
         }
 
-        item.endDate = LocalDateTime.now()
+        item.endDate = lastChange
 
         totalWords += item.words + correction
         correction = 0
@@ -157,17 +150,23 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
     }
 
     /** Schedules for the current progress item to be committed if more than [AppConfig.progressTimeout] passes without input. */
-    private fun scheduleReset() {
-        scheduledReset?.cancel()
-        scheduledReset = Timer("scheduledReset", true).schedule(AppConfig.progressTimeout.toMillis()) {
-            current?.let { commit() }
-        }
+    fun scheduleReset() {
+        scheduledReset?.cancel(true)
+        // scheduledReset = scheduler.schedule({ current?.let { commit() }}, AppConfig.progressTimeout.toMillis(), TimeUnit.MILLISECONDS)
+        scheduledReset = scheduler.schedule({ current?.let { commit() }}, 10, TimeUnit.SECONDS)
     }
 
     private fun scheduleAutosave() {
-        scheduledAutosave?.cancel()
-        scheduledAutosave = Timer("scheduledAutosave", true).schedule(FIVE_MINUTES_IN_MS) {
-            current?.let { autosave() }
-        }
+        scheduledAutosave?.cancel(true)
+        scheduledAutosave = scheduler.schedule({ current?.let { autosave() }}, 5, TimeUnit.MINUTES)
+    }
+
+    override fun dispose() {
+        scheduledReset?.cancel(true)
+        scheduledReset = null
+        scheduledAutosave?.cancel(true)
+        scheduledAutosave = null
+
+        scheduler.shutdownNow()
     }
 }
