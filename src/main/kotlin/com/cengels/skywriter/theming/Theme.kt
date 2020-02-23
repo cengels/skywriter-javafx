@@ -48,7 +48,17 @@ data class Theme (
     /** The background color of the text area. */
     var documentBackground: Color = Color.WHITE,
     /** The text alignment of normal text in the document. */
-    var textAlignment: TextAlignment = TextAlignment.LEFT
+    var textAlignment: TextAlignment = TextAlignment.LEFT,
+    /** The color of the font shadow, if applicable. */
+    var fontShadowColor: Color = Color.BLACK,
+    /** The radius of the font shadow (a value between 0.0 and 127.0). */
+    var fontShadowRadius: Double = 2.0,
+    /** The spread of the font shadow, i.e. the portion of the radius where the contribution of the source material is 100%. Value between 0.0 and 1.0. */
+    var fontShadowSpread: Double = 0.0,
+    /** The horizontal offset of the shadow. */
+    var fontShadowOffsetX: Double = 0.0,
+    /** The vertical offset of the shadow. */
+    var fontShadowOffsetY: Double = 0.0
 ) : Cloneable, Serializable {
     public override fun clone(): Theme {
         return this.copy(default = false)
@@ -59,6 +69,7 @@ data class Theme (
         return "-font-family: $fontFamily;\n" +
                "-text-fill: ${ColorConverter.convert(fontColor).css};\n" +
                "-text-fill-desaturated: ${ColorConverter.convert(fontColor).shiftBy(-0.25).css};\n" +
+               "-font-shadow: dropshadow(gaussian, ${ColorConverter.convert(fontShadowColor).css}, $fontShadowRadius, $fontShadowSpread, $fontShadowOffsetX, $fontShadowOffsetY);\n" +
                "-window-fill: ${ColorConverter.convert(windowBackground).css};\n" +
                "-document-fill: ${ColorConverter.convert(documentBackground).css};\n" +
                "-document-fill-hover: ${ColorConverter.convert(documentBackground).brighter().css};\n" +

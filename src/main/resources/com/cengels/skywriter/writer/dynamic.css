@@ -17,6 +17,7 @@
     -paragraph-spacing: 50;
     -first-line-indent: 0;
     -line-spacing: 0.0;
+    -font-shadow: dropshadow(gaussian, -font-shadow-color, 10, 0, 0, 0);
 }
 
 
@@ -38,6 +39,11 @@
 
 .styled-text-area * {
     -fx-text-alignment: -text-alignment;
+    -fx-font-smoothing-type: gray;
+}
+
+.styled-text-area .text {
+    -fx-effect: -font-shadow;
 }
 
 .paragraph-text {

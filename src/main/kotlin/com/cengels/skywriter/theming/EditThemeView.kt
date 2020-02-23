@@ -11,6 +11,8 @@ import javafx.scene.control.ButtonBar
 import javafx.scene.control.ListCell
 import javafx.scene.control.OverrunStyle
 import javafx.scene.control.ScrollPane
+import javafx.scene.effect.BlurType
+import javafx.scene.effect.DropShadow
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.shape.SVGPath
@@ -169,6 +171,41 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                             pixelfield(model.paddingVerticalProperty as Property<Number>)
                         }
                     }
+
+                    fieldset("Font shadow") {
+                        field("Color") {
+                            (inputContainer as HBox).alignment = Pos.CENTER_LEFT
+                            colorpicker(model.fontShadowColorProperty, ColorPickerMode.Button) {
+                                useMaxWidth = true
+                            }
+                            button(graphic = SVGPath().apply { content = "M 18 6 L 6 18 M 6 6 L 18 18"; stroke = Color.BLACK; strokeWidth = 2.0 }) {
+                                disableWhen { model.fontShadowColorProperty.isEqualTo(Color.TRANSPARENT) }
+                                action {
+                                    model.fontShadowColor = Color.TRANSPARENT
+                                }
+                            }
+                        }
+                        field {
+                            label("Radius").minWidth = 50.0
+                            pixelfield(model.fontShadowRadiusProperty as Property<Number>) {
+                                validator {
+                                    if (it == null || !it.isDouble() || it.toDouble() > 127.0) {
+                                        error("Value must be between 0 and 127.");
+                                    }
+
+                                    success()
+                                }
+                            }
+                            label("Spread").minWidth = 50.0
+                            percentfield(model.fontShadowSpreadProperty)
+                        }
+                        field {
+                            label("Offset X").minWidth = 50.0
+                            pixelfield(model.fontShadowOffsetXProperty as Property<Number>)
+                            label("Offset Y").minWidth = 50.0
+                            pixelfield(model.fontShadowOffsetYProperty as Property<Number>)
+                        }
+                    }
                 }
             }
         }
@@ -214,6 +251,9 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                             textFillProperty().bind(model.fontColorProperty)
                             textAlignmentProperty().bind(model.textAlignmentProperty)
                             lineSpacingProperty().bind(model.lineHeightProperty)
+                            effectProperty().bind(model.fontShadowColorProperty.objectBinding(model.fontShadowRadiusProperty, model.fontShadowSpreadProperty, model.fontShadowOffsetXProperty, model.fontShadowOffsetYProperty) {
+                                DropShadow(BlurType.GAUSSIAN, model.fontShadowColor, model.fontShadowRadius, model.fontShadowSpread, model.fontShadowOffsetX, model.fontShadowOffsetY)
+                            })
                             isWrapText = true
                             textOverrun = OverrunStyle.CLIP
                             fontProperty().bind(this@parentContainer.widthProperty().objectBinding(model.fontSizeProperty, model.fontFamilyProperty) {
