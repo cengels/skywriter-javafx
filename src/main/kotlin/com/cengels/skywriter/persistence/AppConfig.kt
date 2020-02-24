@@ -20,9 +20,12 @@ object AppConfig {
     var lastOpenFile by StringConfigProperty()
     var lastCaretPosition by IntConfigProperty()
     var activeTheme by StringConfigProperty()
+    /** The time of day at which one day counts as concluded and another begins (for the ProgressTracker). */
     var progressResetTime by TimeConfigProperty(LocalTime.of(6, 0))
+    /** The duration after which a progress item "times out" and is automatically committed. */
     var progressTimeout by DurationConfigProperty(Duration.ofMinutes(5))
     private var commentTokensProperty by StringConfigProperty("[,]")
+    /** A list of tokens that indicate "comments", i.e. portions of the text that should not count towards the word count. */
     var commentTokens: List<Pair<String, String>>
         get() = commentTokensProperty?.split(';')?.fold(listOf()) { acc, item ->
             val split = item.split(',')

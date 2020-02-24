@@ -4,11 +4,14 @@ import com.cengels.skywriter.SkyWriterApp
 import com.cengels.skywriter.persistence.AppConfig
 import com.cengels.skywriter.persistence.CsvParser
 import com.cengels.skywriter.util.Disposable
+import com.cengels.skywriter.util.isWithin
 import javafx.beans.property.SimpleIntegerProperty
 import java.io.File
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.temporal.ChronoUnit
+import java.time.temporal.TemporalUnit
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
@@ -113,7 +116,7 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
         scheduleAutosave()
 
         return _progress.lastOrNull().let {
-            if (it?.file == file?.name && it?.endDate?.isAfter(LocalDateTime.now().minusSeconds(AppConfig.progressTimeout.seconds)) == true) {
+            if (it?.file == file?.name && it?.endDate?.isWithin(AppConfig.progressTimeout) == true) {
                 it.endDate = null
                 totalWords -= it.words
                 return@let it
@@ -147,8 +150,15 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
 
     /** Schedules for the current progress item to be committed if more than [AppConfig.progressTimeout] passes without input. */
     fun scheduleReset() {
-        scheduledReset?.cancel(false)
-        scheduledReset = scheduler.schedule({ current?.let { commit() }}, AppConfig.progressTimeout.toMillis(), TimeUnit.MILLISECONDS)
+        if (scheduledReset.let { it == null || it.isDone || it.isCancelled }) {
+            scheduledReset = scheduler.schedule({ current?.let {
+                if (lastChange.isWithin(AppConfig.progressTimeout)) {
+                    scheduleReset()
+                } else {
+                    commit()
+                }
+            }}, LocalDateTime.now().until(lastChange.plusSeconds(AppConfig.progressTimeout.seconds), ChronoUnit.MILLIS), TimeUnit.MILLISECONDS)
+        }
     }
 
     private fun scheduleAutosave() {

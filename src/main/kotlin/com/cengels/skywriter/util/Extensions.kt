@@ -1,5 +1,7 @@
 package com.cengels.skywriter.util
 
+import java.time.Duration
+import java.time.LocalDateTime
 import kotlin.math.max
 
 private val WORD_REGEX = Regex("\\b\\S+\\b")
@@ -39,4 +41,9 @@ fun String.findWordBoundaries(at: Int): IntRange {
     val second = splitString.last().indexOfFirst { c -> c == ' ' || c == '\n' || c == '\r' }
 
     return max(first + 1, 0)..if (second == -1) this.length else second + at
+}
+
+/** Checks if the [LocalDateTime] lies between now and now - duration. */
+fun LocalDateTime.isWithin(duration: Duration): Boolean {
+    return this.isAfter(LocalDateTime.now().minusSeconds(duration.seconds))
 }
