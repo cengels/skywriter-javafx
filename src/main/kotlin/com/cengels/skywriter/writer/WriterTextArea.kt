@@ -6,6 +6,7 @@ import com.cengels.skywriter.persistence.AppConfig
 import com.cengels.skywriter.style.FormattingStylesheet
 import com.cengels.skywriter.util.countWords
 import com.cengels.skywriter.util.findWordBoundaries
+import com.cengels.skywriter.util.splitWords
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.collections.ListChangeListener
@@ -61,7 +62,7 @@ class WriterTextArea : StyleClassedTextArea() {
                 }
             }
 
-            if (!updatingStyles) {
+            if (!updatingStyles && (change.inserted.any { !it.isLetterOrDigit() } || change.removed.any { !it.isLetterOrDigit() })) {
                 wordCountProperty.set(this.countWordsWithoutComments())
             }
         }
