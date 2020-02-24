@@ -6,20 +6,24 @@ import com.cengels.skywriter.persistence.AppConfig
 import com.cengels.skywriter.style.FormattingStylesheet
 import com.cengels.skywriter.util.countWords
 import com.cengels.skywriter.util.findWordBoundaries
-import com.cengels.skywriter.util.splitWords
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
-import javafx.beans.property.SimpleObjectProperty
 import javafx.concurrent.Task
 import javafx.scene.control.IndexRange
 import javafx.scene.input.KeyCode
-import javafx.scene.layout.VBox
+import javafx.scene.input.KeyCombination
+import javafx.scene.input.KeyEvent
 import org.fxmisc.richtext.NavigationActions
 import org.fxmisc.richtext.StyleClassedTextArea
 import org.fxmisc.richtext.model.*
+import org.fxmisc.wellbehaved.event.EventPattern
+import org.fxmisc.wellbehaved.event.InputMap
+import org.fxmisc.wellbehaved.event.Nodes
 import tornadofx.*
-import java.time.LocalDateTime
+import java.text.BreakIterator
 import java.util.*
+import kotlin.math.max
+import kotlin.math.min
 
 class WriterTextArea : StyleClassedTextArea() {
     var insertionStyle: MutableCollection<String>? = null
@@ -81,21 +85,18 @@ class WriterTextArea : StyleClassedTextArea() {
             }
         }
 
-        this.setOnKeyReleased { event ->
-            when (event.code) {
-                KeyCode.END -> this.moveTo(this.text.lastIndex)
-                KeyCode.HOME -> this.moveTo(0)
-                else -> return@setOnKeyReleased
-            }
-        }
+        Nodes.addInputMap(this, InputMap.sequence<KeyEvent>(
+            InputMap.consume(EventPattern.keyPressed(KeyCode.END)) { event -> this.moveTo(this.text.lastIndex) },
+            InputMap.consume(EventPattern.keyPressed(KeyCode.HOME)) { event -> this.moveTo(0) },
+            InputMap.consume(EventPattern.keyPressed(KeyCode.BACK_SPACE, KeyCombination.CONTROL_DOWN)) { event -> this.deleteLastWord() },
+            InputMap.consume(EventPattern.keyPressed(KeyCode.DELETE, KeyCombination.CONTROL_DOWN)) { event -> this.deleteNextWord() }
+        ))
 
         this.setOnMousePressed {
-            if (it.clickCount == 1) {
-                textSelectionMode = TextSelectionMode.Character
-            } else if (it.clickCount == 2) {
-                textSelectionMode = TextSelectionMode.Word
-            } else if (it.clickCount >= 3) {
-                textSelectionMode = TextSelectionMode.Line
+            when {
+                it.clickCount == 1 -> textSelectionMode = TextSelectionMode.Character
+                it.clickCount == 2 -> textSelectionMode = TextSelectionMode.Word
+                it.clickCount >= 3 -> textSelectionMode = TextSelectionMode.Line
             }
         }
 
@@ -117,6 +118,18 @@ class WriterTextArea : StyleClassedTextArea() {
             initialized = true
             onInitialized?.invoke(this)
         }
+    }
+
+    /** Deletes the next word and only the next word, excluding the last space. */
+    fun deleteNextWord() {
+        val nextWordBoundary = getFollowingWordBreakIterator().next()
+        deleteText(caretPosition, if (text[nextWordBoundary].isLetterOrDigit()) nextWordBoundary - 1 else nextWordBoundary)
+    }
+
+    /** Deletes the last word and only the last word, excluding the first space. */
+    fun deleteLastWord() {
+        val previousWordBoundary = getPrecedingWordBreakIterator().previous()
+        deleteText(if (text[previousWordBoundary].isLetterOrDigit()) previousWordBoundary else previousWordBoundary + 1, caretPosition)
     }
 
     /** Queues the specified action until after the document has completed all its queued changes and is ready to accept new ones. */
@@ -322,6 +335,20 @@ class WriterTextArea : StyleClassedTextArea() {
                     index += styleSpan.length
                 }
             }
+        }
+    }
+
+    private fun getPrecedingWordBreakIterator(at: Int = caretPosition): BreakIterator {
+        return BreakIterator.getWordInstance().also {
+            it.setText(text)
+            it.preceding(at)
+        }
+    }
+
+    private fun getFollowingWordBreakIterator(at: Int = caretPosition): BreakIterator {
+        return BreakIterator.getWordInstance().also {
+            it.setText(text)
+            it.following(at)
         }
     }
 

@@ -85,7 +85,7 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
 
     /** Sets [current].endDate to now and saves [current] to the file system and resets it. */
     fun commit() {
-        scheduledReset?.cancel(true)
+        scheduledReset?.cancel(false)
         val item = current ?: return
         val finalizedItem = finalize(item) ?: return
 
@@ -150,19 +150,19 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
 
     /** Schedules for the current progress item to be committed if more than [AppConfig.progressTimeout] passes without input. */
     fun scheduleReset() {
-        scheduledReset?.cancel(true)
+        scheduledReset?.cancel(false)
         scheduledReset = scheduler.schedule({ current?.let { commit() }}, AppConfig.progressTimeout.toMillis(), TimeUnit.MILLISECONDS)
     }
 
     private fun scheduleAutosave() {
-        scheduledAutosave?.cancel(true)
+        scheduledAutosave?.cancel(false)
         scheduledAutosave = scheduler.schedule({ current?.let { autosave() }}, 5, TimeUnit.MINUTES)
     }
 
     override fun dispose() {
-        scheduledReset?.cancel(true)
+        scheduledReset?.cancel(false)
         scheduledReset = null
-        scheduledAutosave?.cancel(true)
+        scheduledAutosave?.cancel(false)
         scheduledAutosave = null
 
         scheduler.shutdownNow()
