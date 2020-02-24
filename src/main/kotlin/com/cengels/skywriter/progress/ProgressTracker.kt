@@ -80,7 +80,7 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
 
     /** Manually sets the word count of [current]. */
     fun setWords(newWords: Int) {
-        (current ?: startNew()).words = newWords
+        this.correction += newWords - (current ?: startNew()).words
     }
 
     /** Sets [current].endDate to now and saves [current] to the file system and resets it. */
@@ -126,10 +126,7 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
     }
 
     private fun autosave() {
-        val item = current ?: return
-        val finalizedItem = finalize(item) ?: return
-
-        csvParser.commitToFile(finalizedItem)
+        commit()
 
         scheduleAutosave()
     }
