@@ -8,11 +8,13 @@ import com.cengels.skywriter.util.countWords
 import com.cengels.skywriter.util.findWordBoundaries
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
+import javafx.collections.ListChangeListener
 import javafx.concurrent.Task
 import javafx.scene.control.IndexRange
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCombination
 import javafx.scene.input.KeyEvent
+import org.fxmisc.flowless.VirtualizedScrollPane
 import org.fxmisc.richtext.NavigationActions
 import org.fxmisc.richtext.StyleClassedTextArea
 import org.fxmisc.richtext.model.*
@@ -63,6 +65,18 @@ class WriterTextArea : StyleClassedTextArea() {
                 wordCountProperty.set(this.countWordsWithoutComments())
             }
         }
+
+        paragraphs.sizeProperty().addListener { observable, oldValue, newValue ->
+            runAsync {} ui {
+                // dummy call to force a repaint and reapply padding to first and last paragraphs
+                setParagraphStyle(currentParagraph, getParagraph(currentParagraph).paragraphStyle)
+            }
+        }
+
+        // paragraphs.addListener { it: ListChangeListener.Change<out Paragraph<MutableCollection<String>, String, MutableCollection<String>>> ->
+        //     insertText(text.lastIndex + 1, " ")
+        //     deleteText(text.lastIndex - 1, text.lastIndex)
+        // }
 
         this.beingUpdatedProperty().addListener { observable, oldValue, newValue ->
             if (oldValue && !newValue) {
