@@ -18,6 +18,11 @@ import javax.swing.filechooser.FileSystemView
 class SkyWriterApp : App(WriterView::class, GeneralStylesheet::class, FormattingStylesheet::class) {
     companion object {
         val userDirectory: String = "${FileSystemView.getFileSystemView().defaultDirectory.path}${File.separator}Skywriter${File.separator}"
+
+        @JvmStatic
+        fun main(args: Array<String>) {
+            launch<SkyWriterApp>(args)
+        }
     }
 
     init {
