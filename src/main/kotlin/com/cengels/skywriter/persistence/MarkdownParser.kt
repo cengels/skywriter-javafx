@@ -3,6 +3,8 @@ package com.cengels.skywriter.persistence
 import com.cengels.skywriter.util.surround
 import org.fxmisc.richtext.model.*
 import java.io.*
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 import java.util.*
 
 
@@ -192,7 +194,7 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
 
     fun load(file: File, segmentOps: SegmentOps<String, MutableCollection<String>>): StyledDocument<MutableCollection<String>, String, MutableCollection<String>> {
         try {
-            val bufferedReader = BufferedReader(FileReader(file))
+            val bufferedReader = file.bufferedReader()
             segOps = segmentOps
             return DOCUMENT_CODEC.decode(bufferedReader).apply { bufferedReader.close()  }
         } catch (exception: IOException) {
