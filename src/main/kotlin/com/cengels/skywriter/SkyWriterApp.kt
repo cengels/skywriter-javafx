@@ -10,14 +10,20 @@ import javafx.scene.input.KeyCodeCombination
 import javafx.scene.input.KeyCombination
 import javafx.stage.Stage
 import javafx.stage.WindowEvent
+import sun.awt.OSInfo
 import tornadofx.*
-import java.io.File
 import java.io.IOException
+import java.nio.file.Path
+import java.nio.file.Paths
 import javax.swing.filechooser.FileSystemView
 
 class SkyWriterApp : App(WriterView::class, GeneralStylesheet::class, FormattingStylesheet::class) {
     companion object {
-        val userDirectory: String = "${FileSystemView.getFileSystemView().defaultDirectory.path}${File.separator}Skywriter${File.separator}"
+        private val isWindows = OSInfo.getOSType() == OSInfo.OSType.WINDOWS
+        /** A [Path] corresponding to the user's home directory. On Windows, this will generally be `%USER%/AppData/Roaming`. On all other operating systems, the property `user.home` is used. */
+        val homeDirectory: Path = Paths.get(if (isWindows) System.getenv("APPDATA") else System.getProperty("user.home"))
+        /** Skywriter's application directory within the user's home directory. This is where configuration files and historical data will be stored. */
+        val applicationDirectory: Path = homeDirectory.resolve(if (isWindows) "Skywriter" else "skywriter")
 
         @JvmStatic
         fun main(args: Array<String>) {
@@ -33,7 +39,14 @@ class SkyWriterApp : App(WriterView::class, GeneralStylesheet::class, Formatting
         stage.minWidth = 300.0
         stage.minHeight = 200.0
 
-        AppConfig.initialize(config)
+        applicationDirectory.toFile().apply {
+            if (!this.exists()) {
+                if (!this.mkdir()) {
+                    throw IOException("Could not create user directory.")
+                }
+            }
+        }
+
         AppConfig.restoreStage(stage)
 
         stage.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST) {
@@ -42,14 +55,6 @@ class SkyWriterApp : App(WriterView::class, GeneralStylesheet::class, Formatting
 
         ThemesManager.load()
         ThemesManager.selectedTheme = ThemesManager.themes.find { it.name == AppConfig.activeTheme } ?: ThemesManager.DEFAULT
-
-        File(userDirectory).apply {
-            if (!this.exists()) {
-                if (!this.mkdir()) {
-                    throw IOException("Could not create user directory.")
-                }
-            }
-        }
 
         super.start(stage)
 

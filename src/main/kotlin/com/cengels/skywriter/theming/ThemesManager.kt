@@ -2,7 +2,6 @@ package com.cengels.skywriter.theming
 
 import com.cengels.skywriter.SkyWriterApp
 import com.cengels.skywriter.persistence.AppConfig
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import javafx.beans.property.SimpleListProperty
 import javafx.beans.property.SimpleObjectProperty
@@ -11,8 +10,6 @@ import javafx.concurrent.Task
 import javafx.scene.text.Font
 import tornadofx.*
 import java.io.File
-import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
 import tornadofx.getValue
 import tornadofx.setValue
 
@@ -29,7 +26,7 @@ object ThemesManager {
     var selectedTheme by selectedThemeProperty
 
     val file: File
-            get() = File("${SkyWriterApp.userDirectory}themes.json")
+            get() = SkyWriterApp.applicationDirectory.resolve("themes.json").toFile()
 
     init {
         themes.add(DEFAULT)

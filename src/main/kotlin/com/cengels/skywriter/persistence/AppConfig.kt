@@ -1,17 +1,17 @@
 package com.cengels.skywriter.persistence
 
+import com.cengels.skywriter.SkyWriterApp
 import javafx.stage.Stage
 import tornadofx.*
-import java.io.File
+import java.nio.charset.Charset
+import java.nio.file.Path
 import java.time.Duration
 import java.time.LocalTime
-import javax.swing.filechooser.FileSystemView
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
 /** Provides type-safe properties corresponding to this application's app.config. */
-object AppConfig {
-    private lateinit var config: ConfigProperties
+object AppConfig : Configurable {
     var windowMaximized by BooleanConfigProperty()
     var windowHeight by DoubleConfigProperty()
     var windowWidth by DoubleConfigProperty()
@@ -38,10 +38,6 @@ object AppConfig {
                 "${it.first},${it.second}"
             }
         } }
-
-    fun initialize(config: ConfigProperties) {
-        this.config = config
-    }
 
     /** Serializes all config properties that were set since the last save. */
     fun save() {
@@ -118,4 +114,10 @@ object AppConfig {
             return config.int(property.name)?.let { Duration.ofSeconds(it.toLong()) } ?: default
         }
     }
+
+    override val config: ConfigProperties by lazy { loadConfig() }
+    override val configCharset: Charset
+        get() = Charsets.UTF_8
+    override val configPath: Path
+        get() = SkyWriterApp.applicationDirectory.resolve("settings")
 }
