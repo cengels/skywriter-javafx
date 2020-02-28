@@ -1,6 +1,6 @@
 // set up the kotlin-gradle plugin
 buildscript {
-    ext.kotlin_version = '1.1.60'
+    ext.kotlin_version = '1.3.61'
     repositories {
         mavenLocal()    //    mavenCentral()
     }
@@ -15,7 +15,7 @@ plugins {
 }
 
 // apply the kotlin-gradle plugin
-apply plugin: "kotlin"
+apply plugin: 'kotlin'
 apply plugin: 'no.tornado.fxlauncher'
 
 version '0.1'
@@ -29,11 +29,11 @@ test {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation "no.tornado:tornadofx:1.7.20"
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
+    implementation 'no.tornado:tornadofx:1.7.20'
     implementation group: 'org.fxmisc.richtext', name: 'richtextfx', version: '0.10.3'
     implementation 'com.google.code.gson:gson:2.8.6'
-    testImplementation "io.kotlintest:kotlintest-runner-junit5:3.3.0"
+    testImplementation 'io.kotlintest:kotlintest-runner-junit5:3.3.0'
 }
 
 kotlin {
@@ -41,10 +41,10 @@ kotlin {
 }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = '1.8'
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = '1.8'
 }
 
 fxlauncher {
