@@ -2,6 +2,7 @@ package com.cengels.skywriter.writer
 
 import com.cengels.skywriter.enum.Heading
 import com.cengels.skywriter.persistence.AppConfig
+import com.cengels.skywriter.persistence.KeyConfig
 import com.cengels.skywriter.theming.ThemesManager
 import com.cengels.skywriter.theming.ThemesView
 import com.cengels.skywriter.util.*
@@ -145,57 +146,57 @@ class WriterView : View("Skywriter") {
                 managedWhen(visibleProperty())
                 hiddenWhen(primaryStage.fullScreenProperty().and(model.showMenuBarProperty.not()))
                 menu("File") {
-                    item("New", "Ctrl+N").action {
+                    item("New", KeyConfig.File.new).action {
                         warnOnUnsavedChanges { return@action }
 
                         textArea.replaceText("")
                         textArea.undoManager.forgetHistory()
                         model.reset(textArea.document)
                     }
-                    item("Open...", "Ctrl+O").action {
+                    item("Open...", KeyConfig.File.open).action {
                         openLoadDialog()
                     }
                     separator()
-                    item("Save", "Ctrl+S") {
+                    item("Save", KeyConfig.File.save) {
                         enableWhen(model.dirtyProperty)
                         action { save() }
                     }
-                    item("Save As...", "Ctrl+Shift+S").action {
+                    item("Save As...", KeyConfig.File.saveAs).action {
                         openSaveDialog()
                     }
-                    item("Rename...", "Ctrl+R") {
+                    item("Rename...", KeyConfig.File.rename) {
                         enableWhen(model.fileExistsProperty)
                         action { rename() }
                     }
                     separator()
-                    item("Fullscreen", "F11").action { primaryStage.isFullScreen = !primaryStage.isFullScreen }
-                    item("Preferences...", "Ctrl+P").isDisable = true
-                    item("Quit", "Ctrl+Alt+F4").action {
+                    item("Fullscreen", KeyConfig.Navigation.fullscreen).action { primaryStage.isFullScreen = !primaryStage.isFullScreen }
+                    item("Preferences...", KeyConfig.Navigation.preferences).isDisable = true
+                    item("Quit", KeyConfig.Navigation.quit).action {
                         close()
                     }
                 }
 
                 menu("Edit") {
-                    item("Undo", "Ctrl+Z") {
+                    item("Undo", KeyConfig.Edit.undo) {
                         enableWhen { textArea.undoAvailableProperty() }
                         action { textArea.undo() }
                     }
-                    item("Redo", "Ctrl+Y") {
+                    item("Redo", KeyConfig.Edit.redo) {
                         enableWhen { textArea.redoAvailableProperty() }
                         action { textArea.redo() }
                     }
                     separator()
-                    item("Cut", "Ctrl+X") {
+                    item("Cut", KeyConfig.Edit.cut) {
                         this.enableWhen(textArea.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
                         action { textArea.cut() }
                     }
-                    item("Copy", "Ctrl+C") {
+                    item("Copy", KeyConfig.Edit.copy) {
                         this.enableWhen(textArea.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
                         action { textArea.copy() }
                     }
-                    item("Paste", "Ctrl+V").action { textArea.paste() }
-                    item("Paste Unformatted", "Ctrl+Shift+V")
-                    item("Paste Untracked").action {
+                    item("Paste", KeyConfig.Edit.paste).action { textArea.paste() }
+                    item("Paste Unformatted", KeyConfig.Edit.pasteUnformatted)
+                    item("Paste Untracked", KeyConfig.Edit.pasteUntracked).action {
                         val wordCountBefore = textArea.wordCount
                         textArea.paste()
                         model.correct(textArea.wordCount - wordCountBefore)
@@ -204,7 +205,7 @@ class WriterView : View("Skywriter") {
                         this.enableWhen(textArea.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
                         action { textArea.deleteText(textArea.selection) }
                     }
-                    item("Delete Untracked", "Shift+Delete") {
+                    item("Delete Untracked", KeyConfig.Edit.deleteUntracked) {
                         this.enableWhen(textArea.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
                         action  {
                             val wordCountBefore = textArea.wordCount
@@ -213,28 +214,28 @@ class WriterView : View("Skywriter") {
                         }
                     }
                     separator()
-                    item("Select Word", "Ctrl+W").action { textArea.selectWord() }
-                    item("Select Paragraph", "Ctrl+Shift+W").action { textArea.selectParagraph() }
-                    item("Select All", "Ctrl+A").action { textArea.selectAll() }
+                    item("Select Word", KeyConfig.Selection.selectWord).action { textArea.selectWord() }
+                    item("Select Paragraph", KeyConfig.Selection.selectParagraph).action { textArea.selectParagraph() }
+                    item("Select All", KeyConfig.Selection.selectAll).action { textArea.selectAll() }
                 }
 
                 menu("Formatting") {
-                    item("Bold", "Ctrl+B").action { textArea.activateStyle("bold") }
-                    item("Italic", "Ctrl+I").action { textArea.activateStyle("italic") }
-                    item("Strikethrough").action { textArea.activateStyle("strikethrough") }
+                    item("Bold", KeyConfig.Formatting.bold).action { textArea.activateStyle("bold") }
+                    item("Italic", KeyConfig.Formatting.italics).action { textArea.activateStyle("italic") }
+                    item("Strikethrough", KeyConfig.Formatting.strikethrough).action { textArea.activateStyle("strikethrough") }
                     separator()
-                    item("No Heading").action { textArea.setHeading(null) }
-                    item("Heading 1", "Ctrl+1").action { textArea.setHeading(Heading.H1) }
-                    item("Heading 2", "Ctrl+2").action { textArea.setHeading(Heading.H2) }
-                    item("Heading 3", "Ctrl+3").action { textArea.setHeading(Heading.H3) }
-                    item("Heading 4", "Ctrl+4").action { textArea.setHeading(Heading.H4) }
-                    item("Heading 5", "Ctrl+5").action { textArea.setHeading(Heading.H5) }
-                    item("Heading 6", "Ctrl+6").action { textArea.setHeading(Heading.H6) }
+                    item("No Heading", KeyConfig.Formatting.headingNone).action { textArea.setHeading(null) }
+                    item("Heading 1", KeyConfig.Formatting.heading1).action { textArea.setHeading(Heading.H1) }
+                    item("Heading 2", KeyConfig.Formatting.heading2).action { textArea.setHeading(Heading.H2) }
+                    item("Heading 3", KeyConfig.Formatting.heading3).action { textArea.setHeading(Heading.H3) }
+                    item("Heading 4", KeyConfig.Formatting.heading4).action { textArea.setHeading(Heading.H4) }
+                    item("Heading 5", KeyConfig.Formatting.heading5).action { textArea.setHeading(Heading.H5) }
+                    item("Heading 6", KeyConfig.Formatting.heading6).action { textArea.setHeading(Heading.H6) }
                 }
 
                 menu("Tools") {
-                    item("Appearance...").action { ThemesView(ThemesManager).openModal() }
-                    item("Progress...").isDisable = true
+                    item("Appearance...", KeyConfig.Navigation.appearance).action { ThemesView(ThemesManager).openModal() }
+                    item("Progress...", KeyConfig.Navigation.progress).isDisable = true
                 }
 
                 menus.forEach { menu -> menu.showingProperty().addListener { observable, oldValue, newValue ->
