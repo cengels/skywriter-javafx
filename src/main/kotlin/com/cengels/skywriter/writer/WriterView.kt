@@ -37,6 +37,10 @@ class WriterView : View("Skywriter") {
             model.progressTracker?.scheduleReset()
         }
 
+        model.originalDocumentProperty.addListener { observable, oldValue, newValue ->
+            model.dirty = newValue != it.document.snapshot()
+        }
+
         it.wordCountProperty.addListener { observable, oldValue, newValue ->
             model.updateProgress(it.wordCount)
         }
@@ -362,7 +366,6 @@ class WriterView : View("Skywriter") {
             runAsync {} ui {
                 model.newProgressTracker(textArea.wordCount, file)
                 model.originalDocument = textArea.document.snapshot()
-                model.dirty = false
             }
         }
         textArea.undoManager.forgetHistory()
