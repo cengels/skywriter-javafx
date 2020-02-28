@@ -41,6 +41,8 @@ class WriterTextArea : StyleClassedTextArea() {
     private var midChange: Boolean = false
     private val queue: Queue<() -> Unit> = LinkedList<() -> Unit>()
     private var textSelectionMode: TextSelectionMode = TextSelectionMode.None
+    val document: EditableStyledDocument<MutableCollection<String>, String, MutableCollection<String>>
+        get() = this.content
 
     init {
         this.isWrapText = true

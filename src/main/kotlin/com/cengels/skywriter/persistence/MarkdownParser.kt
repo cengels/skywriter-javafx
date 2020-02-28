@@ -8,178 +8,176 @@ import java.nio.file.Files
 import java.util.*
 
 
-class MarkdownParser(val document: StyledDocument<MutableCollection<String>, String, MutableCollection<String>>) {
-    companion object {
-        var segOps: SegmentOps<String, MutableCollection<String>>? = null
+object MarkdownParser {
+    var segOps: SegmentOps<String, MutableCollection<String>>? = null
 
-        const val ESCAPE_CHARACTER: Char = '\\'
+    const val ESCAPE_CHARACTER: Char = '\\'
 
-        val TOKEN_MAP: Map<String, String> = mapOf(
-            Pair("**", "bold"),
-            Pair("__", "bold"),
-            Pair("*", "italic"),
-            Pair("_", "italic"),
-            Pair("~", "strikethrough")
-        )
+    val TOKEN_MAP: Map<String, String> = mapOf(
+        Pair("**", "bold"),
+        Pair("__", "bold"),
+        Pair("*", "italic"),
+        Pair("_", "italic"),
+        Pair("~", "strikethrough")
+    )
 
-        val DOCUMENT_CODEC = object: PlainTextCodec<StyledDocument<MutableCollection<String>, String, MutableCollection<String>>, BufferedReader> {
-            override fun encode(writer: BufferedWriter, element: StyledDocument<MutableCollection<String>, String, MutableCollection<String>>) {
-                element.paragraphs.forEachIndexed { index, paragraph ->
-                    PARAGRAPH_CODEC.encode(writer, paragraph.paragraphStyle)
-                    SEGMENT_CODEC.encode(writer, paragraph.styledSegments)
+    val DOCUMENT_CODEC = object: PlainTextCodec<ReadOnlyStyledDocument<MutableCollection<String>, String, MutableCollection<String>>, BufferedReader> {
+        override fun encode(writer: BufferedWriter, element: ReadOnlyStyledDocument<MutableCollection<String>, String, MutableCollection<String>>) {
+            element.paragraphs.forEachIndexed { index, paragraph ->
+                PARAGRAPH_CODEC.encode(writer, paragraph.paragraphStyle)
+                SEGMENT_CODEC.encode(writer, paragraph.styledSegments)
 
-                    if (index != element.paragraphs.lastIndex) {
-                        writer.newLine()
-                        writer.newLine()
-                    }
+                if (index != element.paragraphs.lastIndex) {
+                    writer.newLine()
+                    writer.newLine()
                 }
             }
+        }
 
-            override fun decode(input: BufferedReader): StyledDocument<MutableCollection<String>, String, MutableCollection<String>> {
-                var line: String? = input.readLine() ?: ""
-                val documentBuilder = ReadOnlyStyledDocumentBuilder<MutableCollection<String>, String, MutableCollection<String>>(segOps, mutableListOf())
+        override fun decode(input: BufferedReader): ReadOnlyStyledDocument<MutableCollection<String>, String, MutableCollection<String>> {
+            var line: String? = input.readLine() ?: ""
+            val documentBuilder = ReadOnlyStyledDocumentBuilder<MutableCollection<String>, String, MutableCollection<String>>(segOps, mutableListOf())
+
+            while (line != null) {
+                var segmentText = ""
+                var paragraphBreak = false
 
                 while (line != null) {
-                    var segmentText: String = ""
-                    var paragraphBreak: Boolean = false
-
-                    while (line != null) {
-                        if (line.trim().isNotEmpty()) {
-                            if (paragraphBreak) {
-                                break
-                            }
-
-                            segmentText += if (segmentText.isEmpty()) line else " $line"
-                        } else if (paragraphBreak) {
-                            line = input.readLine()
+                    if (line.trim().isNotEmpty()) {
+                        if (paragraphBreak) {
                             break
-                        } else {
-                            paragraphBreak = true
                         }
 
+                        segmentText += if (segmentText.isEmpty()) line else " $line"
+                    } else if (paragraphBreak) {
                         line = input.readLine()
-                    }
-
-                    val paragraphStyles: MutableCollection<String> = PARAGRAPH_CODEC.decode(segmentText)
-                    segmentText = segmentText.trimStart('#')
-
-                    if (paragraphStyles.isNotEmpty() && segmentText.startsWith(' ')) {
-                        segmentText = segmentText.slice(1..segmentText.lastIndex)
-                    }
-
-                    val textSegments: List<StyledSegment<String, MutableCollection<String>>> = SEGMENT_CODEC.decode(segmentText)
-
-                    documentBuilder.addParagraph(textSegments, paragraphStyles)
-                }
-
-                return documentBuilder.build()
-            }
-        }
-
-        val PARAGRAPH_CODEC = object: PlainTextCodec<MutableCollection<String>, String> {
-            override fun encode(writer: BufferedWriter, element: MutableCollection<String>) {
-                val hashCount: Int? = Character.getNumericValue(element.find { it.matches(Regex("h\\d")) }?.last() ?: '0')
-
-                if (hashCount != null) {
-                    writer.append("#".repeat(hashCount))
-                }
-            }
-
-            override fun decode(input: String): MutableCollection<String> {
-                val hashCount: Int = input.takeWhile { it == '#' }.length
-
-                if (hashCount != 0) {
-                    return mutableListOf("h$hashCount")
-                }
-
-                return mutableListOf()
-            }
-        }
-
-        val SEGMENT_CODEC = object: PlainTextCodec<List<StyledSegment<String, MutableCollection<String>>>, String> {
-            override fun encode(writer: BufferedWriter, element: List<StyledSegment<String, MutableCollection<String>>>) {
-                element.forEachIndexed { index, it ->
-                    val escapedText: String = escape(it.segment)
-
-                    var text: String = escapedText
-
-                    TOKEN_MAP.entries.apply {
-                        it.style.forEach {
-                            this.find { entry -> entry.value == it }.apply {
-                                if (this != null) {
-                                    text = text.surround(this.key)
-                                }
-                            }
-                        }
-                    }
-
-                    if (index == 0 && text.startsWith('#')) {
-                        text = text.replaceFirst("#", "\\#")
-                    }
-
-                    writer.write(text)
-                }
-            }
-
-            override fun decode(input: String): List<StyledSegment<String, MutableCollection<String>>> {
-                val segments: MutableList<StyledSegment<String, MutableCollection<String>>> = mutableListOf()
-                var remainingString: String = input
-                val openingTokens: MutableList<String> = mutableListOf()
-
-                while (remainingString.isNotEmpty()) {
-                    val nextToken = findNextToken(remainingString)
-
-                    if (nextToken.first < 0) {
-                        if (openingTokens.size > 0 && segments.size > 0) {
-                            // unterminated token
-                            // TODO: Not all test cases work with this, but it's not important enough to warrant putting more time into.
-                            segments[segments.lastIndex] = StyledSegment(unescape("${segments.last().segment}${openingTokens.last()}$remainingString"), mutableListOf())
-                            openingTokens.removeAt(openingTokens.lastIndex)
-
-                            while (openingTokens.size > 0) {
-                                val segment = segments.last()
-                                val index: Int = segments.indexOf(segment)
-                                segments[index - 1] = StyledSegment(unescape("${segments[index - 1].segment}${openingTokens.last()}${segment.segment}"), segments[index - 1].style)
-                                segments.removeAt(index)
-                                openingTokens.removeAt(openingTokens.lastIndex)
-                            }
-                        } else {
-                            segments.add(StyledSegment(unescape(remainingString), mutableListOf()))
-                        }
-
-                        remainingString = ""
-                    } else if (openingTokens.isNotEmpty() && openingTokens.last() == nextToken.second) {
-                        if (nextToken.first != 0) {
-                            segments.add(StyledSegment(unescape(remainingString.slice(0 until nextToken.first)), openingTokens.map { TOKEN_MAP[it]!! }.toMutableSet()))
-                        }
-
-                        openingTokens.removeAt(openingTokens.size - 1)
-                        remainingString = remainingString.slice(nextToken.first + nextToken.second.length until remainingString.length)
-                    } else if (nextToken.first == 0) {
-                        openingTokens.add(nextToken.second)
-                        remainingString = remainingString.slice(nextToken.second.length until remainingString.length)
+                        break
                     } else {
-                        if (openingTokens.isEmpty()) {
-                            segments.add(StyledSegment(unescape(remainingString.slice(0 until nextToken.first)), mutableListOf()))
-                        } else {
-                            segments.add(StyledSegment(unescape(remainingString.slice(0 until nextToken.first)), openingTokens.map { TOKEN_MAP[it]!! }.toMutableSet()))
-                        }
-
-                        openingTokens.add(nextToken.second)
-                        remainingString = remainingString.slice(nextToken.first + nextToken.second.length until remainingString.length)
+                        paragraphBreak = true
                     }
+
+                    line = input.readLine()
                 }
 
-                if (segments.isEmpty()) {
-                    segments.add(StyledSegment("", mutableListOf()))
+                val paragraphStyles: MutableCollection<String> = PARAGRAPH_CODEC.decode(segmentText)
+                segmentText = segmentText.trimStart('#')
+
+                if (paragraphStyles.isNotEmpty() && segmentText.startsWith(' ')) {
+                    segmentText = segmentText.slice(1..segmentText.lastIndex)
                 }
 
-                return segments
+                val textSegments: List<StyledSegment<String, MutableCollection<String>>> = SEGMENT_CODEC.decode(segmentText)
+
+                documentBuilder.addParagraph(textSegments, paragraphStyles)
             }
+
+            return documentBuilder.build()
         }
     }
 
-    fun save(file: File) {
+    val PARAGRAPH_CODEC = object: PlainTextCodec<MutableCollection<String>, String> {
+        override fun encode(writer: BufferedWriter, element: MutableCollection<String>) {
+            val hashCount: Int? = Character.getNumericValue(element.find { it.matches(Regex("h\\d")) }?.last() ?: '0')
+
+            if (hashCount != null) {
+                writer.append("#".repeat(hashCount))
+            }
+        }
+
+        override fun decode(input: String): MutableCollection<String> {
+            val hashCount: Int = input.takeWhile { it == '#' }.length
+
+            if (hashCount != 0) {
+                return mutableListOf("h$hashCount")
+            }
+
+            return mutableListOf()
+        }
+    }
+
+    val SEGMENT_CODEC = object: PlainTextCodec<List<StyledSegment<String, MutableCollection<String>>>, String> {
+        override fun encode(writer: BufferedWriter, element: List<StyledSegment<String, MutableCollection<String>>>) {
+            element.forEachIndexed { index, it ->
+                val escapedText: String = escape(it.segment)
+
+                var text: String = escapedText
+
+                TOKEN_MAP.entries.apply {
+                    it.style.forEach {
+                        this.find { entry -> entry.value == it }.apply {
+                            if (this != null) {
+                                text = text.surround(this.key)
+                            }
+                        }
+                    }
+                }
+
+                if (index == 0 && text.startsWith('#')) {
+                    text = text.replaceFirst("#", "\\#")
+                }
+
+                writer.write(text)
+            }
+        }
+
+        override fun decode(input: String): List<StyledSegment<String, MutableCollection<String>>> {
+            val segments: MutableList<StyledSegment<String, MutableCollection<String>>> = mutableListOf()
+            var remainingString: String = input
+            val openingTokens: MutableList<String> = mutableListOf()
+
+            while (remainingString.isNotEmpty()) {
+                val nextToken = findNextToken(remainingString)
+
+                if (nextToken.first < 0) {
+                    if (openingTokens.size > 0 && segments.size > 0) {
+                        // unterminated token
+                        // TODO: Not all test cases work with this, but it's not important enough to warrant putting more time into.
+                        segments[segments.lastIndex] = StyledSegment(unescape("${segments.last().segment}${openingTokens.last()}$remainingString"), mutableListOf())
+                        openingTokens.removeAt(openingTokens.lastIndex)
+
+                        while (openingTokens.size > 0) {
+                            val segment = segments.last()
+                            val index: Int = segments.indexOf(segment)
+                            segments[index - 1] = StyledSegment(unescape("${segments[index - 1].segment}${openingTokens.last()}${segment.segment}"), segments[index - 1].style)
+                            segments.removeAt(index)
+                            openingTokens.removeAt(openingTokens.lastIndex)
+                        }
+                    } else {
+                        segments.add(StyledSegment(unescape(remainingString), mutableListOf()))
+                    }
+
+                    remainingString = ""
+                } else if (openingTokens.isNotEmpty() && openingTokens.last() == nextToken.second) {
+                    if (nextToken.first != 0) {
+                        segments.add(StyledSegment(unescape(remainingString.slice(0 until nextToken.first)), openingTokens.map { TOKEN_MAP[it]!! }.toMutableSet()))
+                    }
+
+                    openingTokens.removeAt(openingTokens.size - 1)
+                    remainingString = remainingString.slice(nextToken.first + nextToken.second.length until remainingString.length)
+                } else if (nextToken.first == 0) {
+                    openingTokens.add(nextToken.second)
+                    remainingString = remainingString.slice(nextToken.second.length until remainingString.length)
+                } else {
+                    if (openingTokens.isEmpty()) {
+                        segments.add(StyledSegment(unescape(remainingString.slice(0 until nextToken.first)), mutableListOf()))
+                    } else {
+                        segments.add(StyledSegment(unescape(remainingString.slice(0 until nextToken.first)), openingTokens.map { TOKEN_MAP[it]!! }.toMutableSet()))
+                    }
+
+                    openingTokens.add(nextToken.second)
+                    remainingString = remainingString.slice(nextToken.first + nextToken.second.length until remainingString.length)
+                }
+            }
+
+            if (segments.isEmpty()) {
+                segments.add(StyledSegment("", mutableListOf()))
+            }
+
+            return segments
+        }
+    }
+
+    fun save(file: File, document: ReadOnlyStyledDocument<MutableCollection<String>, String, MutableCollection<String>>) {
         try {
             file.bufferedWriter().apply {
                 DOCUMENT_CODEC.encode(this, document)
@@ -192,7 +190,7 @@ class MarkdownParser(val document: StyledDocument<MutableCollection<String>, Str
         }
     }
 
-    fun load(file: File, segmentOps: SegmentOps<String, MutableCollection<String>>): StyledDocument<MutableCollection<String>, String, MutableCollection<String>> {
+    fun load(file: File, segmentOps: SegmentOps<String, MutableCollection<String>>): ReadOnlyStyledDocument<MutableCollection<String>, String, MutableCollection<String>> {
         try {
             val bufferedReader = file.bufferedReader()
             segOps = segmentOps

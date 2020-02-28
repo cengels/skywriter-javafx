@@ -5,23 +5,19 @@ import com.cengels.skywriter.persistence.AppConfig
 import com.cengels.skywriter.persistence.CsvParser
 import com.cengels.skywriter.util.Disposable
 import com.cengels.skywriter.util.isWithin
-import javafx.beans.property.SimpleIntegerProperty
 import java.io.File
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
-import java.time.temporal.TemporalUnit
-import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
-import kotlin.concurrent.schedule
 
 /** Supplies methods used to manage [ProgressItem]s. */
 class ProgressTracker(private var totalWords: Int, private var file: File? = null) : Disposable {
     private val csvFile: File
-        get() = File("${SkyWriterApp.userDirectory}progress.csv")
+        get() = SkyWriterApp.applicationDirectory.resolve("progress.csv").toFile()
     private val csvParser = CsvParser(ProgressItem::class, csvFile)
     private val _progress: MutableList<ProgressItem> = mutableListOf()
     private val scheduler = Executors.newScheduledThreadPool(3)

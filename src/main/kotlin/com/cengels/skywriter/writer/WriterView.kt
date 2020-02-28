@@ -5,6 +5,7 @@ import com.cengels.skywriter.persistence.AppConfig
 import com.cengels.skywriter.theming.ThemesManager
 import com.cengels.skywriter.theming.ThemesView
 import com.cengels.skywriter.util.*
+import javafx.beans.value.ObservableValue
 import javafx.geometry.Pos
 import javafx.scene.control.*
 import javafx.scene.input.KeyCode
@@ -15,6 +16,7 @@ import org.fxmisc.flowless.VirtualizedScrollPane
 import tornadofx.*
 import java.io.File
 import java.time.LocalDateTime
+import java.util.function.Function
 
 class WriterView : View("Skywriter") {
     val model = WriterViewModel()
@@ -29,10 +31,7 @@ class WriterView : View("Skywriter") {
 
     val textArea = WriterTextArea().also {
         it.richChanges().subscribe { change ->
-            if (it.initialized) {
-                model.dirty = true
-            }
-
+            model.dirty = model.originalDocument != it.document.snapshot()
             model.progressTracker?.lastChange = LocalDateTime.now()
             model.progressTracker?.scheduleReset()
         }
@@ -150,8 +149,8 @@ class WriterView : View("Skywriter") {
                         warnOnUnsavedChanges { return@action }
 
                         textArea.replaceText("")
-                        model.file = null
-                        model.dirty = false
+                        textArea.undoManager.forgetHistory()
+                        model.reset(textArea.document)
                     }
                     item("Open...", "Ctrl+O").action {
                         openLoadDialog()
@@ -225,19 +224,18 @@ class WriterView : View("Skywriter") {
                     item("Strikethrough").action { textArea.activateStyle("strikethrough") }
                     separator()
                     item("No Heading").action { textArea.setHeading(null) }
-                    item("Heading 1").action { textArea.setHeading(Heading.H1) }
-                    item("Heading 2").action { textArea.setHeading(Heading.H2) }
-                    item("Heading 3").action { textArea.setHeading(Heading.H3) }
-                    item("Heading 4").action { textArea.setHeading(Heading.H4) }
-                    item("Heading 5").action { textArea.setHeading(Heading.H5) }
-                    item("Heading 6").action { textArea.setHeading(Heading.H6) }
+                    item("Heading 1", "Ctrl+1").action { textArea.setHeading(Heading.H1) }
+                    item("Heading 2", "Ctrl+2").action { textArea.setHeading(Heading.H2) }
+                    item("Heading 3", "Ctrl+3").action { textArea.setHeading(Heading.H3) }
+                    item("Heading 4", "Ctrl+4").action { textArea.setHeading(Heading.H4) }
+                    item("Heading 5", "Ctrl+5").action { textArea.setHeading(Heading.H5) }
+                    item("Heading 6", "Ctrl+6").action { textArea.setHeading(Heading.H6) }
                 }
 
                 menu("Tools") {
                     item("Appearance...").action { ThemesView(ThemesManager).openModal() }
                     item("Progress...").isDisable = true
                 }
-
 
                 menus.forEach { menu -> menu.showingProperty().addListener { observable, oldValue, newValue ->
                     if (primaryStage.isFullScreen && !menuBar.isHover && menuBar.menus.none { it.isShowing }) {
@@ -357,11 +355,12 @@ class WriterView : View("Skywriter") {
 
     private fun open(file: File) {
         model.file = file
-        model.load(textArea.document, textArea.segOps).also {
+        model.load(textArea.segOps).also {
             model.progressTracker = null
             textArea.replace(it)
             runAsync {} ui {
                 model.newProgressTracker(textArea.wordCount, file)
+                model.originalDocument = textArea.document.snapshot()
                 model.dirty = false
             }
         }
