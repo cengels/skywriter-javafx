@@ -119,5 +119,5 @@ object AppConfig : Configurable {
     override val configCharset: Charset
         get() = Charsets.UTF_8
     override val configPath: Path
-        get() = SkyWriterApp.applicationDirectory.resolve("settings")
+        get() = SkyWriterApp.applicationDirectory.resolve("app.settings")
 }
