@@ -3,8 +3,9 @@ package com.cengels.skywriter.writer
 import com.cengels.skywriter.enum.Heading
 import com.cengels.skywriter.enum.TextSelectionMode
 import com.cengels.skywriter.persistence.AppConfig
-import com.cengels.skywriter.persistence.CodecGroup
-import com.cengels.skywriter.persistence.RichTextCodecs
+import com.cengels.skywriter.persistence.codec.DocumentCodec
+import com.cengels.skywriter.persistence.codec.HtmlCodecs
+import com.cengels.skywriter.persistence.codec.RtfCodecs
 import com.cengels.skywriter.style.FormattingStylesheet
 import com.cengels.skywriter.util.countWords
 import com.cengels.skywriter.util.findWordBoundaries
@@ -19,15 +20,11 @@ import org.fxmisc.richtext.model.*
 import org.fxmisc.wellbehaved.event.EventPattern
 import org.fxmisc.wellbehaved.event.InputMap
 import org.fxmisc.wellbehaved.event.Nodes
-import org.jsoup.Jsoup
-import org.jsoup.safety.Whitelist
 import tornadofx.FX
 import tornadofx.getValue
 import tornadofx.runAsync
 import tornadofx.ui
-import java.io.BufferedWriter
 import java.io.ByteArrayOutputStream
-import java.io.DataOutputStream
 import java.io.IOException
 import java.text.BreakIterator
 import java.util.*
@@ -47,14 +44,14 @@ class WriterTextArea : StyleClassedTextArea() {
     private var textSelectionMode: TextSelectionMode = TextSelectionMode.None
     val document: EditableStyledDocument<MutableCollection<String>, String, MutableCollection<String>>
         get() = this.content
-    var encoderCodec: CodecGroup? = null
-    var decoderCodecs: List<CodecGroup> = listOf()
+    var encoderCodec: DocumentCodec? = null
+    var decoderCodecs: List<DocumentCodec> = listOf()
 
     init {
         this.isWrapText = true
 
-        encoderCodec = RichTextCodecs.HTML
-        decoderCodecs = listOf(RichTextCodecs.RTF, RichTextCodecs.HTML)
+        encoderCodec = HtmlCodecs.DOCUMENT_CODEC
+        decoderCodecs = listOf(RtfCodecs.DOCUMENT_CODEC, HtmlCodecs.DOCUMENT_CODEC)
 
         this.caretPositionProperty().addListener { _, _, _ ->
             this.requestFollowCaret()
