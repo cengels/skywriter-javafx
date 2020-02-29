@@ -153,8 +153,8 @@ class WriterView : View("Skywriter") {
                     item("New", KeyConfig.File.new).action {
                         warnOnUnsavedChanges { return@action }
 
+                        textArea.reset()
                         textArea.replaceText("")
-                        textArea.undoManager.forgetHistory()
                         model.reset(textArea.document)
                     }
                     item("Open...", KeyConfig.File.open).action {
@@ -362,6 +362,7 @@ class WriterView : View("Skywriter") {
         model.file = file
         model.load(textArea.segOps).also {
             model.progressTracker = null
+            textArea.reset()
             textArea.replace(it)
             runAsync {} ui {
                 model.newProgressTracker(textArea.wordCount, file)

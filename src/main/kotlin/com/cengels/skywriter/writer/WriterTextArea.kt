@@ -146,6 +146,16 @@ class WriterTextArea : StyleClassedTextArea() {
         }
     }
 
+    fun reset() {
+        this.undoManager.forgetHistory()
+        this.insertionStyle = mutableListOf()
+        midChange = false
+        queue.clear()
+        textSelectionMode = TextSelectionMode.None
+        paragraphInsertionStyle = listOf()
+        textInsertionStyle = listOf()
+    }
+
     /** Deletes the next word and only the next word, excluding the last space. */
     fun deleteNextWord() {
         val nextWordBoundary = getFollowingWordBreakIterator().next()
