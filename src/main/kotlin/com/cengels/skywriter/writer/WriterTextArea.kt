@@ -3,30 +3,32 @@ package com.cengels.skywriter.writer
 import com.cengels.skywriter.enum.Heading
 import com.cengels.skywriter.enum.TextSelectionMode
 import com.cengels.skywriter.persistence.AppConfig
+import com.cengels.skywriter.persistence.CodecGroup
+import com.cengels.skywriter.persistence.RichTextCodecs
 import com.cengels.skywriter.style.FormattingStylesheet
 import com.cengels.skywriter.util.countWords
 import com.cengels.skywriter.util.findWordBoundaries
-import com.cengels.skywriter.util.splitWords
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
-import javafx.collections.ListChangeListener
 import javafx.concurrent.Task
 import javafx.scene.control.IndexRange
-import javafx.scene.input.KeyCode
-import javafx.scene.input.KeyCombination
-import javafx.scene.input.KeyEvent
-import org.fxmisc.flowless.VirtualizedScrollPane
+import javafx.scene.input.*
 import org.fxmisc.richtext.NavigationActions
 import org.fxmisc.richtext.StyleClassedTextArea
 import org.fxmisc.richtext.model.*
 import org.fxmisc.wellbehaved.event.EventPattern
 import org.fxmisc.wellbehaved.event.InputMap
 import org.fxmisc.wellbehaved.event.Nodes
-import tornadofx.*
+import tornadofx.FX
+import tornadofx.getValue
+import tornadofx.runAsync
+import tornadofx.ui
+import java.io.BufferedWriter
+import java.io.ByteArrayOutputStream
+import java.io.DataOutputStream
+import java.io.IOException
 import java.text.BreakIterator
 import java.util.*
-import kotlin.math.max
-import kotlin.math.min
 
 class WriterTextArea : StyleClassedTextArea() {
     var insertionStyle: MutableCollection<String>? = null
@@ -43,9 +45,14 @@ class WriterTextArea : StyleClassedTextArea() {
     private var textSelectionMode: TextSelectionMode = TextSelectionMode.None
     val document: EditableStyledDocument<MutableCollection<String>, String, MutableCollection<String>>
         get() = this.content
+    var encoderCodec: CodecGroup? = null
+    var decoderCodecs: List<CodecGroup> = listOf()
 
     init {
         this.isWrapText = true
+
+        encoderCodec = RichTextCodecs.RTF
+        decoderCodecs = listOf(RichTextCodecs.RTF, RichTextCodecs.HTML)
 
         this.caretPositionProperty().addListener { _, _, _ ->
             this.requestFollowCaret()
@@ -277,6 +284,63 @@ class WriterTextArea : StyleClassedTextArea() {
         } else {
             val anchorParagraph = getParagraphIndexAt(anchorPosition)
             selectRange(anchorParagraph, getParagraphLength(anchorParagraph), getParagraphIndexAt(caretPosition), 0)
+        }
+    }
+
+    override fun copy() {
+        if (selection.length > 0) {
+            val content = ClipboardContent()
+            val encoderCodec = this.encoderCodec
+
+            if (encoderCodec == null) {
+                content.putString(selectedText)
+            } else {
+                val subDocument = subDocument(selection.start, selection.end)
+                val byteOutputStream = ByteArrayOutputStream()
+                try {
+                    encoderCodec.encode(byteOutputStream.bufferedWriter(), subDocument.paragraphs)
+                    content[encoderCodec.dataFormat] = byteOutputStream.toByteArray()
+                } catch (e: IOException) {
+                    System.err.println("Codec error: Exception in encoding '" + encoderCodec.dataFormat + "':")
+                    e.printStackTrace()
+                }
+            }
+
+            Clipboard.getSystemClipboard().setContent(content)
+        }
+    }
+
+    override fun paste() {
+        val clipboard = Clipboard.getSystemClipboard()
+        val decoderCodec = decoderCodecs.find { clipboard.hasContent(it.dataFormat) }
+
+        if (decoderCodec == null) {
+            if (clipboard.hasString()) {
+                clipboard.string?.let { replaceSelection(it) }
+            }
+        } else {
+            val contents = clipboard.getContent(decoderCodec.dataFormat)
+            var paragraphs: List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>> = listOf()
+
+            try {
+                paragraphs = decoderCodec.decode(contents)
+            } catch (e: IOException) {
+                System.err.println("Codec error: Failed to decode '" + decoderCodec.dataFormat + "':")
+                e.printStackTrace()
+            }
+
+            if (paragraphs.isNotEmpty()) {
+                replaceSelection(paragraphs)
+            }
+        }
+    }
+
+    /** Replaces the contents of the text area with the specified list of paragraphs. */
+    fun replaceSelection(paragraphs: List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>>) {
+        ReadOnlyStyledDocumentBuilder<MutableCollection<String>, String, MutableCollection<String>>(segOps, mutableListOf()).apply {
+            paragraphs.forEach { addParagraph(it.styledSegments, it.paragraphStyle) }
+        }.build().apply {
+            replaceSelection(this)
         }
     }
 
