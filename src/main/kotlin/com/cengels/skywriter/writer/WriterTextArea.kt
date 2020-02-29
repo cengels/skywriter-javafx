@@ -53,7 +53,7 @@ class WriterTextArea : StyleClassedTextArea() {
     init {
         this.isWrapText = true
 
-        encoderCodec = RichTextCodecs.RTF
+        encoderCodec = RichTextCodecs.HTML
         decoderCodecs = listOf(RichTextCodecs.RTF, RichTextCodecs.HTML)
 
         this.caretPositionProperty().addListener { _, _, _ ->
@@ -148,7 +148,7 @@ class WriterTextArea : StyleClassedTextArea() {
 
     fun reset() {
         this.undoManager.forgetHistory()
-        this.insertionStyle = mutableListOf()
+        this.insertionStyle = null
         midChange = false
         queue.clear()
         textSelectionMode = TextSelectionMode.None
@@ -311,7 +311,7 @@ class WriterTextArea : StyleClassedTextArea() {
                 val byteOutputStream = ByteArrayOutputStream()
                 try {
                     encoderCodec.encode(byteOutputStream.bufferedWriter(), subDocument.paragraphs)
-                    content[encoderCodec.dataFormat] = byteOutputStream.toByteArray()
+                    content[encoderCodec.dataFormat] = byteOutputStream.toString("utf8")
                 } catch (e: IOException) {
                     System.err.println("Codec error: Exception in encoding '" + encoderCodec.dataFormat + "':")
                     e.printStackTrace()

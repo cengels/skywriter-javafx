@@ -21,7 +21,11 @@ object RichTextCodecs {
 
         private val paragraph = object : PlainTextCodec<Paragraph<MutableCollection<String>, String, MutableCollection<String>>, Element> {
             override fun encode(writer: BufferedWriter, element: Paragraph<MutableCollection<String>, String, MutableCollection<String>>) {
-                TODO("not implemented")
+                val tag: String = element.paragraphStyle.find { it.startsWith('h') } ?: "p"
+
+                writer.write("<$tag>")
+                segment.encode(writer, element.styledSegments)
+                writer.write("</$tag>")
             }
 
             override fun decode(input: Element): Paragraph<MutableCollection<String>, String, MutableCollection<String>> {
@@ -37,7 +41,23 @@ object RichTextCodecs {
 
         private val segment = object : PlainTextCodec<List<StyledSegment<String, MutableCollection<String>>>, Element> {
             override fun encode(writer: BufferedWriter, element: List<StyledSegment<String, MutableCollection<String>>>) {
-                TODO("not implemented")
+                writer.write(element.joinToString("") {
+                    val tags = mutableListOf<String>()
+
+                    if (it.style.contains("bold")) {
+                        tags.add("strong")
+                    }
+                    if (it.style.contains("italic")) {
+                        tags.add("em")
+                    }
+                    if (it.style.contains("strikethrough")) {
+                        tags.add("s")
+                    }
+
+                    tags.fold(it.segment) { acc, tag ->
+                        "<$tag>$acc</$tag>"
+                    }
+                })
             }
 
             override fun decode(input: Element): List<StyledSegment<String, MutableCollection<String>>> {
