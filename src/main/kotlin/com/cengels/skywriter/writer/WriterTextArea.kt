@@ -19,6 +19,8 @@ import org.fxmisc.richtext.model.*
 import org.fxmisc.wellbehaved.event.EventPattern
 import org.fxmisc.wellbehaved.event.InputMap
 import org.fxmisc.wellbehaved.event.Nodes
+import org.jsoup.Jsoup
+import org.jsoup.safety.Whitelist
 import tornadofx.FX
 import tornadofx.getValue
 import tornadofx.runAsync
@@ -314,11 +316,7 @@ class WriterTextArea : StyleClassedTextArea() {
         val clipboard = Clipboard.getSystemClipboard()
         val decoderCodec = decoderCodecs.find { clipboard.hasContent(it.dataFormat) }
 
-        if (decoderCodec == null) {
-            if (clipboard.hasString()) {
-                clipboard.string?.let { replaceSelection(it) }
-            }
-        } else {
+        if (decoderCodec != null) {
             val contents = clipboard.getContent(decoderCodec.dataFormat)
             var paragraphs: List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>> = listOf()
 
@@ -332,6 +330,8 @@ class WriterTextArea : StyleClassedTextArea() {
             if (paragraphs.isNotEmpty()) {
                 replaceSelection(paragraphs)
             }
+        } else if (clipboard.hasString()) {
+            clipboard.string?.let { replaceSelection(it) }
         }
     }
 
