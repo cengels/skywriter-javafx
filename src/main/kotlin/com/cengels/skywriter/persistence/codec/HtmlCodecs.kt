@@ -10,7 +10,7 @@ import org.jsoup.nodes.Element
 import java.io.BufferedWriter
 
 object HtmlCodecs {
-    private const val SELECTED_TAGS = "p, h1, h2, h3, h4, h5, h6, span, b, strong, i, em, s, del"
+    private const val SELECTED_TAGS = "p, br, h1, h2, h3, h4, h5, h6, span, b, strong, i, em, s, del"
 
     val DOCUMENT_CODEC = object : DocumentCodec<Any> {
         override val dataFormat: DataFormat = DataFormat.HTML
@@ -41,8 +41,10 @@ object HtmlCodecs {
                     // Necessary to make sure non-block elements are combined into one.
                     if (element.isBlock) {
                         acc + element
+                    } else if (element.tagName() == "br") {
+                        acc + Element("p")
                     } else {
-                        val sameParentElements = elementsNotContainedInAnother.filter { !it.isBlock && it.parent() === element.parent() }
+                        val sameParentElements = elementsNotContainedInAnother.filter { !it.isBlock && it.tagName() != "br" && it.parent() === element.parent() }
 
                         if (sameParentElements.size <= 1) {
                             acc + element
@@ -120,6 +122,8 @@ object HtmlCodecs {
                 }
 
                 styledSegments.add(StyledSegment(input.wholeOwnText(), style))
+            } else if (input.childrenSize() == 0) {
+                return styledSegments.plus(StyledSegment("", mutableListOf()))
             }
 
             return styledSegments.plus(
