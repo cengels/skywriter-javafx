@@ -6,8 +6,8 @@ import org.fxmisc.richtext.model.Paragraph
 import org.fxmisc.richtext.model.StyledSegment
 
 
-interface DocumentCodec :
-    PlainTextCodec<List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>>, Any> {
+interface DocumentCodec<in T> :
+    PlainTextCodec<List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>>, T> {
     /** The DataFormat to apply the codecs on. If the DataFormat does not match, the codec is not used. */
     val dataFormat: DataFormat
 }

@@ -44,8 +44,8 @@ class WriterTextArea : StyleClassedTextArea() {
     private var textSelectionMode: TextSelectionMode = TextSelectionMode.None
     val document: EditableStyledDocument<MutableCollection<String>, String, MutableCollection<String>>
         get() = this.content
-    var encoderCodec: DocumentCodec? = null
-    var decoderCodecs: List<DocumentCodec> = listOf()
+    var encoderCodec: DocumentCodec<Any>? = null
+    var decoderCodecs: List<DocumentCodec<Any>> = listOf()
 
     init {
         this.isWrapText = true

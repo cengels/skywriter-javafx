@@ -12,7 +12,7 @@ import java.io.BufferedWriter
 object HtmlCodecs {
     private const val SELECTED_TAGS = "p, h1, h2, h3, h4, h5, h6, span, b, strong, i, em, s, del"
 
-    val DOCUMENT_CODEC = object : DocumentCodec {
+    val DOCUMENT_CODEC = object : DocumentCodec<Any> {
         override val dataFormat: DataFormat = DataFormat.HTML
 
         override fun encode(writer: BufferedWriter, element: List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>>) {

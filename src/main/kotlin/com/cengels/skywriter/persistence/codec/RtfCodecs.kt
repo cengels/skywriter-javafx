@@ -8,7 +8,7 @@ import java.io.BufferedWriter
 
 
 object RtfCodecs {
-    val DOCUMENT_CODEC = object : DocumentCodec {
+    val DOCUMENT_CODEC = object : DocumentCodec<Any> {
         override val dataFormat: DataFormat = DataFormat.RTF
 
         override fun encode(writer: BufferedWriter, element: List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>>) {

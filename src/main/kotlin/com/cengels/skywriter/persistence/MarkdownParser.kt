@@ -20,7 +20,7 @@ object MarkdownParser {
     fun save(file: File, document: ReadOnlyStyledDocument<MutableCollection<String>, String, MutableCollection<String>>) {
         try {
             file.bufferedWriter().apply {
-                MarkdownCodecs.DOCUMENT_CODEC.encode(this, document)
+                MarkdownCodecs.DOCUMENT_CODEC.encode(this, document.paragraphs)
                 this.close()
             }
         } catch (exception: IOException) {
@@ -34,7 +34,16 @@ object MarkdownParser {
         try {
             val bufferedReader = file.bufferedReader()
             segOps = segmentOps
-            return MarkdownCodecs.DOCUMENT_CODEC.decode(bufferedReader).apply { bufferedReader.close()  }
+            return MarkdownCodecs.DOCUMENT_CODEC.decode(bufferedReader).let {
+                bufferedReader.close()
+
+                val documentBuilder = ReadOnlyStyledDocumentBuilder<MutableCollection<String>, String, MutableCollection<String>>(
+                    segOps, mutableListOf())
+
+                it.forEach { documentBuilder.addParagraph(it.styledSegments, it.paragraphStyle) }
+
+                documentBuilder.build()
+            }
         } catch (exception: IOException) {
             exception.printStackTrace()
 

@@ -2,30 +2,28 @@ package com.cengels.skywriter.persistence.codec
 
 import com.cengels.skywriter.persistence.*
 import com.cengels.skywriter.util.surround
-import org.fxmisc.richtext.model.ReadOnlyStyledDocument
-import org.fxmisc.richtext.model.ReadOnlyStyledDocumentBuilder
-import org.fxmisc.richtext.model.StyledSegment
+import javafx.scene.input.DataFormat
+import org.fxmisc.richtext.model.*
 import java.io.BufferedReader
 import java.io.BufferedWriter
 
 object MarkdownCodecs {
-    val DOCUMENT_CODEC = object : PlainTextCodec<ReadOnlyStyledDocument<MutableCollection<String>, String, MutableCollection<String>>, BufferedReader> {
-        override fun encode(writer: BufferedWriter, element: ReadOnlyStyledDocument<MutableCollection<String>, String, MutableCollection<String>>) {
-            element.paragraphs.forEachIndexed { index, paragraph ->
-                PARAGRAPH_CODEC.encode(writer, paragraph.paragraphStyle)
-                SEGMENT_CODEC.encode(writer, paragraph.styledSegments)
+    val DOCUMENT_CODEC = object : DocumentCodec<BufferedReader> {
+        override val dataFormat: DataFormat by lazy { DataFormat("text/markdown") }
 
-                if (index != element.paragraphs.lastIndex) {
-                    writer.newLine()
-                    writer.newLine()
+        override fun encode(writer: BufferedWriter, element: List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>>) {
+            element.forEachIndexed { index, paragraph ->
+                PARAGRAPH_CODEC.encode(writer, paragraph)
+
+                if (index != element.lastIndex) {
+                    repeat(2) { writer.newLine() }
                 }
             }
         }
 
-        override fun decode(input: BufferedReader): ReadOnlyStyledDocument<MutableCollection<String>, String, MutableCollection<String>> {
+        override fun decode(input: BufferedReader): List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>> {
             var line: String? = input.readLine() ?: ""
-            val documentBuilder = ReadOnlyStyledDocumentBuilder<MutableCollection<String>, String, MutableCollection<String>>(
-                MarkdownParser.segOps, mutableListOf())
+            val paragraphs = mutableListOf<Paragraph<MutableCollection<String>, String, MutableCollection<String>>>()
 
             while (line != null) {
                 var segmentText = ""
@@ -48,39 +46,40 @@ object MarkdownCodecs {
                     line = input.readLine()
                 }
 
-                val paragraphStyles: MutableCollection<String> = PARAGRAPH_CODEC.decode(segmentText)
-                segmentText = segmentText.trimStart('#')
-
-                if (paragraphStyles.isNotEmpty() && segmentText.startsWith(' ')) {
-                    segmentText = segmentText.slice(1..segmentText.lastIndex)
-                }
-
-                val textSegments: List<StyledSegment<String, MutableCollection<String>>> = SEGMENT_CODEC.decode(segmentText)
-
-                documentBuilder.addParagraph(textSegments, paragraphStyles)
+                paragraphs.add(PARAGRAPH_CODEC.decode(segmentText))
             }
 
-            return documentBuilder.build()
+            return paragraphs
         }
     }
 
-    val PARAGRAPH_CODEC = object : PlainTextCodec<MutableCollection<String>, String> {
-        override fun encode(writer: BufferedWriter, element: MutableCollection<String>) {
-            val hashCount: Int? = Character.getNumericValue(element.find { it.matches(Regex("h\\d")) }?.last() ?: '0')
+    val PARAGRAPH_CODEC = object : ParagraphCodec<String> {
+        override fun encode(writer: BufferedWriter, element: Paragraph<MutableCollection<String>, String, MutableCollection<String>>) {
+            val hashCount: Int? = Character.getNumericValue(element.paragraphStyle.find { it.matches(Regex("h\\d")) }?.last() ?: '0')
 
             if (hashCount != null) {
                 writer.append("#".repeat(hashCount))
             }
+
+            SEGMENT_CODEC.encode(writer, element.styledSegments)
         }
 
-        override fun decode(input: String): MutableCollection<String> {
+        override fun decode(input: String): Paragraph<MutableCollection<String>, String, MutableCollection<String>> {
             val hashCount: Int = input.takeWhile { it == '#' }.length
+            var segmentText = input.trimStart('#')
+            val paragraphStyles: MutableList<String> = mutableListOf()
 
             if (hashCount != 0) {
-                return mutableListOf("h$hashCount")
+                if (segmentText.startsWith(' ')) {
+                    segmentText = segmentText.slice(1..segmentText.lastIndex)
+                }
+
+                paragraphStyles.add("h$hashCount")
             }
 
-            return mutableListOf()
+            val textSegments: List<StyledSegment<String, MutableCollection<String>>> = SEGMENT_CODEC.decode(segmentText)
+
+            return Paragraph(paragraphStyles, SegmentOps.styledTextOps<MutableCollection<String>>(), textSegments)
         }
     }
 
