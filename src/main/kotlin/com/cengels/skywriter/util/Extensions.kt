@@ -11,11 +11,18 @@ fun String.splitWords(): List<String> {
     return this.split(WORD_REGEX)
 }
 
+/** Counts the words by applying the regex `\b\S+\b`. */
 fun String.countWords(): Int {
     return this.splitWords().size - 1
 }
 
+/** Surrounds the [String] with the specified text. */
 fun String.surround(with: String): String = "$with$this$with"
+
+/** Removes the specified substrings from the [String]. */
+fun String.remove(vararg strings: String): String {
+    return strings.fold(this) { acc, string -> acc.replace(string, "") }
+}
 
 /** Splits the string at the specified exclusive positions. */
 fun String.split(vararg at: Int): Collection<String> {

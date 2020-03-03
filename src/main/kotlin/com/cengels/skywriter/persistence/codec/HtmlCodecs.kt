@@ -148,12 +148,12 @@ object HtmlCodecs {
 }
 
 /** Gets the specified style attribute or an empty [String] if it's not defined on this element. */
-fun Element.getStyle(key: String): String {
+private fun Element.getStyle(key: String): String {
     return this.getStyles().getOrDefault(key, "")
 }
 
 /** Gets all style attributes defined within this element. */
-fun Element.getStyles(): Map<String, String> {
+private fun Element.getStyles(): Map<String, String> {
     return this.attr("style")
         .split(';')
         .filter { it.contains(":") } // protects against semicolons at the end of a style list
@@ -164,6 +164,6 @@ fun Element.getStyles(): Map<String, String> {
 }
 
 /** Gets this element's whole own text, i.e. including all whitespace but excluding child node text. */
-fun Element.wholeOwnText(): String {
+private fun Element.wholeOwnText(): String {
     return this.textNodes().fold("") { acc, textNode -> acc + textNode.wholeText }
 }
