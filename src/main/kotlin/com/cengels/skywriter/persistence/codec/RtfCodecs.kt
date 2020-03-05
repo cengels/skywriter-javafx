@@ -74,8 +74,9 @@ object RtfCodecs : CodecGroup<Any, Iterable<RtfCodecs.CommandSegment>> {
         }
 
         override fun decode(input: Iterable<CommandSegment>): List<StyledSegment<String, MutableCollection<String>>> {
-            return input.map {
-                StyledSegment(it.segment, mapToStyles(it.commands))
+            return input.map { (segment, commands) ->
+                val tabs = "\t".repeat(commands.count { RtfCommand.TAB_INDICATORS.contains(it) })
+                StyledSegment(tabs + segment, mapToStyles(commands))
             }
         }
 
@@ -108,9 +109,10 @@ object RtfCodecs : CodecGroup<Any, Iterable<RtfCodecs.CommandSegment>> {
         var currentCommands = ArrayDeque<RtfCommand>(16)
         var lastIndex = -1
         var commandRange = findNextCommand(input, lastIndex)
+        var segmentText = ""
 
         while (commandRange != IntRange.EMPTY) {
-            val segmentText: String = input.substring(lastIndex + 1 until commandRange.first)
+            segmentText = input.substring(lastIndex + 1 until commandRange.first)
             val command = input.substring(commandRange).trimEnd(' ')
             // Some commands are "segment commands," i.e. they operate on a portion of text. These segments are terminated by their command and a 0.
             val rtfCommand = RtfCommand.getCommand(if (command.last() == '0') command.removeRange(command.lastIndex..command.lastIndex) else command)
@@ -134,6 +136,14 @@ object RtfCodecs : CodecGroup<Any, Iterable<RtfCodecs.CommandSegment>> {
 
             lastIndex = commandRange.last
             commandRange = findNextCommand(input, lastIndex)
+        }
+
+        if (lastIndex != input.lastIndex) {
+            segmentText = input.substring(lastIndex + 1..input.lastIndex)
+
+            if (segmentText.isNotEmpty()) {
+                deque.add(CommandSegment(segmentText, currentCommands))
+            }
         }
 
         return deque
