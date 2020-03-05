@@ -40,7 +40,7 @@ class WriterTextArea : StyleClassedTextArea() {
     var initialized: Boolean = false
         private set
     private var midChange: Boolean = false
-    private val queue: Queue<() -> Unit> = LinkedList<() -> Unit>()
+    private val queue: Queue<() -> Unit> = LinkedList()
     private var textSelectionMode: TextSelectionMode = TextSelectionMode.None
     val document: EditableStyledDocument<MutableCollection<String>, String, MutableCollection<String>>
         get() = this.content
@@ -51,7 +51,8 @@ class WriterTextArea : StyleClassedTextArea() {
         this.isWrapText = true
 
         encoderCodec = HtmlCodecs.DOCUMENT_CODEC
-        decoderCodecs = listOf(RtfCodecs.DOCUMENT_CODEC, HtmlCodecs.DOCUMENT_CODEC)
+        // prefer HTML (the RTF codecs are imperfect)
+        decoderCodecs = listOf(HtmlCodecs.DOCUMENT_CODEC, RtfCodecs.DOCUMENT_CODEC)
 
         this.caretPositionProperty().addListener { _, _, _ ->
             this.requestFollowCaret()

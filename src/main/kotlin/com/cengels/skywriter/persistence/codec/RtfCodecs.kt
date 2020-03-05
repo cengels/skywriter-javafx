@@ -3,6 +3,7 @@ package com.cengels.skywriter.persistence.codec
 import com.cengels.skywriter.enum.RtfCommand
 import com.cengels.skywriter.style.FormattingStylesheet
 import com.cengels.skywriter.util.containsAny
+import com.cengels.skywriter.util.indexOfUnescaped
 import com.cengels.skywriter.util.remove
 import com.cengels.skywriter.util.removeUnescaped
 import javafx.scene.input.DataFormat
@@ -13,8 +14,6 @@ import java.io.*
 import java.util.*
 
 object RtfCodecs : CodecGroup<Any, Iterable<RtfCodecs.CommandSegment>> {
-    private val BRACES_MATCHER = Regex("(?<!\\\\)(\\{.*?[^\\\\]})")
-
     private val RTF_TO_STYLES = mapOf(
         RtfCommand.B to FormattingStylesheet.bold,
         RtfCommand.I to FormattingStylesheet.italic,
@@ -94,8 +93,35 @@ object RtfCodecs : CodecGroup<Any, Iterable<RtfCodecs.CommandSegment>> {
 
     /** Cleans a proper RTF input string by stripping it of any useless information enclosed in braces. */
     private fun cleanRtfString(input: String): String {
-        return BRACES_MATCHER.replace(input, "")
+        return stripCurlyBraced(input)
             .removeUnescaped("{", "}", "\n", "\r", "\t")
+    }
+
+    private fun stripCurlyBraced(input: String): String {
+        // IMPORTANT DISCLAIMER:
+        // This method DOES NOT WORK AS INTENDED in all cases. Depending on the kind of RTF input, the actual text
+        // may be surrounded by curly braces as well, which (using this method) will strip out all content.
+        // To counteract this, Skywriter uses HTML format to decode the clipboard whenever available.
+        // At some point in the future, all codecs in this file should probably be rewritten to allow all use cases.
+
+        var startIndex = input.indexOfUnescaped('{')
+        var endIndex = input.indexOfUnescaped('}')
+        var lastIndex = input.lastIndexOf('}')
+        var remaining = input
+
+        while (endIndex != -1 && endIndex != lastIndex) {
+            remaining = remaining.removeRange((if (startIndex == -1) 0 else startIndex)..endIndex)
+
+            val newStartIndex = remaining.indexOfUnescaped('{')
+            endIndex = remaining.indexOfUnescaped('}')
+            lastIndex = remaining.lastIndexOf('}')
+
+            if (newStartIndex != -1 && newStartIndex <= endIndex) {
+                startIndex = newStartIndex
+            }
+        }
+
+        return remaining
     }
 
     /** Skims the text and divides it into a list of [CommandSegment]s. Note that only defined commands (see [RtfCommand]) are retained. */

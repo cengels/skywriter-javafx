@@ -1,5 +1,6 @@
 package com.cengels.skywriter.util
 
+import com.cengels.skywriter.persistence.codec.isEscaped
 import java.time.Duration
 import java.time.LocalDateTime
 import kotlin.math.max
@@ -22,6 +23,28 @@ fun String.surround(with: String): String = "$with$this$with"
 /** Removes the specified substrings from the [String]. */
 fun String.remove(vararg strings: String): String {
     return strings.fold(this) { acc, string -> acc.replace(string, "") }
+}
+
+/** Finds the index of the specified unescaped character or returns -1 if no unescaped character is found. */
+fun String.indexOfUnescaped(char: Char, startIndex: Int = 0): Int {
+    var index: Int = startIndex - 1
+
+    do {
+        index = this.indexOf(char, index + 1)
+    } while (this.isEscaped(index))
+
+    return index
+}
+
+/** Finds the index of the specified unescaped substring or returns -1 if no unescaped substring is found. */
+fun String.indexOfUnescaped(string: String, startIndex: Int = 0): Int {
+    var index: Int = startIndex - 1
+
+    do {
+        index = this.indexOf(string, index + 1)
+    } while (this.isEscaped(index))
+
+    return index
 }
 
 /** Removes the specified substrings from the [String] only if they are not escaped (preceded by a backslash). If they are escaped, removes the escaping. */
