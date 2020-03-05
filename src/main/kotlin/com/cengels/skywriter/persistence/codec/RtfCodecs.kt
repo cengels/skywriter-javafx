@@ -4,6 +4,7 @@ import com.cengels.skywriter.enum.RtfCommand
 import com.cengels.skywriter.style.FormattingStylesheet
 import com.cengels.skywriter.util.containsAny
 import com.cengels.skywriter.util.remove
+import com.cengels.skywriter.util.removeUnescaped
 import javafx.scene.input.DataFormat
 import org.fxmisc.richtext.model.Paragraph
 import org.fxmisc.richtext.model.SegmentOps
@@ -12,7 +13,7 @@ import java.io.*
 import java.util.*
 
 object RtfCodecs : CodecGroup<Any, Iterable<RtfCodecs.CommandSegment>> {
-    private val BRACES_MATCHER = Regex("\\{.*?}")
+    private val BRACES_MATCHER = Regex("(?<!\\\\)(\\{.*?[^\\\\]})")
 
     private val RTF_TO_STYLES = mapOf(
         RtfCommand.B to FormattingStylesheet.bold,
@@ -94,7 +95,7 @@ object RtfCodecs : CodecGroup<Any, Iterable<RtfCodecs.CommandSegment>> {
     /** Cleans a proper RTF input string by stripping it of any useless information enclosed in braces. */
     private fun cleanRtfString(input: String): String {
         return BRACES_MATCHER.replace(input, "")
-            .remove("{", "}", "\n", "\r", "\t")
+            .removeUnescaped("{", "}", "\n", "\r", "\t")
     }
 
     /** Skims the text and divides it into a list of [CommandSegment]s. Note that only defined commands (see [RtfCommand]) are retained. */
@@ -109,7 +110,7 @@ object RtfCodecs : CodecGroup<Any, Iterable<RtfCodecs.CommandSegment>> {
         var currentCommands = ArrayDeque<RtfCommand>(16)
         var lastIndex = -1
         var commandRange = findNextCommand(input, lastIndex)
-        var segmentText = ""
+        var segmentText: String
 
         while (commandRange != IntRange.EMPTY) {
             segmentText = input.substring(lastIndex + 1 until commandRange.first)
@@ -154,7 +155,7 @@ object RtfCodecs : CodecGroup<Any, Iterable<RtfCodecs.CommandSegment>> {
 
         do {
             index = inString.indexOf('\\', index + 1)
-        } while (index != -1 && inString[index + 1] == '\\' && inString[index - 1] == '\\')
+        } while (index != -1 && ((inString[index + 1] == '\\' && inString[index - 1] == '\\') || !inString[index + 1].isLetter()))
 
         if (index == -1) {
             return IntRange.EMPTY

@@ -24,6 +24,30 @@ fun String.remove(vararg strings: String): String {
     return strings.fold(this) { acc, string -> acc.replace(string, "") }
 }
 
+/** Removes the specified substrings from the [String] only if they are not escaped (preceded by a backslash). If they are escaped, removes the escaping. */
+fun String.removeUnescaped(vararg strings: String): String {
+    return strings.fold(this) { acc, string ->
+        var index = acc.indexOf(string)
+        var newString = acc
+
+        while (index != -1) {
+            var endIndex = index + string.length - 1
+            if (newString.getOrNull(index - 1)?.equals('\\') != true) {
+                // unescaped
+                newString = newString.removeRange(index..endIndex)
+                endIndex = -1
+            } else {
+                newString = newString.removeRange(index - 1 until index)
+                endIndex -= 1
+            }
+
+            index = newString.indexOf(string, endIndex + 1)
+        }
+
+        newString
+    }
+}
+
 /** Splits the string at the specified exclusive positions. */
 fun String.split(vararg at: Int): Collection<String> {
     if (at.isEmpty()) {
