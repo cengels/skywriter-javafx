@@ -6,6 +6,12 @@ import org.fxmisc.richtext.model.Paragraph
 import org.fxmisc.richtext.model.StyledSegment
 
 
+interface CodecGroup<in TDocument, in T> {
+    val DOCUMENT_CODEC: DocumentCodec<TDocument>
+    val PARAGRAPH_CODEC: ParagraphCodec<T>
+    val SEGMENT_CODEC: SegmentCodec<T>
+}
+
 interface DocumentCodec<in T> :
     PlainTextCodec<List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>>, T> {
     /** The DataFormat to apply the codecs on. If the DataFormat does not match, the codec is not used. */

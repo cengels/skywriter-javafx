@@ -9,10 +9,10 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import java.io.BufferedWriter
 
-object HtmlCodecs {
+object HtmlCodecs : CodecGroup<Any, Element> {
     private const val SELECTED_TAGS = "p, br, h1, h2, h3, h4, h5, h6, span, b, strong, i, em, s, del"
 
-    val DOCUMENT_CODEC = object : DocumentCodec<Any> {
+    override val DOCUMENT_CODEC = object : DocumentCodec<Any> {
         override val dataFormat: DataFormat = DataFormat.HTML
 
         override fun encode(writer: BufferedWriter, element: List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>>) {
@@ -62,7 +62,7 @@ object HtmlCodecs {
         }
     }
 
-    val PARAGRAPH_CODEC = object : ParagraphCodec<Element> {
+    override val PARAGRAPH_CODEC = object : ParagraphCodec<Element> {
         override fun encode(writer: BufferedWriter, element: Paragraph<MutableCollection<String>, String, MutableCollection<String>>) {
             val tag: String = element.paragraphStyle.find { it.startsWith('h') } ?: "p"
 
@@ -82,7 +82,7 @@ object HtmlCodecs {
         }
     }
 
-    val SEGMENT_CODEC = object : SegmentCodec<Element> {
+    override val SEGMENT_CODEC = object : SegmentCodec<Element> {
         override fun encode(writer: BufferedWriter, element: List<StyledSegment<String, MutableCollection<String>>>) {
             writer.write(element.joinToString("") {
                 val tags = mutableListOf<String>()

@@ -4,11 +4,12 @@ import com.cengels.skywriter.persistence.*
 import com.cengels.skywriter.util.surround
 import javafx.scene.input.DataFormat
 import org.fxmisc.richtext.model.*
+import org.jsoup.nodes.Element
 import java.io.BufferedReader
 import java.io.BufferedWriter
 
-object MarkdownCodecs {
-    val DOCUMENT_CODEC = object : DocumentCodec<BufferedReader> {
+object MarkdownCodecs : CodecGroup<BufferedReader, String> {
+    override val DOCUMENT_CODEC = object : DocumentCodec<BufferedReader> {
         override val dataFormat: DataFormat by lazy { DataFormat("text/markdown") }
 
         override fun encode(writer: BufferedWriter, element: List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>>) {
@@ -53,7 +54,7 @@ object MarkdownCodecs {
         }
     }
 
-    val PARAGRAPH_CODEC = object : ParagraphCodec<String> {
+    override val PARAGRAPH_CODEC = object : ParagraphCodec<String> {
         override fun encode(writer: BufferedWriter, element: Paragraph<MutableCollection<String>, String, MutableCollection<String>>) {
             val hashCount: Int? = Character.getNumericValue(element.paragraphStyle.find { it.matches(Regex("h\\d")) }?.last() ?: '0')
 
@@ -83,7 +84,7 @@ object MarkdownCodecs {
         }
     }
 
-    val SEGMENT_CODEC = object : SegmentCodec<String> {
+    override val SEGMENT_CODEC = object : SegmentCodec<String> {
         override fun encode(writer: BufferedWriter, element: List<StyledSegment<String, MutableCollection<String>>>) {
             element.forEachIndexed { index, it ->
                 val escapedText: String = escape(it.segment)

@@ -54,3 +54,13 @@ fun String.findWordBoundaries(at: Int): IntRange {
 fun LocalDateTime.isWithin(duration: Duration): Boolean {
     return this.isAfter(LocalDateTime.now().minusSeconds(duration.seconds))
 }
+
+/** Checks if the iterable contains any of the given elements. */
+fun <T> Iterable<T>.containsAny(otherCollection: Iterable<T>): Boolean {
+    return this.any { otherCollection.contains(it) }
+}
+
+/** Checks if the iterable contains any of the given elements. */
+fun <T> Iterable<T>.containsAny(vararg elements: T): Boolean {
+    return this.any { elements.contains(it) }
+}
