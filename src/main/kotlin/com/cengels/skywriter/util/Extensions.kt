@@ -1,5 +1,6 @@
 package com.cengels.skywriter.util
 
+import com.cengels.skywriter.persistence.codec.isEscaped
 import java.time.Duration
 import java.time.LocalDateTime
 import kotlin.math.max
@@ -11,11 +12,64 @@ fun String.splitWords(): List<String> {
     return this.split(WORD_REGEX)
 }
 
+/** Counts the words by applying the regex `\b\S+\b`. */
 fun String.countWords(): Int {
     return this.splitWords().size - 1
 }
 
+/** Surrounds the [String] with the specified text. */
 fun String.surround(with: String): String = "$with$this$with"
+
+/** Removes the specified substrings from the [String]. */
+fun String.remove(vararg strings: String): String {
+    return strings.fold(this) { acc, string -> acc.replace(string, "") }
+}
+
+/** Finds the index of the specified unescaped character or returns -1 if no unescaped character is found. */
+fun String.indexOfUnescaped(char: Char, startIndex: Int = 0): Int {
+    var index: Int = startIndex - 1
+
+    do {
+        index = this.indexOf(char, index + 1)
+    } while (this.isEscaped(index))
+
+    return index
+}
+
+/** Finds the index of the specified unescaped substring or returns -1 if no unescaped substring is found. */
+fun String.indexOfUnescaped(string: String, startIndex: Int = 0): Int {
+    var index: Int = startIndex - 1
+
+    do {
+        index = this.indexOf(string, index + 1)
+    } while (this.isEscaped(index))
+
+    return index
+}
+
+/** Removes the specified substrings from the [String] only if they are not escaped (preceded by a backslash). If they are escaped, removes the escaping. */
+fun String.removeUnescaped(vararg strings: String): String {
+    return strings.fold(this) { acc, string ->
+        var index = acc.indexOf(string)
+        var newString = acc
+
+        while (index != -1) {
+            var endIndex = index + string.length - 1
+            if (newString.getOrNull(index - 1)?.equals('\\') != true) {
+                // unescaped
+                newString = newString.removeRange(index..endIndex)
+                endIndex = -1
+            } else {
+                newString = newString.removeRange(index - 1 until index)
+                endIndex -= 1
+            }
+
+            index = newString.indexOf(string, endIndex + 1)
+        }
+
+        newString
+    }
+}
 
 /** Splits the string at the specified exclusive positions. */
 fun String.split(vararg at: Int): Collection<String> {
@@ -46,4 +100,14 @@ fun String.findWordBoundaries(at: Int): IntRange {
 /** Checks if the [LocalDateTime] lies between now and now - duration. */
 fun LocalDateTime.isWithin(duration: Duration): Boolean {
     return this.isAfter(LocalDateTime.now().minusSeconds(duration.seconds))
+}
+
+/** Checks if the iterable contains any of the given elements. */
+fun <T> Iterable<T>.containsAny(otherCollection: Iterable<T>): Boolean {
+    return this.any { otherCollection.contains(it) }
+}
+
+/** Checks if the iterable contains any of the given elements. */
+fun <T> Iterable<T>.containsAny(vararg elements: T): Boolean {
+    return this.any { elements.contains(it) }
 }
