@@ -1,5 +1,6 @@
 package com.cengels.skywriter.persistence
 
+import com.cengels.skywriter.persistence.codec.MarkdownCodecs
 import io.kotlintest.*
 import io.kotlintest.matchers.collections.shouldContainExactly
 import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -7,10 +8,10 @@ import io.kotlintest.specs.FreeSpec
 import io.kotlintest.specs.WordSpec
 
 class MarkdownParserTests : FreeSpec({
-    "MarkdownParser.SEGMENT_CODEC.decode should" - {
+    "MarkdownCodecs.SEGMENT_CODEC.decode should" - {
         "leave unformatted strings" - {
             "the same" {
-                val output = MarkdownParser.SEGMENT_CODEC.decode("This is a minor test involving an unformatted string.")
+                val output = MarkdownCodecs.SEGMENT_CODEC.decode("This is a minor test involving an unformatted string.")
 
                 output.size shouldBe 1
                 output.single().segment shouldBe "This is a minor test involving an unformatted string."
@@ -19,14 +20,14 @@ class MarkdownParserTests : FreeSpec({
         }
         "properly decode simple formatting" - {
             "when the entire string is italicized" {
-                val output = MarkdownParser.SEGMENT_CODEC.decode("*This test involves an italicized string.*")
+                val output = MarkdownCodecs.SEGMENT_CODEC.decode("*This test involves an italicized string.*")
 
                 output.size shouldBe 1
                 output.single().segment shouldBe "This test involves an italicized string."
                 output.single().style.shouldContainExactly("italic")
             }
             "when the beginning is italicized" {
-                val output = MarkdownParser.SEGMENT_CODEC.decode("*This test involves* an italicized string.")
+                val output = MarkdownCodecs.SEGMENT_CODEC.decode("*This test involves* an italicized string.")
 
                 output.size shouldBe 2
                 output[0].segment shouldBe "This test involves"
@@ -35,7 +36,7 @@ class MarkdownParserTests : FreeSpec({
                 output[1].style.size shouldBe 0
             }
             "when the middle is italicized" {
-                val output = MarkdownParser.SEGMENT_CODEC.decode("This test *involves *an italicized string.")
+                val output = MarkdownCodecs.SEGMENT_CODEC.decode("This test *involves *an italicized string.")
 
                 output.size shouldBe 3
                 output[0].segment shouldBe "This test "
@@ -46,7 +47,7 @@ class MarkdownParserTests : FreeSpec({
                 output[2].style.size shouldBe 0
             }
             "when the end is italicized" {
-                val output = MarkdownParser.SEGMENT_CODEC.decode("This test involves *an italicized string.*")
+                val output = MarkdownCodecs.SEGMENT_CODEC.decode("This test involves *an italicized string.*")
 
                 output.size shouldBe 2
                 output[0].segment shouldBe "This test involves "
@@ -55,7 +56,7 @@ class MarkdownParserTests : FreeSpec({
                 output[1].style.shouldContainExactly("italic")
             }
             "when there are underscores" {
-                val output = MarkdownParser.SEGMENT_CODEC.decode("This test involves _an italicized string._")
+                val output = MarkdownCodecs.SEGMENT_CODEC.decode("This test involves _an italicized string._")
 
                 output.size shouldBe 2
                 output[0].segment shouldBe "This test involves "
@@ -64,7 +65,7 @@ class MarkdownParserTests : FreeSpec({
                 output[1].style.shouldContainExactly("italic")
             }
             "properly decode bold" {
-                val output = MarkdownParser.SEGMENT_CODEC.decode("This test involves **a bold string.**")
+                val output = MarkdownCodecs.SEGMENT_CODEC.decode("This test involves **a bold string.**")
 
                 output.size shouldBe 2
                 output[0].segment shouldBe "This test involves "
@@ -75,7 +76,7 @@ class MarkdownParserTests : FreeSpec({
         }
         "properly decode nested formatting" - {
             "with bold within italics surrounded by spaces" {
-                val output = MarkdownParser.SEGMENT_CODEC.decode("This test involves *nested **bold** within italics.*")
+                val output = MarkdownCodecs.SEGMENT_CODEC.decode("This test involves *nested **bold** within italics.*")
 
                 output.size shouldBe 4
                 output[0].segment shouldBe "This test involves "
@@ -88,7 +89,7 @@ class MarkdownParserTests : FreeSpec({
                 output[3].style.shouldContainExactly("italic")
             }
             "with bold within italics" {
-                val output = MarkdownParser.SEGMENT_CODEC.decode("This test involves *nested **bold***.")
+                val output = MarkdownCodecs.SEGMENT_CODEC.decode("This test involves *nested **bold***.")
 
                 output.size shouldBe 4
                 output[0].segment shouldBe "This test involves "
@@ -101,7 +102,7 @@ class MarkdownParserTests : FreeSpec({
                 output[3].style.size shouldBe 0
             }
             "with italics within bold" {
-                val output = MarkdownParser.SEGMENT_CODEC.decode("This test __involves _italics_.__")
+                val output = MarkdownCodecs.SEGMENT_CODEC.decode("This test __involves _italics_.__")
 
                 output.size shouldBe 4
                 output[0].segment shouldBe "This test "
@@ -116,28 +117,28 @@ class MarkdownParserTests : FreeSpec({
         }
         "properly handle unterminated tokens" - {
             "with an unterminated italics segment" {
-                val output = MarkdownParser.SEGMENT_CODEC.decode("This test *involves an unterminated token.")
+                val output = MarkdownCodecs.SEGMENT_CODEC.decode("This test *involves an unterminated token.")
 
                 output.size shouldBe 1
                 output.single().segment shouldBe "This test *involves an unterminated token."
                 output.single().style.size shouldBe 0
             }
             "with an unterminated bold segment" {
-                val output = MarkdownParser.SEGMENT_CODEC.decode("This test involves an unterminated token**.")
+                val output = MarkdownCodecs.SEGMENT_CODEC.decode("This test involves an unterminated token**.")
 
                 output.size shouldBe 1
                 output.single().segment shouldBe "This test involves an unterminated token**."
                 output.single().style.size shouldBe 0
             }
             "with multiple unterminated tokens" {
-                val output = MarkdownParser.SEGMENT_CODEC.decode("This ** test involves multiple_ unterminated tokens.")
+                val output = MarkdownCodecs.SEGMENT_CODEC.decode("This ** test involves multiple_ unterminated tokens.")
 
                 output.size shouldBe 1
                 output.single().segment shouldBe "This ** test involves multiple_ unterminated tokens."
                 output.single().style.size shouldBe 0
             }
             "with multiple unterminated tokens and legitimate tokens 1".config(enabled = false) {
-                val output = MarkdownParser.SEGMENT_CODEC.decode("This ** test involves **multiple**_ unterminated tokens.")
+                val output = MarkdownCodecs.SEGMENT_CODEC.decode("This ** test involves **multiple**_ unterminated tokens.")
 
                 output.size shouldBe 3
                 output[0].segment shouldBe "This "
@@ -148,7 +149,7 @@ class MarkdownParserTests : FreeSpec({
                 output[2].style.size shouldBe 0
             }
             "with multiple unterminated tokens and legitimate tokens 2".config(enabled = false) {
-                val output = MarkdownParser.SEGMENT_CODEC.decode("This ** test involves *multiple*_ unterminated tokens.")
+                val output = MarkdownCodecs.SEGMENT_CODEC.decode("This ** test involves *multiple*_ unterminated tokens.")
 
                 output.size shouldBe 3
                 output[0].segment shouldBe "This ** test involves "
@@ -161,14 +162,14 @@ class MarkdownParserTests : FreeSpec({
         }
         "avoid decoding escaped tokens" - {
             "with simple escaped tokens" {
-                val output = MarkdownParser.SEGMENT_CODEC.decode("This test \\*involves an escaped token\\*.")
+                val output = MarkdownCodecs.SEGMENT_CODEC.decode("This test \\*involves an escaped token\\*.")
 
                 output.size shouldBe 1
                 output.single().segment shouldBe "This test *involves an escaped token*."
                 output.single().style.size shouldBe 0
             }
             "where the backslash itself is escaped" {
-                val output = MarkdownParser.SEGMENT_CODEC.decode("This test \\\\*involves an escaped token.\\\\*")
+                val output = MarkdownCodecs.SEGMENT_CODEC.decode("This test \\\\*involves an escaped token.\\\\*")
 
                 output.size shouldBe 2
                 output[0].segment shouldBe "This test \\"
@@ -177,7 +178,7 @@ class MarkdownParserTests : FreeSpec({
                 output[1].style.shouldContainExactlyInAnyOrder("italic")
             }
             "where the escaping of the backslash is escaped" {
-                val output = MarkdownParser.SEGMENT_CODEC.decode("This test \\\\\\*involves an escaped token.\\\\\\*")
+                val output = MarkdownCodecs.SEGMENT_CODEC.decode("This test \\\\\\*involves an escaped token.\\\\\\*")
 
                 output.size shouldBe 1
                 output.single().segment shouldBe "This test \\*involves an escaped token.\\*"
