@@ -150,8 +150,6 @@ class WriterTextArea : StyleClassedTextArea() {
         midChange = false
         queue.clear()
         textSelectionMode = TextSelectionMode.None
-        paragraphInsertionStyle = listOf()
-        textInsertionStyle = listOf()
     }
 
     /** Deletes the next word and only the next word, excluding the last space. */
