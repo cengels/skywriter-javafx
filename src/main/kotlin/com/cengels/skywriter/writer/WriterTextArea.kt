@@ -50,7 +50,7 @@ class WriterTextArea : StyleClassedTextArea() {
         get() = this.content
     var encoderCodec: DocumentCodec<Any>? = null
     var decoderCodecs: List<DocumentCodec<Any>> = listOf()
-    private var requestCenterCaret: Boolean = false
+    private var centerCaretRequested: Boolean = false
     private val virtualFlow: VirtualFlow<Any, Cell<Any, Node>> = this.children.filterIsInstance<VirtualFlow<Any, Cell<Any, Node>>>().single()
 
     init {
@@ -264,26 +264,23 @@ class WriterTextArea : StyleClassedTextArea() {
         IndexRange(this.caretSelectionBind.startParagraphIndex, this.caretSelectionBind.endParagraphIndex)
 
     /** Vertically centers the caret in the viewport. */
-    fun centerCaret() {
-        this.showParagraphAtBottom(currentParagraph)
+    fun requestCenterCaret() {
+        // this.showParagraphAtBottom(currentParagraph)
         // visible paragraphs will not be updated yet if this isn't run asynchronously
-        runAsync { } ui { requestCenterCaret = true }
+        centerCaretRequested = true
     }
 
     override fun layoutChildren() {
         super.layoutChildren()
 
-        if (requestCenterCaret) {
+        if (centerCaretRequested) {
             this.visibleParagraphs.suspendable().suspendWhile {
                 this.caretSelectionBind.underlyingCaret.let { caret ->
-                    val sceneCaretBounds = caret.localToScene(caret.boundsInLocal)
                     val center = (scene ?: FX.primaryStage.scene).height / 2
-                    val caretCenter = sceneCaretBounds.minY + sceneCaretBounds.height / 2
-                    val offset = center - caretCenter
-                    scrollYBy(-offset)
+                    virtualFlow.showAtOffset(currentParagraph, center - caret.boundsInLocal.maxY)
                 }
             }
-            requestCenterCaret = false
+            centerCaretRequested = false
         }
     }
 

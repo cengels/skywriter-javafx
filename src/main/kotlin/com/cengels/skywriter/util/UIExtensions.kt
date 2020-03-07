@@ -9,6 +9,7 @@ import javafx.beans.property.ReadOnlyProperty
 import javafx.geometry.Insets
 import javafx.geometry.Side
 import javafx.scene.Node
+import javafx.scene.Scene
 import javafx.scene.control.Label
 import javafx.scene.image.Image
 import javafx.scene.layout.*
@@ -16,6 +17,7 @@ import javafx.scene.paint.Paint
 import javafx.stage.FileChooser
 import tornadofx.*
 import java.awt.Color
+import java.util.function.Predicate
 
 /** Creates a binding that automatically converts the [java.awt.Color] values into [javafx.scene.paint.Paint] values. */
  fun Color.toBackground(): Background {
@@ -68,4 +70,22 @@ fun <T> ReadOnlyProperty<T>.onChangeAndNow(op: (it: T?) -> Unit) {
 
 fun Node.initializeStyle() {
     this.styleProperty().bind(ThemesManager.selectedThemeProperty.stringBinding { it!!.toStylesheet() })
+}
+
+/** Checks if this element has any children that are currently focused. */
+fun Node.isChildFocused(): Boolean {
+    return this.scene.focusOwner?.findParent { it === this } != null
+}
+
+/** Finds the parent matching the specified predicate. Returns null if no parent matching the predicate is found. */
+fun Node.findParent(predicate: (node: Node) -> Boolean): Node? {
+    if (parent == null) {
+        return null
+    }
+
+    if (predicate.invoke(parent)) {
+        return parent
+    }
+
+    return parent.findParent(predicate)
 }

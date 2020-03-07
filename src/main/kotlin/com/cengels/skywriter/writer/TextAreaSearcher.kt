@@ -45,18 +45,16 @@ class TextAreaSearcher(private val context: WriterTextArea) {
     /** Scrolls the text area to the next occurrence of the search term. */
     fun scrollToNext() {
         getNextMatch()?.let {
-            println("${it.range.first} to ${it.range.last + 1}")
             context.selectRange(it.range.first, it.range.last + 1)
-            context.requestFollowCaret()
+            context.requestCenterCaret()
         }
     }
 
     /** Scrolls the text area to the previous occurrence of the search term. */
     fun scrollToPrevious() {
         getPreviousMatch()?.let {
-            println("${it.range.first} to ${it.range.last + 1}")
             context.selectRange(it.range.first, it.range.last + 1)
-            context.requestFollowCaret()
+            context.requestCenterCaret()
         }
     }
 

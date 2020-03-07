@@ -7,30 +7,23 @@ import com.cengels.skywriter.style.GeneralStylesheet
 import com.cengels.skywriter.theming.ThemesManager
 import com.cengels.skywriter.theming.ThemesView
 import com.cengels.skywriter.util.*
-import com.cengels.skywriter.util.convert.ColorConverter
-import javafx.beans.value.ObservableValue
-import javafx.geometry.Insets
 import javafx.geometry.Pos
 import javafx.scene.Group
 import javafx.scene.control.*
-import javafx.scene.input.KeyCode
 import javafx.scene.layout.*
-import javafx.scene.paint.Color
-import javafx.scene.shape.Path
 import javafx.stage.FileChooser
 import javafx.stage.WindowEvent
 import org.fxmisc.flowless.VirtualizedScrollPane
 import tornadofx.*
 import java.io.File
 import java.time.LocalDateTime
-import java.util.*
-import java.util.function.Function
 
 class WriterView : View("Skywriter") {
     val model = WriterViewModel()
     lateinit var menuBar: MenuBar
     lateinit var statusBar: StackPane
     lateinit var findField: TextField
+    lateinit var findBar: BorderPane
 
     init {
         this.updateTitle()
@@ -298,12 +291,12 @@ class WriterView : View("Skywriter") {
             useMaxWidth = true
 
             vbox {
-                borderpane {
-                    paddingVertical = 10.0
-                    paddingHorizontal = 20.0
+                findBar = borderpane {
                     addClass("find-bar")
                     managedWhen(visibleProperty())
                     hiddenWhen(model.findAndReplaceStateProperty.isEqualTo(WriterViewModel.FindAndReplace.None))
+                    paddingVertical = 10.0
+                    paddingHorizontal = 20.0
 
                     left {
                         vbox(5) {
@@ -471,7 +464,7 @@ class WriterView : View("Skywriter") {
             runAsync {} ui {
                 model.newProgressTracker(textArea.wordCount, file)
                 model.originalDocument = textArea.document.snapshot()
-                textArea.centerCaret()
+                textArea.requestCenterCaret()
             }
         }
         textArea.undoManager.forgetHistory()
@@ -513,7 +506,7 @@ class WriterView : View("Skywriter") {
     }
 
     private fun openFind() {
-        if (model.findAndReplaceState == WriterViewModel.FindAndReplace.Find) {
+        if (model.findAndReplaceState == WriterViewModel.FindAndReplace.Find && findBar.isChildFocused()) {
             model.findAndReplaceState = WriterViewModel.FindAndReplace.None
         } else {
             model.findAndReplaceState = WriterViewModel.FindAndReplace.Find
@@ -523,7 +516,7 @@ class WriterView : View("Skywriter") {
     }
 
     private fun openFindAndReplace() {
-        if (model.findAndReplaceState == WriterViewModel.FindAndReplace.Replace) {
+        if (model.findAndReplaceState == WriterViewModel.FindAndReplace.Replace && findBar.isChildFocused()) {
             model.findAndReplaceState = WriterViewModel.FindAndReplace.None
         } else {
             model.findAndReplaceState = WriterViewModel.FindAndReplace.Replace
