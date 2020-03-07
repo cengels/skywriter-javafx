@@ -69,6 +69,11 @@
     -fx-fill: -text-fill-desaturated;
 }
 
+.paragraph-text .text.search-highlighting {
+    -rtfx-border-stroke-color: -text-fill-desaturated;
+    -rtfx-border-stroke-width: 2;
+}
+
 .styled-text-area .h1, .styled-text-area .h2, .styled-text-area .h3, .styled-text-area .h4, .styled-text-area .h5, .styled-text-area .h6 {
     -fx-font-weight: bold;
     -fx-text-alignment: center;
@@ -147,6 +152,10 @@
 
 .text-button:hover {
     -fx-background-color: -document-fill-hover;
+}
+
+.text-button:disabled {
+    -fx-opacity: 0.5;
 }
 
 .status-bar .label {

@@ -10,6 +10,7 @@ import com.cengels.skywriter.util.*
 import javafx.geometry.Pos
 import javafx.scene.Group
 import javafx.scene.control.*
+import javafx.scene.input.KeyCode
 import javafx.scene.layout.*
 import javafx.stage.FileChooser
 import javafx.stage.WindowEvent
@@ -40,6 +41,12 @@ class WriterView : View("Skywriter") {
 
         model.originalDocumentProperty.addListener { observable, oldValue, newValue ->
             model.dirty = newValue != it.document.snapshot()
+        }
+
+        model.findAndReplaceStateProperty.addListener { observable, oldValue, newValue ->
+            if (newValue == WriterViewModel.FindAndReplace.None) {
+                it.clearStyle(0, it.text.lastIndex, "search-highlighting")
+            }
         }
 
         it.wordCountProperty.addListener { observable, oldValue, newValue ->
@@ -297,6 +304,11 @@ class WriterView : View("Skywriter") {
                     hiddenWhen(model.findAndReplaceStateProperty.isEqualTo(WriterViewModel.FindAndReplace.None))
                     paddingVertical = 10.0
                     paddingHorizontal = 20.0
+                    this.setOnKeyReleased {
+                        if (it.code == KeyCode.ESCAPE) {
+                            model.findAndReplaceState = WriterViewModel.FindAndReplace.None
+                        }
+                    }
 
                     left {
                         vbox(5) {
@@ -304,6 +316,7 @@ class WriterView : View("Skywriter") {
                                 hbox(10) {
                                     alignment = Pos.CENTER
                                     findField = textfield(textArea.searcher.findTermProperty) {
+                                        isFocusTraversable = true
                                         prefWidth = 250.0
                                         promptText = "Find..."
                                         action { textArea.searcher.scrollToNext() }
@@ -315,6 +328,7 @@ class WriterView : View("Skywriter") {
                                     hbox {
                                         button {
                                             addClass(GeneralStylesheet.plainButton)
+                                            isFocusTraversable = false
                                             tooltip("Find previous occurrence")
                                             graphic = Group().apply {
                                                 addClass("svg")
@@ -325,6 +339,7 @@ class WriterView : View("Skywriter") {
                                         }
                                         button {
                                             addClass(GeneralStylesheet.plainButton)
+                                            isFocusTraversable = false
                                             tooltip("Find next occurrence")
                                             graphic = Group().apply {
                                                 addClass("svg")
@@ -344,8 +359,12 @@ class WriterView : View("Skywriter") {
                                             }
                                         })
                                     }
-                                    checkbox("Whole words", textArea.searcher.findWholeWordsProperty)
-                                    checkbox("Case-sensitive", textArea.searcher.caseSensitiveProperty)
+                                    checkbox("Whole words", textArea.searcher.findWholeWordsProperty) {
+                                        isFocusTraversable = false
+                                    }
+                                    checkbox("Case-sensitive", textArea.searcher.caseSensitiveProperty) {
+                                        isFocusTraversable = false
+                                    }
                                 }
                             }
 
@@ -356,20 +375,27 @@ class WriterView : View("Skywriter") {
                                 hbox(0) {
                                     alignment = Pos.CENTER
                                     textfield(textArea.searcher.replaceTermProperty) {
+                                        isFocusTraversable = true
                                         prefWidth = 250.0
                                         promptText = "Replace with..."
-                                        action { textArea.searcher.replaceNext() }
+                                        action { textArea.searcher.replaceCurrent() }
                                     }
                                 }
 
                                 hbox(10) {
                                     button("Replace") {
                                         addClass("text-button")
+                                        isFocusTraversable = false
+                                        enableWhen { textArea.searcher.countBinding.isNotEqualTo(0) }
                                         prefWidth = 90.0
-                                        action { textArea.searcher.replaceNext() }
+                                        action { textArea.searcher.replaceCurrent() }
                                     }
                                     button("Replace all") {
                                         addClass("text-button")
+                                        isFocusTraversable = false
+                                        enableWhen { textArea.searcher.countBinding.booleanBinding {
+                                            it != 0
+                                        } }
                                         prefWidth = 90.0
                                         action { textArea.searcher.replaceAll() }
                                     }
