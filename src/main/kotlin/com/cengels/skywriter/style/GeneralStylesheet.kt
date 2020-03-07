@@ -1,12 +1,11 @@
 package com.cengels.skywriter.style
 
-import javafx.scene.effect.DropShadow
-import javafx.scene.effect.Effect
 import javafx.scene.paint.Color
 import tornadofx.*
 
 class GeneralStylesheet : Stylesheet() {
     companion object {
+        val plainButton by cssclass()
         val titleBar by cssclass()
         val themedView by cssclass()
         val selected by cssclass()
@@ -31,6 +30,11 @@ class GeneralStylesheet : Stylesheet() {
 
         themedView {
             backgroundColor += Color.ORANGE
+        }
+
+        plainButton {
+            backgroundColor += Color.TRANSPARENT
+            borderWidth += CssBox(0.px, 0.px, 0.px, 0.px)
         }
     }
 }

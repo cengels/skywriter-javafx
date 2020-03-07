@@ -41,6 +41,8 @@ object KeyConfig : Configurable {
             var pasteUnformatted by KeyConfigProperty(KeyCombination.valueOf("Ctrl+Shift+V"))
             var pasteUntracked by KeyConfigProperty()
             var deleteUntracked by KeyConfigProperty()
+            var find by KeyConfigProperty(KeyCombination.valueOf("Ctrl+F"))
+            var findAndReplace by KeyConfigProperty(KeyCombination.valueOf("Ctrl+H"))
         }
     }
     class Selection {
