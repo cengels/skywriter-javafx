@@ -3,11 +3,12 @@ package com.cengels.skywriter.writer
 import com.cengels.skywriter.enum.Heading
 import com.cengels.skywriter.persistence.AppConfig
 import com.cengels.skywriter.persistence.KeyConfig
+import com.cengels.skywriter.style.GeneralStylesheet
 import com.cengels.skywriter.theming.ThemesManager
 import com.cengels.skywriter.theming.ThemesView
 import com.cengels.skywriter.util.*
-import javafx.beans.value.ObservableValue
 import javafx.geometry.Pos
+import javafx.scene.Group
 import javafx.scene.control.*
 import javafx.scene.input.KeyCode
 import javafx.scene.layout.*
@@ -17,12 +18,13 @@ import org.fxmisc.flowless.VirtualizedScrollPane
 import tornadofx.*
 import java.io.File
 import java.time.LocalDateTime
-import java.util.function.Function
 
 class WriterView : View("Skywriter") {
     val model = WriterViewModel()
     lateinit var menuBar: MenuBar
     lateinit var statusBar: StackPane
+    lateinit var findField: TextField
+    lateinit var findBar: BorderPane
 
     init {
         this.updateTitle()
@@ -39,6 +41,12 @@ class WriterView : View("Skywriter") {
 
         model.originalDocumentProperty.addListener { observable, oldValue, newValue ->
             model.dirty = newValue != it.document.snapshot()
+        }
+
+        model.findAndReplaceStateProperty.addListener { observable, oldValue, newValue ->
+            if (newValue == WriterViewModel.FindAndReplace.None) {
+                it.clearStyle(0, it.text.lastIndex, "search-highlighting")
+            }
         }
 
         it.wordCountProperty.addListener { observable, oldValue, newValue ->
@@ -122,14 +130,6 @@ class WriterView : View("Skywriter") {
 
             model.progressTracker?.commit()
             model.progressTracker?.dispose()
-        }
-    }
-
-    override fun onBeforeShow() {
-        super.onBeforeShow()
-
-        runAsync { } ui {
-            textArea.centerCaret()
         }
     }
 
@@ -221,6 +221,9 @@ class WriterView : View("Skywriter") {
                     item("Select Word", KeyConfig.Selection.selectWord).action { textArea.selectWord() }
                     item("Select Paragraph", KeyConfig.Selection.selectParagraph).action { textArea.selectParagraph() }
                     item("Select All", KeyConfig.Selection.selectAll).action { textArea.selectAll() }
+                    separator()
+                    item("Find", KeyConfig.Edit.find).action { openFind() }
+                    item("Find and replace", KeyConfig.Edit.findAndReplace).action { openFindAndReplace() }
                 }
 
                 menu("Formatting") {
@@ -294,49 +297,169 @@ class WriterView : View("Skywriter") {
         bottom {
             useMaxWidth = true
 
-            statusBar = stackpane {
-                addClass("status-bar")
-                managedWhen(visibleProperty())
-                hiddenWhen(primaryStage.fullScreenProperty().and(model.showStatusBarProperty.not()))
+            vbox {
+                findBar = borderpane {
+                    addClass("find-bar")
+                    managedWhen(visibleProperty())
+                    hiddenWhen(model.findAndReplaceStateProperty.isEqualTo(WriterViewModel.FindAndReplace.None))
+                    paddingVertical = 10.0
+                    paddingHorizontal = 20.0
+                    this.setOnKeyReleased {
+                        if (it.code == KeyCode.ESCAPE) {
+                            model.findAndReplaceState = WriterViewModel.FindAndReplace.None
+                        }
+                    }
 
-                hbox {
-                    isPickOnBounds = false
-                    useMaxWidth = false
-                    alignment = Pos.CENTER
-                    spacing = 9.0
-                    label(model.wordsTodayProperty.stringBinding {
-                        "${model.wordsToday} added today"
-                    }) {
-                        addClass("clickable")
-                        setOnMouseClicked { popup { popup ->
-                            label("Enter a new word count")
-
-                            numberfield(model.wordsToday) {
-                                this.focusedProperty().addListener { observable, oldValue, newValue ->
-                                    model.setWords(getDefaultConverter<Int>()!!.fromString(this.text))
+                    left {
+                        vbox(5) {
+                            hbox(10) {
+                                hbox(10) {
+                                    alignment = Pos.CENTER
+                                    findField = textfield(textArea.searcher.findTermProperty) {
+                                        isFocusTraversable = true
+                                        prefWidth = 250.0
+                                        promptText = "Find..."
+                                        action { textArea.searcher.scrollToNext() }
+                                    }
                                 }
-                                this.setOnAction { popup.hide() }
+
+                                hbox(10) {
+                                    alignment = Pos.CENTER
+                                    hbox {
+                                        button {
+                                            addClass(GeneralStylesheet.plainButton)
+                                            isFocusTraversable = false
+                                            tooltip("Find previous occurrence")
+                                            graphic = Group().apply {
+                                                addClass("svg")
+                                                line(5, 14, 5, 0) { strokeWidth = 2.0 }
+                                                polyline(0, 7, 5, 0, 10, 7) { strokeWidth = 2.0 }
+                                            }
+                                            action { textArea.searcher.scrollToPrevious() }
+                                        }
+                                        button {
+                                            addClass(GeneralStylesheet.plainButton)
+                                            isFocusTraversable = false
+                                            tooltip("Find next occurrence")
+                                            graphic = Group().apply {
+                                                addClass("svg")
+                                                line(5, 0, 5, 14) { strokeWidth = 2.0 }
+                                                polyline(10, 7, 5, 14, 0, 7) { strokeWidth = 2.0 }
+                                            }
+                                            action { textArea.searcher.scrollToNext() }
+                                        }
+                                    }
+                                    label {
+                                        prefWidth = 130.0
+                                        textProperty().bind(textArea.searcher.countBinding.stringBinding {
+                                            if (textArea.searcher.findTerm.isEmpty()) {
+                                                "0 matches found"
+                                            } else {
+                                                "$it matches found"
+                                            }
+                                        })
+                                    }
+                                    checkbox("Whole words", textArea.searcher.findWholeWordsProperty) {
+                                        isFocusTraversable = false
+                                    }
+                                    checkbox("Case-sensitive", textArea.searcher.caseSensitiveProperty) {
+                                        isFocusTraversable = false
+                                    }
+                                }
                             }
-                        } }
+
+                            hbox(15) {
+                                managedWhen(visibleProperty())
+                                hiddenWhen(model.findAndReplaceStateProperty.isNotEqualTo(WriterViewModel.FindAndReplace.Replace))
+
+                                hbox(0) {
+                                    alignment = Pos.CENTER
+                                    textfield(textArea.searcher.replaceTermProperty) {
+                                        isFocusTraversable = true
+                                        prefWidth = 250.0
+                                        promptText = "Replace with..."
+                                        action { textArea.searcher.replaceCurrent() }
+                                    }
+                                }
+
+                                hbox(10) {
+                                    button("Replace") {
+                                        addClass("text-button")
+                                        isFocusTraversable = false
+                                        enableWhen { textArea.searcher.countBinding.isNotEqualTo(0) }
+                                        prefWidth = 90.0
+                                        action { textArea.searcher.replaceCurrent() }
+                                    }
+                                    button("Replace all") {
+                                        addClass("text-button")
+                                        isFocusTraversable = false
+                                        enableWhen { textArea.searcher.countBinding.booleanBinding {
+                                            it != 0
+                                        } }
+                                        prefWidth = 90.0
+                                        action { textArea.searcher.replaceAll() }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    right {
+                        button {
+                            addClass(GeneralStylesheet.plainButton)
+                            action { model.findAndReplaceState = WriterViewModel.FindAndReplace.None }
+                            graphic = svgpath("M0 0 9 9 M9 0 0 9") {
+                                addClass("svg")
+                                strokeWidth = 2.0
+                            }
+                        }
                     }
                 }
 
-                hbox {
-                    isPickOnBounds = false
-                    alignment = Pos.CENTER_RIGHT
-                    spacing = 9.0
-                    label(textArea.wordCountProperty.stringBinding(textArea.selectionProperty()) {
-                        "${it ?: 0} words" + if (textArea.selection.length > 0) " (${textArea.countSelectedWords()} selected)" else ""
-                    })
-                    label(textArea.wordCountProperty.stringBinding {
-                        "${((it?.toInt() ?: 0) / 250) + 1} pages"
-                    })
-                    label(textArea.textProperty().stringBinding {
-                        "${textArea.paragraphs.size} paragraphs"
-                    })
-                    label(textArea.textProperty().stringBinding {
-                        "${it?.length} characters"
-                    })
+                statusBar = stackpane {
+                    addClass("status-bar")
+                    managedWhen(visibleProperty())
+                    hiddenWhen(primaryStage.fullScreenProperty().and(model.showStatusBarProperty.not()))
+
+                    hbox {
+                        isPickOnBounds = false
+                        useMaxWidth = false
+                        alignment = Pos.CENTER
+                        spacing = 9.0
+                        label(model.wordsTodayProperty.stringBinding {
+                            "${model.wordsToday} added today"
+                        }) {
+                            addClass("clickable")
+                            setOnMouseClicked { popup { popup ->
+                                label("Enter a new word count")
+
+                                numberfield(model.wordsToday) {
+                                    this.focusedProperty().addListener { observable, oldValue, newValue ->
+                                        model.setWords(getDefaultConverter<Int>()!!.fromString(this.text))
+                                    }
+                                    this.setOnAction { popup.hide() }
+                                }
+                            } }
+                        }
+                    }
+
+                    hbox {
+                        isPickOnBounds = false
+                        alignment = Pos.CENTER_RIGHT
+                        spacing = 9.0
+                        label(textArea.wordCountProperty.stringBinding(textArea.selectionProperty()) {
+                            "${it ?: 0} words" + if (textArea.selection.length > 0) " (${textArea.countSelectedWords()} selected)" else ""
+                        })
+                        label(textArea.wordCountProperty.stringBinding {
+                            "${((it?.toInt() ?: 0) / 250) + 1} pages"
+                        })
+                        label(textArea.textProperty().stringBinding {
+                            "${textArea.paragraphs.size} paragraphs"
+                        })
+                        label(textArea.textProperty().stringBinding {
+                            "${it?.length} characters"
+                        })
+                    }
                 }
             }
         }
@@ -367,6 +490,7 @@ class WriterView : View("Skywriter") {
             runAsync {} ui {
                 model.newProgressTracker(textArea.wordCount, file)
                 model.originalDocument = textArea.document.snapshot()
+                textArea.requestCenterCaret()
             }
         }
         textArea.undoManager.forgetHistory()
@@ -405,6 +529,26 @@ class WriterView : View("Skywriter") {
 
     private fun openProgressView() {
 
+    }
+
+    private fun openFind() {
+        if (model.findAndReplaceState == WriterViewModel.FindAndReplace.Find && findBar.isChildFocused()) {
+            model.findAndReplaceState = WriterViewModel.FindAndReplace.None
+        } else {
+            model.findAndReplaceState = WriterViewModel.FindAndReplace.Find
+        }
+
+        findField.requestFocus()
+    }
+
+    private fun openFindAndReplace() {
+        if (model.findAndReplaceState == WriterViewModel.FindAndReplace.Replace && findBar.isChildFocused()) {
+            model.findAndReplaceState = WriterViewModel.FindAndReplace.None
+        } else {
+            model.findAndReplaceState = WriterViewModel.FindAndReplace.Replace
+        }
+
+        findField.requestFocus()
     }
 
     private fun rename() {

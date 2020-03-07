@@ -69,6 +69,11 @@
     -fx-fill: -text-fill-desaturated;
 }
 
+.paragraph-text .text.search-highlighting {
+    -rtfx-border-stroke-color: -text-fill-desaturated;
+    -rtfx-border-stroke-width: 2;
+}
+
 .styled-text-area .h1, .styled-text-area .h2, .styled-text-area .h3, .styled-text-area .h4, .styled-text-area .h5, .styled-text-area .h6 {
     -fx-font-weight: bold;
     -fx-text-alignment: center;
@@ -109,8 +114,48 @@
     -fx-background-color: -document-fill-hover;
 }
 
-.menu-bar, .menu-button, .status-bar, .menu-item, .menu .container {
+.menu-bar, .menu-button, .status-bar, .menu-item, .menu .container, .find-bar {
     -fx-background-color: -document-fill-dark;
+}
+
+.find-bar .label, .find-bar .text, .find-bar .text-input {
+    -fx-fill: -text-fill;
+    -fx-text-fill: -text-fill;
+    -fx-prompt-text-fill: -text-fill-desaturated;
+}
+
+.find-bar .text-field, .check-box .box {
+    -fx-background-color: -document-fill-darkest;
+}
+
+.check-box:hover .box {
+    -fx-background-color: -document-fill-hover;
+}
+
+.check-box:selected .mark {
+    -fx-background-color: -text-fill;
+}
+
+.plain-button .svg, .plain-button .svg * {
+    -fx-stroke: -text-fill;
+}
+
+.plain-button:hover .svg, .plain-button:hover .svg * {
+    -fx-stroke: -text-fill-desaturated;
+}
+
+.text-button {
+    -fx-fill: -text-fill;
+    -fx-text-fill: -text-fill;
+    -fx-background-color: -document-fill-darkest;
+}
+
+.text-button:hover {
+    -fx-background-color: -document-fill-hover;
+}
+
+.text-button:disabled {
+    -fx-opacity: 0.5;
 }
 
 .status-bar .label {

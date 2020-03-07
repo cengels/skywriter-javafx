@@ -12,8 +12,11 @@ import com.cengels.skywriter.util.findWordBoundaries
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.concurrent.Task
+import javafx.scene.Node
 import javafx.scene.control.IndexRange
 import javafx.scene.input.*
+import org.fxmisc.flowless.Cell
+import org.fxmisc.flowless.VirtualFlow
 import org.fxmisc.richtext.NavigationActions
 import org.fxmisc.richtext.StyleClassedTextArea
 import org.fxmisc.richtext.model.*
@@ -30,8 +33,9 @@ import java.text.BreakIterator
 import java.util.*
 
 class WriterTextArea : StyleClassedTextArea() {
-    var insertionStyle: MutableCollection<String>? = null
     val smartReplacer: SmartReplacer = SmartReplacer(SmartReplacer.DEFAULT_QUOTES_MAP, SmartReplacer.DEFAULT_SYMBOL_MAP)
+    val searcher = TextAreaSearcher(this)
+    var insertionStyle: MutableCollection<String>? = null
     val wordCountProperty = SimpleIntegerProperty(this.countWords())
     val wordCount by wordCountProperty
     val readyProperty = SimpleBooleanProperty(false)
@@ -46,6 +50,8 @@ class WriterTextArea : StyleClassedTextArea() {
         get() = this.content
     var encoderCodec: DocumentCodec<Any>? = null
     var decoderCodecs: List<DocumentCodec<Any>> = listOf()
+    private var centerCaretRequested: Boolean = false
+    private val virtualFlow: VirtualFlow<Any, Cell<Any, Node>> = this.children.filterIsInstance<VirtualFlow<Any, Cell<Any, Node>>>().single()
 
     init {
         this.isWrapText = true
@@ -258,17 +264,23 @@ class WriterTextArea : StyleClassedTextArea() {
         IndexRange(this.caretSelectionBind.startParagraphIndex, this.caretSelectionBind.endParagraphIndex)
 
     /** Vertically centers the caret in the viewport. */
-    fun centerCaret() {
-        this.showParagraphAtBottom(currentParagraph)
-        // Async because otherwise the visible paragraphs will not have been updated yet.
-        runAsync {} ui {
-            this.caretSelectionBind.underlyingCaret.let { caret ->
-                val sceneCaretBounds = caret.localToScene(caret.boundsInLocal)
-                val center = (scene ?: FX.primaryStage.scene).height / 2
-                val caretCenter = sceneCaretBounds.minY + sceneCaretBounds.height / 2
-                val offset = center - caretCenter
-                scrollYBy(-offset)
+    fun requestCenterCaret() {
+        // this.showParagraphAtBottom(currentParagraph)
+        // visible paragraphs will not be updated yet if this isn't run asynchronously
+        centerCaretRequested = true
+    }
+
+    override fun layoutChildren() {
+        super.layoutChildren()
+
+        if (centerCaretRequested) {
+            this.visibleParagraphs.suspendable().suspendWhile {
+                this.caretSelectionBind.underlyingCaret.let { caret ->
+                    val center = (scene ?: FX.primaryStage.scene).height / 2
+                    virtualFlow.showAtOffset(currentParagraph, center - caret.boundsInLocal.maxY)
+                }
             }
+            centerCaretRequested = false
         }
     }
 

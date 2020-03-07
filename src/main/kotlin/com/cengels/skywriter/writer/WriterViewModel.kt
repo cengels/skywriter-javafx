@@ -8,7 +8,10 @@ import org.fxmisc.richtext.model.*
 import tornadofx.booleanBinding
 import java.io.File
 import tornadofx.getValue
+import tornadofx.objectBinding
 import tornadofx.setValue
+import java.util.*
+import kotlin.collections.HashSet
 
 class WriterViewModel {
     val fileProperty = SimpleObjectProperty<File?>()
@@ -30,6 +33,9 @@ class WriterViewModel {
     var originalDocument by originalDocumentProperty
     val wordsTodayProperty: SimpleIntegerProperty = SimpleIntegerProperty(getTodaysWords())
     val wordsToday by wordsTodayProperty
+
+    val findAndReplaceStateProperty = SimpleObjectProperty(FindAndReplace.None)
+    var findAndReplaceState: FindAndReplace by findAndReplaceStateProperty
 
     private fun getTodaysWords(): Int {
         return progressTracker?.progressToday?.sumBy { it.words } ?: 0
@@ -84,5 +90,11 @@ class WriterViewModel {
     fun setWords(newTotalWords: Int) {
         progressTracker?.setWords(newTotalWords - wordsToday + (progressTracker?.current?.words ?: 0))
         wordsTodayProperty.set(getTodaysWords())
+    }
+
+    enum class FindAndReplace {
+        Find,
+        Replace,
+        None
     }
 }
