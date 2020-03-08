@@ -111,3 +111,7 @@ fun <T> Iterable<T>.containsAny(otherCollection: Iterable<T>): Boolean {
 fun <T> Iterable<T>.containsAny(vararg elements: T): Boolean {
     return this.any { elements.contains(it) }
 }
+
+/** The length of the range. */
+val IntRange.length: Int
+    get() = this.last - this.first

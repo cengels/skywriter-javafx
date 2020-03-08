@@ -56,7 +56,7 @@ class TextAreaSearcher(private val context: WriterTextArea) {
             matchIndex = 0
 
             runAsync { Thread.sleep(300) } ui {
-                context.clearStyle(0, context.text.lastIndex, "search-highlighting")
+                context.clearStyle("search-highlighting")
                 if (matches === newValue && count < 200) {
                     highlightMatches()
                 }
@@ -65,9 +65,7 @@ class TextAreaSearcher(private val context: WriterTextArea) {
     }
 
     fun highlightMatches() {
-        matches.forEach {
-            context.toggleStyleClass(it.range.first, it.range.last + 1, "search-highlighting")
-        }
+        context.mergeStyles(matches.map { it.range.first..it.range.last + 1 }, "search-highlighting")
     }
 
     /** Scrolls the text area to the next occurrence of the search term. */

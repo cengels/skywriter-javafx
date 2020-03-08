@@ -9,6 +9,7 @@ import com.cengels.skywriter.persistence.codec.RtfCodecs
 import com.cengels.skywriter.style.FormattingStylesheet
 import com.cengels.skywriter.util.countWords
 import com.cengels.skywriter.util.findWordBoundaries
+import com.cengels.skywriter.util.length
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.concurrent.Task
@@ -213,6 +214,10 @@ class WriterTextArea : StyleClassedTextArea() {
         }
     }
 
+    fun clearStyle(className: String) {
+        setStyleSpans(0, getStyleSpans(0, text.lastIndex).mapStyles { style -> style.minus(className) })
+    }
+
     fun clearStyle(start: Int, end: Int, className: String) {
         setStyleSpans(start, getStyleSpans(start, end).mapStyles { style -> style.minus(className) })
     }
@@ -221,17 +226,45 @@ class WriterTextArea : StyleClassedTextArea() {
         setStyleSpans(start, getStyleSpans(start, end).mapStyles { style -> style.plus(className) })
     }
 
+    /** Merges the style spans in the given range with the given style spans by adding each className from the given style spans to the current style spans. */
+    fun mergeStyles(start: Int, end: Int, styleSpans: StyleSpans<MutableCollection<String>>) {
+        setStyleSpans(start, getStyleSpans(start, end).overlay(styleSpans) { first, second ->
+            return@overlay first.plus(second)
+        })
+    }
+
+    /** Adds the given style class to each style span in the given ranges. This allows you to update multiple parts of the document in one pass. */
+    fun mergeStyles(ranges: List<IntRange>, className: String) {
+        if (ranges.isEmpty()) {
+            return
+        }
+
+        val styleSpans = StyleSpansBuilder<MutableCollection<String>>().apply {
+            ranges.forEachIndexed { index, it ->
+                add(mutableListOf(className), it.length)
+
+                if (ranges.size > index + 1) {
+                    val inBetween = ranges[index + 1].first - it.last
+
+                    if (inBetween > 0) {
+                        add(mutableListOf(), ranges[index + 1].first - it.last)
+                    }
+                }
+            }
+        }.create()
+
+        mergeStyles(ranges.first().first, ranges.last().last, styleSpans)
+    }
+
     /** If text is selected, styles the selected text with the specified class. Otherwise, starts a new segment with the specified style class. */
     fun activateStyle(className: String) {
         if (selection.length > 0) {
             updateSelectionWith(className)
         } else {
-            if (insertionStyle == null) {
-                insertionStyle = mutableListOf(className)
-            } else if (insertionStyle!!.contains(className)) {
-                insertionStyle!!.remove(className)
-            } else {
-                insertionStyle!!.add(className)
+            when {
+                insertionStyle == null -> { insertionStyle = mutableListOf(className) }
+                insertionStyle!!.contains(className) -> { insertionStyle!!.remove(className) }
+                else -> { insertionStyle!!.add(className) }
             }
         }
     }
@@ -355,9 +388,10 @@ class WriterTextArea : StyleClassedTextArea() {
     }
 
     /** Skims the text for any tokens that define a style range and applies the style. */
-    private fun updateStyles(): Task<Unit> {
-        return runAsync { } ui {
-            clearStyle(0, text.lastIndex, "comment")
+    private fun updateStyles(): Task<MutableList<IntRange>> {
+        return runAsync {
+            val indices = mutableListOf<IntRange>()
+
             AppConfig.commentTokens.forEach { token ->
                 var startIndex = text.indexOf(token.first)
 
@@ -370,7 +404,7 @@ class WriterTextArea : StyleClassedTextArea() {
                     }
 
                     if (endIndex != -1) {
-                        toggleStyleClass(startIndex, endIndex + 1, "comment")
+                        indices.add(startIndex..endIndex + 1)
 
                         if (caretPosition == endIndex + 1 && found) {
                             insertionStyle = mutableListOf("comment")
@@ -380,6 +414,11 @@ class WriterTextArea : StyleClassedTextArea() {
                     startIndex = text.indexOf(token.first, startIndex + 1)
                 }
             }
+
+            return@runAsync indices
+        } ui {
+            clearStyle("comment")
+            mergeStyles(it, "comment")
 
             wordCountProperty.set(this.countWordsWithoutComments())
         }
