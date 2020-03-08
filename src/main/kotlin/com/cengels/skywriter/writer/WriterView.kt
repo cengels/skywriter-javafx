@@ -322,7 +322,7 @@ class WriterView : View("Skywriter") {
                     alignment = Pos.BOTTOM_CENTER
                     isPickOnBounds = false
                     // binding must be a field, otherwise the garbage collector will destroy it
-                    addFadeOn(findVisibilityBinding, 100)
+                    fadeWhen(findVisibilityBinding, 100)
                     paddingTop = 5.0
                     paddingHorizontal = 20.0
                     maxHeight = 0.0
@@ -396,7 +396,7 @@ class WriterView : View("Skywriter") {
                             }
 
                             hbox(15) {
-                                addFadeOn(replaceVisibilityBinding, 100)
+                                fadeWhen(replaceVisibilityBinding, 100)
 
                                 hbox(0) {
                                     alignment = Pos.CENTER

@@ -261,7 +261,7 @@ fun Node.popup(op: VBox.(popup: Popup) -> Unit = {}): Popup = Popup().apply {
 fun Node.popupOnClick(fadeDurationMs: Number = 0.0, op: VBox.(popup: Popup) -> Unit = {}): Popup {
     return popup { popup ->
         val shouldFadeInProperty = SimpleBooleanProperty(false)
-        addFadeOn(shouldFadeInProperty, fadeDurationMs)
+        fadeWhen(shouldFadeInProperty, fadeDurationMs)
 
         this@popupOnClick.setOnMouseClicked {
             if (popup.isShowing) {
