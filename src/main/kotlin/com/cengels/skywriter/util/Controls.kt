@@ -258,20 +258,31 @@ fun Node.popup(op: VBox.(popup: Popup) -> Unit = {}): Popup = Popup().apply {
     })
 }
 
-fun Node.popupOnClick(fadeDurationMs: Number = 0.0, op: VBox.(popup: Popup) -> Unit = {}): Popup {
+/**
+ * Creates a new [Popup] that will automatically be shown/hidden when the anchor node receives a click event.
+ *
+ * @param fadeDurationMs The number of milliseconds the popup should be faded in or out for. If this popup should not receive a [FadeTransition], specify `0.0`. Note that the transition will not be applied if the user clicks outside the popup and [Popup.autoHide] is on.
+ * @param offsetX The horizontal offset of this popup to its anchor.
+ * @param offsetY The vertical offset of this popup to its anchor.
+ */
+fun Node.popupOnClick(fadeDurationMs: Number = 0.0, offsetX: Number = 0.0, offsetY: Number = 0.0, op: VBox.(popup: Popup) -> Unit = {}): Popup {
     return popup { popup ->
+        val fadeEnabled = fadeDurationMs.toDouble() > 0.0
         val shouldFadeInProperty = SimpleBooleanProperty(false)
-        fadeWhen(shouldFadeInProperty, fadeDurationMs)
+
+        if (fadeEnabled) { fadeWhen(shouldFadeInProperty, fadeDurationMs) }
 
         this@popupOnClick.setOnMouseClicked {
             if (popup.isShowing) {
-                shouldFadeInProperty.set(false)
+                if (fadeEnabled) { shouldFadeInProperty.set(false) }
                 runLater(fadeDurationMs.millis) { popup.hide() }
             } else {
-                val position = this@popupOnClick.localToScreen(this@popupOnClick.boundsInLocal)
+                val anchorNodeBounds = this@popupOnClick.localToScreen(this@popupOnClick.boundsInLocal)
+                val anchorX = anchorNodeBounds.minX + offsetX.toDouble()
+                val anchorY = anchorNodeBounds.minY + offsetY.toDouble()
 
-                popup.show(this@popupOnClick, position.minX, position.minY - 10)
-                shouldFadeInProperty.set(true)
+                popup.show(this@popupOnClick, anchorX, anchorY)
+                if (fadeEnabled) { shouldFadeInProperty.set(true) }
             }
         }
 

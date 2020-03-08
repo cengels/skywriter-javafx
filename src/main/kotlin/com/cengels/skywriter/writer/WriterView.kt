@@ -461,7 +461,8 @@ class WriterView : View("Skywriter") {
                         "${model.wordsToday} added today"
                     }) {
                         addClass("clickable")
-                        popupOnClick(200) { popup ->
+                        // manual offset necessary as width information is not available during show()
+                        popupOnClick(200, offsetX = -137.5 + 44.5, offsetY = -10) { popup ->
                             label("Enter a new word count")
 
                             numberfield(model.wordsToday) {
