@@ -465,8 +465,10 @@ class WriterView : View("Skywriter") {
                             label("Enter a new word count")
 
                             numberfield(model.wordsToday) {
-                                this.focusedProperty().addListener { observable, oldValue, newValue ->
-                                    model.setWords(getDefaultConverter<Int>()!!.fromString(this.text))
+                                popup.showingProperty().addListener { observable, oldValue, newValue ->
+                                    if (!newValue) {
+                                        model.setWords(getDefaultConverter<Int>()!!.fromString(this.text))
+                                    }
                                 }
                                 this.setOnAction { popup.hide() }
                             }

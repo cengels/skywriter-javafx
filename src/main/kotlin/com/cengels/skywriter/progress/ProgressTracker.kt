@@ -79,7 +79,10 @@ class ProgressTracker(private var totalWords: Int, private var file: File? = nul
 
     /** Manually sets the word count of [current]. */
     fun setWords(newWords: Int) {
-        this.correction += newWords - (current ?: startNew()).words
+        val item = current ?: startNew()
+        val difference = newWords - item.words
+        item.words = newWords
+        this.correction += -difference
     }
 
     /** Sets [current].endDate to now and saves [current] to the file system and resets it. */

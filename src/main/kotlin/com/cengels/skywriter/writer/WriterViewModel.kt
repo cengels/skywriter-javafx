@@ -2,16 +2,12 @@ package com.cengels.skywriter.writer
 
 import com.cengels.skywriter.persistence.MarkdownParser
 import com.cengels.skywriter.progress.ProgressTracker
-import javafx.beans.binding.BooleanBinding
 import javafx.beans.property.*
 import org.fxmisc.richtext.model.*
 import tornadofx.booleanBinding
 import java.io.File
 import tornadofx.getValue
-import tornadofx.objectBinding
 import tornadofx.setValue
-import java.util.*
-import kotlin.collections.HashSet
 
 class WriterViewModel {
     val fileProperty = SimpleObjectProperty<File?>()
@@ -87,9 +83,10 @@ class WriterViewModel {
         wordsTodayProperty.set(getTodaysWords())
     }
 
-    fun setWords(newTotalWords: Int) {
-        progressTracker?.setWords(newTotalWords - wordsToday + (progressTracker?.current?.words ?: 0))
-        wordsTodayProperty.set(getTodaysWords())
+    fun setWords(newWordsToday: Int) {
+        val newWordsCurrent = newWordsToday - wordsToday + (progressTracker?.current?.words ?: 0)
+        progressTracker?.setWords(newWordsCurrent)
+        wordsTodayProperty.set(newWordsToday)
     }
 
     enum class FindAndReplace {
