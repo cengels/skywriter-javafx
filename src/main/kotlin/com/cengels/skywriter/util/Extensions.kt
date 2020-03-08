@@ -115,3 +115,25 @@ fun <T> Iterable<T>.containsAny(vararg elements: T): Boolean {
 /** The length of the range. */
 val IntRange.length: Int
     get() = this.last - this.first
+
+/**
+ * Returns a new instance of this list with the given element added only if it was not already contained within the list.
+ *
+ * Note that this method always returns a new [List], regardless of whether the element was already within the list or not.
+ **/
+fun <T> Collection<T>.plusDistinct(element: T): List<T> {
+    if (!this.contains(element)) {
+        return this.plus(element)
+    }
+
+    return this.toList()
+}
+
+/**
+ * Returns a new instance of this list with all instances of the given element removed only if it was not already contained within the list.
+ *
+ * Note that this method always returns a new [List], regardless of whether the element was already within the list or not.
+ **/
+fun <T> Collection<T>.minusAll(element: T): List<T> {
+    return this.filterNot { it === element }
+}

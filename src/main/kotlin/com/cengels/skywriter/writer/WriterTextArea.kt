@@ -7,9 +7,7 @@ import com.cengels.skywriter.persistence.codec.DocumentCodec
 import com.cengels.skywriter.persistence.codec.HtmlCodecs
 import com.cengels.skywriter.persistence.codec.RtfCodecs
 import com.cengels.skywriter.style.FormattingStylesheet
-import com.cengels.skywriter.util.countWords
-import com.cengels.skywriter.util.findWordBoundaries
-import com.cengels.skywriter.util.length
+import com.cengels.skywriter.util.*
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.concurrent.Task
@@ -36,7 +34,6 @@ import java.util.*
 class WriterTextArea : StyleClassedTextArea() {
     val smartReplacer: SmartReplacer = SmartReplacer(SmartReplacer.DEFAULT_QUOTES_MAP, SmartReplacer.DEFAULT_SYMBOL_MAP)
     val searcher = TextAreaSearcher(this)
-    var insertionStyle: MutableCollection<String>? = null
     val wordCountProperty = SimpleIntegerProperty(this.countWords())
     val wordCount by wordCountProperty
     val readyProperty = SimpleBooleanProperty(false)
@@ -63,14 +60,13 @@ class WriterTextArea : StyleClassedTextArea() {
 
         this.caretPositionProperty().addListener { _, _, _ ->
             this.requestFollowCaret()
+            this.textInsertionStyle = null
         }
 
         this.plainTextChanges().subscribe { change ->
             var updatingStyles = false
             if (change.inserted.isNotEmpty()) {
                 midChange = true
-
-                applyInsertionStyle(change)
 
                 if (AppConfig.commentTokens.any { change.inserted.contains(it.first) || change.inserted.contains(if (it.second.isBlank()) "\\n" else it.second) }) {
                     updatingStyles = true
@@ -83,17 +79,16 @@ class WriterTextArea : StyleClassedTextArea() {
             }
         }
 
+        // this.estimatedScrollYProperty().addListener { observable, oldValue, newValue ->
+        //     println(newValue)
+        // }
+
         paragraphs.sizeProperty().addListener { observable, oldValue, newValue ->
             runAsync {} ui {
                 // dummy call to force a repaint and reapply padding to first and last paragraphs
                 setParagraphStyle(currentParagraph, getParagraph(currentParagraph).paragraphStyle)
             }
         }
-
-        // paragraphs.addListener { it: ListChangeListener.Change<out Paragraph<MutableCollection<String>, String, MutableCollection<String>>> ->
-        //     insertText(text.lastIndex + 1, " ")
-        //     deleteText(text.lastIndex - 1, text.lastIndex)
-        // }
 
         this.beingUpdatedProperty().addListener { observable, oldValue, newValue ->
             if (oldValue && !newValue) {
@@ -153,7 +148,7 @@ class WriterTextArea : StyleClassedTextArea() {
 
     fun reset() {
         this.undoManager.forgetHistory()
-        this.insertionStyle = null
+        textInsertionStyle = null
         midChange = false
         queue.clear()
         textSelectionMode = TextSelectionMode.None
@@ -207,7 +202,7 @@ class WriterTextArea : StyleClassedTextArea() {
     }
 
     fun toggleStyleClass(start: Int, end: Int, className: String) {
-        if (this.isRangeStyled(start, end, className)) {
+        if (isRangeStyled(start, end, className)) {
             clearStyle(start, end, className)
         } else {
             addStyle(start, end, className)
@@ -215,15 +210,15 @@ class WriterTextArea : StyleClassedTextArea() {
     }
 
     fun clearStyle(className: String) {
-        setStyleSpans(0, getStyleSpans(0, text.lastIndex).mapStyles { style -> style.minus(className) })
+        setStyleSpans(0, getStyleSpans(0, text.lastIndex).mapStyles { style -> style.minusAll(className) })
     }
 
     fun clearStyle(start: Int, end: Int, className: String) {
-        setStyleSpans(start, getStyleSpans(start, end).mapStyles { style -> style.minus(className) })
+        setStyleSpans(start, getStyleSpans(start, end).mapStyles { style -> style.minusAll(className) })
     }
 
     fun addStyle(start: Int, end: Int, className: String) {
-        setStyleSpans(start, getStyleSpans(start, end).mapStyles { style -> style.plus(className) })
+        setStyleSpans(start, getStyleSpans(start, end).mapStyles { style -> style.plusDistinct(className) })
     }
 
     /** Merges the style spans in the given range with the given style spans by adding each className from the given style spans to the current style spans. */
@@ -261,10 +256,15 @@ class WriterTextArea : StyleClassedTextArea() {
         if (selection.length > 0) {
             updateSelectionWith(className)
         } else {
-            when {
-                insertionStyle == null -> { insertionStyle = mutableListOf(className) }
-                insertionStyle!!.contains(className) -> { insertionStyle!!.remove(className) }
-                else -> { insertionStyle!!.add(className) }
+            textInsertionStyle.let {
+                val styleAtPosition = getStyleAtPosition(caretPosition)
+                textInsertionStyle = when {
+                    it == null -> if (styleAtPosition.contains(className))
+                                      styleAtPosition.minus(className)
+                                      else styleAtPosition.plus(className)
+                    it.contains(className) -> it.minus(className)
+                    else -> it.plus(className)
+                }
             }
         }
     }
@@ -407,7 +407,7 @@ class WriterTextArea : StyleClassedTextArea() {
                         indices.add(startIndex..endIndex + 1)
 
                         if (caretPosition == endIndex + 1 && found) {
-                            insertionStyle = mutableListOf("comment")
+                            textInsertionStyle = mutableListOf("comment")
                         }
                     }
 
@@ -421,26 +421,6 @@ class WriterTextArea : StyleClassedTextArea() {
             mergeStyles(it, "comment")
 
             wordCountProperty.set(this.countWordsWithoutComments())
-        }
-    }
-
-    private fun applyInsertionStyle(change: PlainTextChange) {
-        if (insertionStyle != null) {
-            val from = change.position
-            val length = change.inserted.length
-
-            val styles = getStyleAtPosition(from).toMutableList()
-
-            insertionStyle!!.forEach {
-                if (styles.contains(it)) {
-                    styles.remove(it)
-                } else {
-                    styles.add(it)
-                }
-            }
-
-            setStyle(from, from + length, styles)
-            insertionStyle = null
         }
     }
 
