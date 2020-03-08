@@ -214,19 +214,11 @@ class WriterTextArea : StyleClassedTextArea() {
     }
 
     fun clearStyle(start: Int, end: Int, className: String) {
-        setStyleSpans(start, StyleSpansBuilder<MutableCollection<String>>().addAll(getStyleSpans(start, end).map { styleSpan ->
-            StyleSpan<MutableCollection<String>>(styleSpan.style.filter {
-                    style -> style != className
-            }.toMutableList(), styleSpan.length)
-        }).create())
+        setStyleSpans(start, getStyleSpans(start, end).mapStyles { style -> style.minus(className) })
     }
 
     fun addStyle(start: Int, end: Int, className: String) {
-        setStyleSpans(start, StyleSpansBuilder<MutableCollection<String>>().addAll(getStyleSpans(start, end).map { styleSpan ->
-            StyleSpan<MutableCollection<String>>(styleSpan.style.filter {
-                    style -> style != className
-            }.plus(className).toMutableList(), styleSpan.length)
-        }).create())
+        setStyleSpans(start, getStyleSpans(start, end).mapStyles { style -> style.plus(className) })
     }
 
     /** If text is selected, styles the selected text with the specified class. Otherwise, starts a new segment with the specified style class. */
