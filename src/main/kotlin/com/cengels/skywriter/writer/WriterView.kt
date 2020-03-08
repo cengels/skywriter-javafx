@@ -7,6 +7,8 @@ import com.cengels.skywriter.style.GeneralStylesheet
 import com.cengels.skywriter.theming.ThemesManager
 import com.cengels.skywriter.theming.ThemesView
 import com.cengels.skywriter.util.*
+import javafx.animation.Interpolator
+import javafx.beans.value.ObservableDoubleValue
 import javafx.geometry.Pos
 import javafx.scene.Group
 import javafx.scene.control.*
@@ -14,17 +16,21 @@ import javafx.scene.input.KeyCode
 import javafx.scene.layout.*
 import javafx.stage.FileChooser
 import javafx.stage.WindowEvent
+import javafx.util.Duration
 import org.fxmisc.flowless.VirtualizedScrollPane
 import tornadofx.*
 import java.io.File
 import java.time.LocalDateTime
 
 class WriterView : View("Skywriter") {
-    val model = WriterViewModel()
-    lateinit var menuBar: MenuBar
-    lateinit var statusBar: StackPane
-    lateinit var findField: TextField
-    lateinit var findBar: BorderPane
+    private val model = WriterViewModel()
+    private lateinit var menuBar: MenuBar
+    private lateinit var statusBar: StackPane
+    private lateinit var findField: TextField
+    private lateinit var findBar: BorderPane
+    private val findVisibilityBinding = model.findAndReplaceStateProperty.isNotEqualTo(WriterViewModel.FindAndReplace.None)
+    private val replaceVisibilityBinding = model.findAndReplaceStateProperty.isEqualTo(WriterViewModel.FindAndReplace.Replace)
+    private lateinit var findBarHeightBinding: ObservableDoubleValue
 
     init {
         this.updateTitle()
@@ -144,6 +150,22 @@ class WriterView : View("Skywriter") {
             }
         }
 
+        this.setOnKeyReleased {
+            when {
+                it.code == KeyCode.ESCAPE -> {
+                    model.findAndReplaceState = WriterViewModel.FindAndReplace.None
+                }
+                // For some strange reason, the find handler works just fine when the find bar has
+                // focus, but findAndReplace does not. Therefore, both of these events are handled here.
+                KeyConfig.Edit.find?.match(it) == true -> {
+                    openFind()
+                }
+                KeyConfig.Edit.findAndReplace?.match(it) == true -> {
+                    openFindAndReplace()
+                }
+            }
+        }
+
         top {
             useMaxWidth = true
             menuBar = menubar {
@@ -222,8 +244,10 @@ class WriterView : View("Skywriter") {
                     item("Select Paragraph", KeyConfig.Selection.selectParagraph).action { textArea.selectParagraph() }
                     item("Select All", KeyConfig.Selection.selectAll).action { textArea.selectAll() }
                     separator()
-                    item("Find", KeyConfig.Edit.find).action { openFind() }
-                    item("Find and replace", KeyConfig.Edit.findAndReplace).action { openFindAndReplace() }
+                    // There is an inexplicable bug with this setup. Both of the below key handlers are defined in the
+                    // exact same way, yet only `find` works when the find bar has focus.
+                    item("Find").action { openFind() }
+                    item("Find and replace").action { openFindAndReplace() }
                 }
 
                 menu("Formatting") {
@@ -254,65 +278,69 @@ class WriterView : View("Skywriter") {
         }
 
         center {
-            gridpane {
-                this.backgroundProperty().bind(ThemesManager.selectedThemeProperty.objectBinding { getBackgroundFor(it!!.windowBackground, it.backgroundImage, it.backgroundImageSizingType)  })
-                this.useMaxWidth = true
-                this.useMaxHeight = true
-                this.columnConstraints.addAll(
-                    ColumnConstraints().apply { this.hgrow = Priority.ALWAYS },
-                    ColumnConstraints().apply {
-                        this.percentWidthProperty().bind(ThemesManager.selectedThemeProperty.doubleBinding { if (it!!.documentWidth <= 1.0) it.documentWidth * 100.0 else -1.0 })
-                        this.prefWidthProperty().bind(ThemesManager.selectedThemeProperty.doubleBinding { if (it!!.documentWidth > 1.0) it.documentWidth else -1.0 })
-                    },
-                    ColumnConstraints().apply { this.hgrow = Priority.ALWAYS }
-                )
-                this.rowConstraints.addAll(
-                    RowConstraints().apply { this.vgrow = Priority.ALWAYS },
-                    RowConstraints().apply {
-                        this.percentHeightProperty().bind(ThemesManager.selectedThemeProperty.doubleBinding { if (it!!.documentHeight <= 1.0) it.documentHeight * 100.0 else -1.0 })
-                        this.prefHeightProperty().bind(ThemesManager.selectedThemeProperty.doubleBinding { if (it!!.documentHeight > 1.0) it.documentHeight else -1.0 })
-                    },
-                    RowConstraints().apply { this.vgrow = Priority.ALWAYS }
-                )
+            stackpane {
+                gridpane {
+                    this.backgroundProperty().bind(ThemesManager.selectedThemeProperty.objectBinding { getBackgroundFor(it!!.windowBackground, it.backgroundImage, it.backgroundImageSizingType)  })
+                    this.useMaxWidth = true
+                    this.useMaxHeight = true
+                    this.columnConstraints.addAll(
+                        ColumnConstraints().apply { this.hgrow = Priority.ALWAYS },
+                        ColumnConstraints().apply {
+                            this.percentWidthProperty().bind(ThemesManager.selectedThemeProperty.doubleBinding { if (it!!.documentWidth <= 1.0) it.documentWidth * 100.0 else -1.0 })
+                            this.prefWidthProperty().bind(ThemesManager.selectedThemeProperty.doubleBinding { if (it!!.documentWidth > 1.0) it.documentWidth else -1.0 })
+                        },
+                        ColumnConstraints().apply { this.hgrow = Priority.ALWAYS }
+                    )
+                    this.rowConstraints.addAll(
+                        RowConstraints().apply { this.vgrow = Priority.ALWAYS },
+                        RowConstraints().apply {
+                            this.percentHeightProperty().bind(ThemesManager.selectedThemeProperty.doubleBinding { if (it!!.documentHeight <= 1.0) it.documentHeight * 100.0 else -1.0 })
+                            this.prefHeightProperty().bind(ThemesManager.selectedThemeProperty.doubleBinding { if (it!!.documentHeight > 1.0) it.documentHeight else -1.0 })
+                        },
+                        RowConstraints().apply { this.vgrow = Priority.ALWAYS }
+                    )
 
-                this.add(VirtualizedScrollPane(textArea, ScrollPane.ScrollBarPolicy.NEVER, ScrollPane.ScrollBarPolicy.AS_NEEDED).also { scrollPane ->
-                    primaryStage.fullScreenProperty().onChangeAndNow { isFullscreen ->
-                        if (isFullscreen == true) {
-                            scrollPane.getChildList()?.filterIsInstance<ScrollBar>()?.forEach { scrollbar ->
-                                scrollbar.style = "-fx-opacity: 0;"
-                                scrollbar.onHover {
-                                    if (it) {
-                                        scrollbar.style = "-fx-opacity: 1;"
-                                    } else {
-                                        scrollbar.style = "-fx-opacity: 0;"
+                    this.add(VirtualizedScrollPane(textArea, ScrollPane.ScrollBarPolicy.NEVER, ScrollPane.ScrollBarPolicy.AS_NEEDED).also { scrollPane ->
+                        primaryStage.fullScreenProperty().onChangeAndNow { isFullscreen ->
+                            if (isFullscreen == true) {
+                                scrollPane.getChildList()?.filterIsInstance<ScrollBar>()?.forEach { scrollbar ->
+                                    scrollbar.style = "-fx-opacity: 0;"
+                                    scrollbar.onHover {
+                                        if (it) {
+                                            scrollbar.style = "-fx-opacity: 1;"
+                                        } else {
+                                            scrollbar.style = "-fx-opacity: 0;"
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                }, 1, 1)
-            }
-        }
+                    }, 1, 1)
+                }
 
-        bottom {
-            useMaxWidth = true
-
-            vbox {
-                findBar = borderpane {
+                findBar = borderpane findbar@ {
                     addClass("find-bar")
-                    managedWhen(visibleProperty())
-                    hiddenWhen(model.findAndReplaceStateProperty.isEqualTo(WriterViewModel.FindAndReplace.None))
-                    paddingVertical = 10.0
+                    alignment = Pos.BOTTOM_CENTER
+                    isPickOnBounds = false
+                    // binding must be a field, otherwise the garbage collector will destroy it
+                    addFadeOn(findVisibilityBinding, 100)
+                    paddingTop = 5.0
                     paddingHorizontal = 20.0
-                    this.setOnKeyReleased {
-                        if (it.code == KeyCode.ESCAPE) {
-                            model.findAndReplaceState = WriterViewModel.FindAndReplace.None
-                        }
-                    }
+                    maxHeight = 0.0
+                    minHeight = 0.0
 
                     left {
                         vbox(5) {
                             hbox(10) {
+                                findBarHeightBinding = this.heightProperty().doubleBinding(model.findAndReplaceStateProperty) {
+                                    when (model.findAndReplaceState) {
+                                        WriterViewModel.FindAndReplace.Find -> this.height + this@findbar.paddingTop.toDouble()
+                                        WriterViewModel.FindAndReplace.Replace -> this.height * 2 + this@vbox.spacing + this@findbar.paddingTop.toDouble()
+                                        else -> 0.0
+                                    }
+                                }
+                                this@findbar.maxHeightProperty().animate(findBarHeightBinding, Duration.millis(100.0), Interpolator.EASE_BOTH)
+
                                 hbox(10) {
                                     alignment = Pos.CENTER
                                     findField = textfield(textArea.searcher.findTermProperty) {
@@ -369,8 +397,7 @@ class WriterView : View("Skywriter") {
                             }
 
                             hbox(15) {
-                                managedWhen(visibleProperty())
-                                hiddenWhen(model.findAndReplaceStateProperty.isNotEqualTo(WriterViewModel.FindAndReplace.Replace))
+                                addFadeOn(replaceVisibilityBinding, 100)
 
                                 hbox(0) {
                                     alignment = Pos.CENTER
@@ -415,51 +442,55 @@ class WriterView : View("Skywriter") {
                         }
                     }
                 }
+            }
+        }
 
-                statusBar = stackpane {
-                    addClass("status-bar")
-                    managedWhen(visibleProperty())
-                    hiddenWhen(primaryStage.fullScreenProperty().and(model.showStatusBarProperty.not()))
+        bottom {
+            useMaxWidth = true
 
-                    hbox {
-                        isPickOnBounds = false
-                        useMaxWidth = false
-                        alignment = Pos.CENTER
-                        spacing = 9.0
-                        label(model.wordsTodayProperty.stringBinding {
-                            "${model.wordsToday} added today"
-                        }) {
-                            addClass("clickable")
-                            setOnMouseClicked { popup { popup ->
-                                label("Enter a new word count")
+            statusBar = stackpane {
+                addClass("status-bar")
+                managedWhen(visibleProperty())
+                hiddenWhen(primaryStage.fullScreenProperty().and(model.showStatusBarProperty.not()))
 
-                                numberfield(model.wordsToday) {
-                                    this.focusedProperty().addListener { observable, oldValue, newValue ->
-                                        model.setWords(getDefaultConverter<Int>()!!.fromString(this.text))
-                                    }
-                                    this.setOnAction { popup.hide() }
+                hbox {
+                    isPickOnBounds = false
+                    useMaxWidth = false
+                    alignment = Pos.CENTER
+                    spacing = 9.0
+                    label(model.wordsTodayProperty.stringBinding {
+                        "${model.wordsToday} added today"
+                    }) {
+                        addClass("clickable")
+                        setOnMouseClicked { popup { popup ->
+                            label("Enter a new word count")
+
+                            numberfield(model.wordsToday) {
+                                this.focusedProperty().addListener { observable, oldValue, newValue ->
+                                    model.setWords(getDefaultConverter<Int>()!!.fromString(this.text))
                                 }
-                            } }
-                        }
+                                this.setOnAction { popup.hide() }
+                            }
+                        } }
                     }
+                }
 
-                    hbox {
-                        isPickOnBounds = false
-                        alignment = Pos.CENTER_RIGHT
-                        spacing = 9.0
-                        label(textArea.wordCountProperty.stringBinding(textArea.selectionProperty()) {
-                            "${it ?: 0} words" + if (textArea.selection.length > 0) " (${textArea.countSelectedWords()} selected)" else ""
-                        })
-                        label(textArea.wordCountProperty.stringBinding {
-                            "${((it?.toInt() ?: 0) / 250) + 1} pages"
-                        })
-                        label(textArea.textProperty().stringBinding {
-                            "${textArea.paragraphs.size} paragraphs"
-                        })
-                        label(textArea.textProperty().stringBinding {
-                            "${it?.length} characters"
-                        })
-                    }
+                hbox {
+                    isPickOnBounds = false
+                    alignment = Pos.CENTER_RIGHT
+                    spacing = 9.0
+                    label(textArea.wordCountProperty.stringBinding(textArea.selectionProperty()) {
+                        "${it ?: 0} words" + if (textArea.selection.length > 0) " (${textArea.countSelectedWords()} selected)" else ""
+                    })
+                    label(textArea.wordCountProperty.stringBinding {
+                        "${((it?.toInt() ?: 0) / 250) + 1} pages"
+                    })
+                    label(textArea.textProperty().stringBinding {
+                        "${textArea.paragraphs.size} paragraphs"
+                    })
+                    label(textArea.textProperty().stringBinding {
+                        "${it?.length} characters"
+                    })
                 }
             }
         }
@@ -534,21 +565,21 @@ class WriterView : View("Skywriter") {
     private fun openFind() {
         if (model.findAndReplaceState == WriterViewModel.FindAndReplace.Find && findBar.isChildFocused()) {
             model.findAndReplaceState = WriterViewModel.FindAndReplace.None
+            textArea.requestFocus()
         } else {
             model.findAndReplaceState = WriterViewModel.FindAndReplace.Find
+            findField.requestFocus()
         }
-
-        findField.requestFocus()
     }
 
     private fun openFindAndReplace() {
         if (model.findAndReplaceState == WriterViewModel.FindAndReplace.Replace && findBar.isChildFocused()) {
             model.findAndReplaceState = WriterViewModel.FindAndReplace.None
+            textArea.requestFocus()
         } else {
             model.findAndReplaceState = WriterViewModel.FindAndReplace.Replace
+            findField.requestFocus()
         }
-
-        findField.requestFocus()
     }
 
     private fun rename() {

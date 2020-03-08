@@ -3,21 +3,25 @@ package com.cengels.skywriter.util
 import com.cengels.skywriter.enum.ImageSizingType
 import com.cengels.skywriter.theming.ThemesManager
 import com.cengels.skywriter.util.convert.ColorConverter
+import javafx.animation.Animation
+import javafx.animation.FadeTransition
+import javafx.animation.Interpolator
+import javafx.animation.Timeline
+import javafx.beans.Observable
 import javafx.beans.binding.Binding
 import javafx.beans.property.Property
 import javafx.beans.property.ReadOnlyProperty
+import javafx.beans.value.ObservableBooleanValue
+import javafx.beans.value.ObservableValue
+import javafx.beans.value.WritableValue
 import javafx.geometry.Insets
-import javafx.geometry.Side
 import javafx.scene.Node
-import javafx.scene.Scene
-import javafx.scene.control.Label
 import javafx.scene.image.Image
 import javafx.scene.layout.*
-import javafx.scene.paint.Paint
 import javafx.stage.FileChooser
+import javafx.util.Duration
 import tornadofx.*
 import java.awt.Color
-import java.util.function.Predicate
 
 /** Creates a binding that automatically converts the [java.awt.Color] values into [javafx.scene.paint.Paint] values. */
  fun Color.toBackground(): Background {
@@ -88,4 +92,45 @@ fun Node.findParent(predicate: (node: Node) -> Boolean): Node? {
     }
 
     return parent.findParent(predicate)
+}
+
+/** Listens to a variable number of observables and executes the given function if any of the observables change. */
+fun listen(vararg dependencies: Observable, op: () -> Unit) {
+    if (dependencies.isEmpty()) {
+        throw IllegalArgumentException("Must specify at least one dependency.")
+    }
+
+    dependencies.forEach { it.addListener { op() } }
+}
+
+/** Animates this property whenever the given observable value changes. */
+fun <T> WritableValue<T>.animate(value: ObservableValue<T>, duration: Duration, interpolator: Interpolator? = null, op: Timeline.() -> Unit = {}) {
+    value.addListener { observable, oldValue, newValue ->
+        this.animate(newValue, duration, interpolator, op)
+    }
+}
+
+/** Plays the method in reverse, starting from the end and transitioning to the beginning. */
+fun Animation.playInReverse() {
+    rate = -this.rate
+    jumpTo(this.totalDuration)
+    play()
+}
+
+/** Adds a new [FadeTransition] to this [Node] and automatically plays it whenever the given [ObservableBooleanValue] changes. If the value changes to true, the node is faded in. If the value changes to false, the node is faded out. */
+fun Node.addFadeOn(playWhen: ObservableBooleanValue, durationMs: Number = 200): FadeTransition {
+    opacity = 0.0
+    return FadeTransition(Duration.millis(durationMs.toDouble()), this).apply {
+        fromValue = 0.0
+        toValue = 1.0
+        interpolator = Interpolator.EASE_BOTH
+
+        playWhen.addListener { _, _, newValue ->
+            if (newValue) {
+                playFromStart()
+            } else {
+                playInReverse()
+            }
+        }
+    }
 }

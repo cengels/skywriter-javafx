@@ -2,11 +2,7 @@ package com.cengels.skywriter.writer
 
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
-import org.fxmisc.richtext.model.EditableStyledDocument
-import org.fxmisc.richtext.model.StyleSpansBuilder
 import tornadofx.*
-import java.util.*
-import kotlin.concurrent.schedule
 
 /**
  * This component provides find and replace functionality to the [WriterTextArea].
