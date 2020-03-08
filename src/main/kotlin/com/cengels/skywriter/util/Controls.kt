@@ -17,12 +17,12 @@ import javafx.scene.layout.VBox
 import javafx.scene.text.Font
 import javafx.stage.Popup
 import javafx.stage.PopupWindow
+import javafx.util.Duration
 import javafx.util.StringConverter
 import javafx.util.converter.PercentageStringConverter
 import tornadofx.*
 import java.time.Instant
 import kotlin.math.min
-import kotlin.properties.ReadWriteProperty
 
 /** Adds a custom text field that only accepts the number type which was passed in. */
 inline fun <reified T : Any> EventTarget.numberfield(property: Property<T>, noinline op: TextField.() -> Unit = {}) = textfield(property, getDefaultConverter()!!, op).apply {
@@ -259,17 +259,15 @@ fun Node.popup(op: VBox.(popup: Popup) -> Unit = {}): Popup = Popup().apply {
     })
 }
 
-fun Node.popupOnClick(fadeDuration: Number = 0.0, op: VBox.(popup: Popup) -> Unit = {}): Popup {
+fun Node.popupOnClick(fadeDurationMs: Number = 0.0, op: VBox.(popup: Popup) -> Unit = {}): Popup {
     return popup { popup ->
         val shouldFadeInProperty = SimpleBooleanProperty(false)
-        addFadeOn(shouldFadeInProperty, fadeDuration)
+        addFadeOn(shouldFadeInProperty, fadeDurationMs)
 
         this@popupOnClick.setOnMouseClicked {
             if (popup.isShowing) {
                 shouldFadeInProperty.set(false)
-                runAsync { Thread.sleep(fadeDuration.toLong()) } ui {
-                    popup.hide()
-                }
+                runLater(Duration.millis(fadeDurationMs.toDouble())) { popup.hide() }
             } else {
                 val position = this@popupOnClick.localToScreen(this@popupOnClick.boundsInLocal)
 
