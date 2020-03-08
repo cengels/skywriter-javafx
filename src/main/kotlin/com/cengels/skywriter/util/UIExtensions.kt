@@ -120,7 +120,7 @@ fun Animation.playInReverse() {
 /** Adds a new [FadeTransition] to this [Node] and automatically plays it whenever the given [ObservableBooleanValue] changes. If the value changes to true, the node is faded in. If the value changes to false, the node is faded out. */
 fun Node.addFadeOn(playWhen: ObservableBooleanValue, durationMs: Number = 200): FadeTransition {
     opacity = 0.0
-    return FadeTransition(Duration.millis(durationMs.toDouble()), this).apply {
+    return FadeTransition(durationMs.millis, this).apply {
         fromValue = 0.0
         toValue = 1.0
         interpolator = Interpolator.EASE_BOTH

@@ -16,7 +16,6 @@ import javafx.scene.input.KeyCode
 import javafx.scene.layout.*
 import javafx.stage.FileChooser
 import javafx.stage.WindowEvent
-import javafx.util.Duration
 import org.fxmisc.flowless.VirtualizedScrollPane
 import tornadofx.*
 import java.io.File
@@ -339,7 +338,7 @@ class WriterView : View("Skywriter") {
                                         else -> 0.0
                                     }
                                 }
-                                this@findbar.maxHeightProperty().animate(findBarHeightBinding, Duration.millis(100.0), Interpolator.EASE_BOTH)
+                                this@findbar.maxHeightProperty().animate(findBarHeightBinding, 100.millis, Interpolator.EASE_BOTH)
 
                                 hbox(10) {
                                     alignment = Pos.CENTER

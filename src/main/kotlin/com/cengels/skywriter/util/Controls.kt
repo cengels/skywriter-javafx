@@ -17,7 +17,6 @@ import javafx.scene.layout.VBox
 import javafx.scene.text.Font
 import javafx.stage.Popup
 import javafx.stage.PopupWindow
-import javafx.util.Duration
 import javafx.util.StringConverter
 import javafx.util.converter.PercentageStringConverter
 import tornadofx.*
@@ -267,7 +266,7 @@ fun Node.popupOnClick(fadeDurationMs: Number = 0.0, op: VBox.(popup: Popup) -> U
         this@popupOnClick.setOnMouseClicked {
             if (popup.isShowing) {
                 shouldFadeInProperty.set(false)
-                runLater(Duration.millis(fadeDurationMs.toDouble())) { popup.hide() }
+                runLater(fadeDurationMs.millis) { popup.hide() }
             } else {
                 val position = this@popupOnClick.localToScreen(this@popupOnClick.boundsInLocal)
 
