@@ -462,7 +462,7 @@ class WriterView : View("Skywriter") {
                         "${model.wordsToday} added today"
                     }) {
                         addClass("clickable")
-                        setOnMouseClicked { popup { popup ->
+                        popupOnClick(200) { popup ->
                             label("Enter a new word count")
 
                             numberfield(model.wordsToday) {
@@ -471,7 +471,7 @@ class WriterView : View("Skywriter") {
                                 }
                                 this.setOnAction { popup.hide() }
                             }
-                        } }
+                        }
                     }
                 }
 

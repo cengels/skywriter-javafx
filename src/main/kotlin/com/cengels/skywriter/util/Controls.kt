@@ -5,6 +5,7 @@ import com.cengels.skywriter.util.convert.EnumConverter
 import com.cengels.skywriter.util.convert.SuffixConverter
 import com.sun.javafx.scene.control.skin.ComboBoxListViewSkin
 import javafx.beans.property.Property
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.event.EventTarget
 import javafx.geometry.Orientation
 import javafx.geometry.Pos
@@ -243,7 +244,7 @@ fun EventTarget.fontpicker(property: Property<String>, fonts: List<String>? = Fo
     op(this)
 }
 
-fun Node.popup(op: VBox.(popup: Popup) -> Unit = {}) = Popup().apply {
+fun Node.popup(op: VBox.(popup: Popup) -> Unit = {}): Popup = Popup().apply {
     isAutoHide = true
     isAutoFix = false
     anchorLocation = PopupWindow.AnchorLocation.CONTENT_BOTTOM_LEFT
@@ -256,8 +257,27 @@ fun Node.popup(op: VBox.(popup: Popup) -> Unit = {}) = Popup().apply {
         addClass("popup-box")
         op(this, popup)
     })
+}
 
-    val position = this@popup.localToScreen(this@popup.boundsInLocal)
+fun Node.popupOnClick(fadeDuration: Number = 0.0, op: VBox.(popup: Popup) -> Unit = {}): Popup {
+    return popup { popup ->
+        val shouldFadeInProperty = SimpleBooleanProperty(false)
+        addFadeOn(shouldFadeInProperty, fadeDuration)
 
-    show(this@popup, position.minX, position.minY - 10)
+        this@popupOnClick.setOnMouseClicked {
+            if (popup.isShowing) {
+                shouldFadeInProperty.set(false)
+                runAsync { Thread.sleep(fadeDuration.toLong()) } ui {
+                    popup.hide()
+                }
+            } else {
+                val position = this@popupOnClick.localToScreen(this@popupOnClick.boundsInLocal)
+
+                popup.show(this@popupOnClick, position.minX, position.minY - 10)
+                shouldFadeInProperty.set(true)
+            }
+        }
+
+        op(this, popup)
+    }
 }
