@@ -55,9 +55,10 @@ class TextAreaSearcher(private val context: WriterTextArea) {
         matchesBinding.addListener { observable, oldValue, newValue ->
             matchIndex = 0
 
-            runAsync { Thread.sleep(300) } ui {
+            runAsync { } ui {
                 context.clearStyle("search-highlighting")
-                if (matches === newValue && count < 200) {
+
+                if (matches === newValue) {
                     highlightMatches()
                 }
             }
