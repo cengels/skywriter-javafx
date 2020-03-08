@@ -466,7 +466,10 @@ class WriterView : View("Skywriter") {
 
                             numberfield(model.wordsToday) {
                                 popup.showingProperty().addListener { observable, oldValue, newValue ->
-                                    if (!newValue) {
+                                    if (newValue) {
+                                        this.requestFocus()
+                                        this.selectAll()
+                                    } else {
                                         model.setWords(getDefaultConverter<Int>()!!.fromString(this.text))
                                     }
                                 }
