@@ -112,6 +112,10 @@ fun <T> Iterable<T>.containsAny(vararg elements: T): Boolean {
     return this.any { elements.contains(it) }
 }
 
+fun String.containsAny(vararg chars: Char): Boolean {
+    return this.indexOfAny(chars) != -1
+}
+
 /** The length of the range. */
 val IntRange.length: Int
     get() = this.last - this.first
@@ -136,4 +140,19 @@ fun <T> Collection<T>.plusDistinct(element: T): List<T> {
  **/
 fun <T> Collection<T>.minusAll(element: T): List<T> {
     return this.filterNot { it === element }
+}
+
+/** If the [replacementString] contains either a `$` or `\` followed by a group index, substitute it by the corresponding matched group. If there is no group of that index, leaves the match alone and interprets it as a literal string. If no tokens are found, returns the replacement string as-is. Note that `$0` or `\0` inserts the entire matched value. */
+fun MatchResult.replace(replacementString: String): String {
+    var result: String = replacementString
+
+    if (!result.containsAny('$', '\\')) {
+        return result
+    }
+
+    for (i in this.groups.indices) {
+        result = result.replace("\$$i", this.groupValues[i]).replace("\\$i", this.groupValues[i])
+    }
+
+    return result
 }

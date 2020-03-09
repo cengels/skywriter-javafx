@@ -1,8 +1,10 @@
 package com.cengels.skywriter.writer
 
+import com.cengels.skywriter.util.replace
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
+import java.util.regex.PatternSyntaxException
 
 /**
  * This component provides find and replace functionality to the [WriterTextArea].
@@ -15,11 +17,17 @@ class TextAreaSearcher(private val context: WriterTextArea) {
     val replaceTermProperty = SimpleStringProperty("")
     val replaceTerm: String by replaceTermProperty
     val findWholeWordsProperty = SimpleBooleanProperty(false)
+    /** Describes whether the search matches only whole "words", i.e. any matches must be surrounded by word boundaries. */
     val findWholeWords: Boolean by findWholeWordsProperty
     val caseSensitiveProperty = SimpleBooleanProperty(false)
+    /** Describes whether the case must be matched in addition to the search string. */
     val caseSensitive: Boolean by caseSensitiveProperty
-    private val searchRegexBinding = findTermProperty.objectBinding(findWholeWordsProperty, caseSensitiveProperty) {
+    val useRegexProperty = SimpleBooleanProperty(false)
+    /** If true, Regex tokens in the search term will not be escaped. If false, literal matching is possible without explicit escapes, but you cannot use Regex in the search term. */
+    val useRegex: Boolean by useRegexProperty
+    private val searchRegexBinding = findTermProperty.objectBinding(findWholeWordsProperty, caseSensitiveProperty, useRegexProperty) {
         val surrounding = if (findWholeWords) "\\b+" else ""
+        val searchString = if (useRegex || it == null) it else Regex.escape(it)
         val options = mutableSetOf<RegexOption>()
 
         if (!caseSensitive) {
@@ -29,7 +37,11 @@ class TextAreaSearcher(private val context: WriterTextArea) {
         if (it == null || it.isEmpty()) {
             null
         } else {
-            Regex("$surrounding$it$surrounding", options)
+            try {
+                Regex("$surrounding$searchString$surrounding", options)
+            } catch (e: PatternSyntaxException) {
+                null
+            }
         }
     }
     private val searchRegex: Regex? by searchRegexBinding
@@ -88,8 +100,9 @@ class TextAreaSearcher(private val context: WriterTextArea) {
         }
 
         val match = matches[matchIndex]
-        context.replaceText(match.range.first, match.range.last + 1, replaceTerm)
+        context.replaceText(match.range.first, match.range.last + 1, createReplacementString(match))
         context.requestCenterCaret()
+        matchesBinding.invalidate()
     }
 
     /** Replaces all occurrences of the search term with the replace term. */
@@ -100,10 +113,19 @@ class TextAreaSearcher(private val context: WriterTextArea) {
 
         context.createMultiChange(matches.size).apply {
             matches.forEach {
-                this.replaceText(it.range.first, it.range.last + 1, replaceTerm)
+                this.replaceText(it.range.first, it.range.last + 1, createReplacementString(it))
             }
             this.commit()
         }
+        matchesBinding.invalidate()
+    }
+
+    private fun createReplacementString(match: MatchResult): String {
+        if (useRegex) {
+            return match.replace(replaceTerm)
+        }
+
+        return replaceTerm
     }
 
     private fun getNextMatch(): MatchResult? {

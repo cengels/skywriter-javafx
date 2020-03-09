@@ -392,6 +392,9 @@ class WriterView : View("Skywriter") {
                                     checkbox("Case-sensitive", textArea.searcher.caseSensitiveProperty) {
                                         isFocusTraversable = false
                                     }
+                                    checkbox("Regular expression", textArea.searcher.useRegexProperty) {
+                                        isFocusTraversable = false
+                                    }
                                 }
                             }
 
