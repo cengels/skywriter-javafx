@@ -60,3 +60,13 @@ fun MatchResult.replace(replacementString: String): String {
 
     return result
 }
+
+val <A, R> java.util.function.Function<A, R>.kotlinFunction: (A) -> R
+    get() = { this.apply(it) }
+
+val <A, R> ((A) -> R).javaFunction: java.util.function.Function<A, R>
+    get() = java.util.function.Function<A, R> { a -> this(a) }
+val <A, B, R> ((A, B) -> R).javaBiFunction: java.util.function.BiFunction<A, B, R>
+    get() = java.util.function.BiFunction<A, B, R> { a, b -> this(a, b) }
+val <A> ((A) -> Boolean).javaPredicate: java.util.function.Predicate<A>
+    get() = java.util.function.Predicate<A> { a -> this(a) }

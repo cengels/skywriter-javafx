@@ -19,11 +19,15 @@ import org.fxmisc.flowless.VirtualFlow
 import org.fxmisc.richtext.NavigationActions
 import org.fxmisc.richtext.StyleClassedTextArea
 import org.fxmisc.richtext.model.*
+import org.fxmisc.richtext.util.UndoUtils
+import org.fxmisc.undo.UndoManagerFactory
 import org.fxmisc.wellbehaved.event.EventPattern
 import org.fxmisc.wellbehaved.event.InputMap
 import org.fxmisc.wellbehaved.event.Nodes
+import org.reactfx.SuspendableYes
 import tornadofx.FX
 import tornadofx.getValue
+import tornadofx.setValue
 import tornadofx.runAsync
 import tornadofx.ui
 import java.io.ByteArrayOutputStream
@@ -50,6 +54,7 @@ class WriterTextArea : StyleClassedTextArea() {
     var decoderCodecs: List<DocumentCodec<Any>> = listOf()
     private var centerCaretRequested: Boolean = false
     private val virtualFlow: VirtualFlow<Any, Cell<Any, Node>> = this.children.filterIsInstance<VirtualFlow<Any, Cell<Any, Node>>>().single()
+    var undoEnabled = SuspendableYes()
 
     init {
         this.isWrapText = true
@@ -68,6 +73,12 @@ class WriterTextArea : StyleClassedTextArea() {
                 textInsertionStyle = getStyleAtPosition(caretPosition).minus("comment")
             }
         }
+
+        undoManager = UndoManagerFactory.unlimitedHistoryFactory().createMultiChangeUM(multiRichChanges().conditionOn(undoEnabled),
+            RichTextChange<MutableCollection<String>, String, MutableCollection<String>>::invert.javaFunction,
+            UndoUtils.applyMultiRichTextChange(this),
+            RichTextChange<MutableCollection<String>, String, MutableCollection<String>>::mergeWith.javaBiFunction,
+            RichTextChange<MutableCollection<String>, String, MutableCollection<String>>::isIdentity.javaPredicate)
 
         this.plainTextChanges().subscribe { change ->
             midChange = true
@@ -137,6 +148,12 @@ class WriterTextArea : StyleClassedTextArea() {
         }
     }
 
+    /** Executes the given block with the [undoManager] ignoring any changes emitted during the execution. */
+    fun suspendUndo(op: () -> Unit) {
+        undoEnabled.suspendWhile { op() }
+    }
+
+    /** Resets any values that mutated since the creation of this text area back to their defaults, excluding the document itself. */
     fun reset() {
         this.undoManager.forgetHistory()
         textInsertionStyle = null
@@ -192,6 +209,7 @@ class WriterTextArea : StyleClassedTextArea() {
         return styleSpans.all { span -> span.style.any { style -> style == className } }
     }
 
+    /** Maintains all styles in the given range and adds or removes the given class from the range. */
     fun toggleStyleClass(start: Int, end: Int, className: String) {
         if (isRangeStyled(start, end, className)) {
             clearStyle(start, end, className)
@@ -200,14 +218,17 @@ class WriterTextArea : StyleClassedTextArea() {
         }
     }
 
+    /** Clears all styles of the given class from the document. */
     fun clearStyle(className: String) {
-        setStyleSpans(0, getStyleSpans(0, text.lastIndex).mapStyles { style -> style.minusAll(className) })
+        suspendUndo { setStyleSpans(0, getStyleSpans(0, text.lastIndex).mapStyles { style -> style.minusAll(className) }) }
     }
 
+    /** Clears all styles of the given class from the given range. */
     fun clearStyle(start: Int, end: Int, className: String) {
         setStyleSpans(start, getStyleSpans(start, end).mapStyles { style -> style.minusAll(className) })
     }
 
+    /** Adds the style of the given class to the given range, maintaining all pre-existing styles. */
     fun addStyle(start: Int, end: Int, className: String) {
         setStyleSpans(start, getStyleSpans(start, end).mapStyles { style -> style.plusDistinct(className) })
     }
