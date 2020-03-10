@@ -74,11 +74,13 @@ class WriterTextArea : StyleClassedTextArea() {
             }
         }
 
-        undoManager = UndoManagerFactory.unlimitedHistoryFactory().createMultiChangeUM(multiRichChanges().conditionOn(undoEnabled),
-            RichTextChange<MutableCollection<String>, String, MutableCollection<String>>::invert.javaFunction,
-            UndoUtils.applyMultiRichTextChange(this),
-            RichTextChange<MutableCollection<String>, String, MutableCollection<String>>::mergeWith.javaBiFunction,
-            RichTextChange<MutableCollection<String>, String, MutableCollection<String>>::isIdentity.javaPredicate)
+        // undoManager = UndoManagerFactory.unlimitedHistoryFactory().createMultiChangeUM(multiRichChanges().conditionOn(undoEnabled),
+        //     RichTextChange<MutableCollection<String>, String, MutableCollection<String>>::invert.javaFunction,
+        //     UndoUtils.applyMultiRichTextChange(this),
+        //     RichTextChange<MutableCollection<String>, String, MutableCollection<String>>::mergeWith.javaBiFunction,
+        //     RichTextChange<MutableCollection<String>, String, MutableCollection<String>>::isIdentity.javaPredicate)
+
+        undoManager = UndoUtils.richTextUncheckedUndoManager(this, undoEnabled)
 
         this.plainTextChanges().subscribe { change ->
             midChange = true
