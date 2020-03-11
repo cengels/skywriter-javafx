@@ -220,7 +220,7 @@ class WriterView : View("Skywriter") {
                         action { textArea.copy() }
                     }
                     item("Paste", KeyConfig.Edit.paste).action { textArea.paste() }
-                    item("Paste Unformatted", KeyConfig.Edit.pasteUnformatted)
+                    item("Paste Unformatted", KeyConfig.Edit.pasteUnformatted).action { textArea.pasteUnformatted() }
                     item("Paste Untracked", KeyConfig.Edit.pasteUntracked).action {
                         val wordCountBefore = textArea.wordCount
                         textArea.paste()
@@ -471,6 +471,7 @@ class WriterView : View("Skywriter") {
                             numberfield(model.wordsToday) {
                                 popup.showingProperty().addListener { observable, oldValue, newValue ->
                                     if (newValue) {
+                                        this.text = model.wordsToday.toString()
                                         this.requestFocus()
                                         this.selectAll()
                                     } else {

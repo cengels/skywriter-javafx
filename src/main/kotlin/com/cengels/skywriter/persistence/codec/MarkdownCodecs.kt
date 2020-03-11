@@ -217,6 +217,6 @@ private fun unescape(string: String): String {
 }
 
 /** Checks whether the character at the specified index is escaped. */
-fun String.isEscaped(index: Int): Boolean {
+fun CharSequence.isEscaped(index: Int): Boolean {
     return this.slice(0 until index).takeLastWhile { it == MarkdownParser.ESCAPE_CHARACTER }.length % 2 == 1
 }

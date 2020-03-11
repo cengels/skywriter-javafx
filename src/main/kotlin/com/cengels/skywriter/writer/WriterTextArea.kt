@@ -42,7 +42,7 @@ class WriterTextArea : StyleClassedTextArea() {
     var initialized: Boolean = false
         private set
     private var midChange: Boolean = false
-    private val queue: Queue<() -> Unit> = LinkedList()
+    private val readyQueue: Queue<() -> Unit> = LinkedList()
     private var textSelectionMode: TextSelectionMode = TextSelectionMode.None
     val document: EditableStyledDocument<MutableCollection<String>, String, MutableCollection<String>>
         get() = this.content
@@ -61,27 +61,18 @@ class WriterTextArea : StyleClassedTextArea() {
         this.caretPositionProperty().addListener { _, _, _ ->
             this.requestFollowCaret()
             this.textInsertionStyle = null
+
+            if (caretPosition != 0 && AppConfig.commentTokens.any {
+                    text.slice(caretPosition - it.second.length until caretPosition) == if (it.second.isBlank()) "\n" else it.second
+                }) {
+                textInsertionStyle = getStyleAtPosition(caretPosition).minus("comment")
+            }
         }
 
         this.plainTextChanges().subscribe { change ->
-            var updatingStyles = false
-            if (change.inserted.isNotEmpty()) {
-                midChange = true
-
-                if (AppConfig.commentTokens.any { change.inserted.contains(it.first) || change.inserted.contains(if (it.second.isBlank()) "\\n" else it.second) }) {
-                    updatingStyles = true
-                    updateStyles()
-                }
-            }
-
-            if (!updatingStyles && (change.inserted.any { !it.isLetterOrDigit() } || change.removed.any { !it.isLetterOrDigit() })) {
-                wordCountProperty.set(this.countWordsWithoutComments())
-            }
+            midChange = true
+            updateComments(change)
         }
-
-        // this.estimatedScrollYProperty().addListener { observable, oldValue, newValue ->
-        //     println(newValue)
-        // }
 
         paragraphs.sizeProperty().addListener { observable, oldValue, newValue ->
             runAsync {} ui {
@@ -105,7 +96,7 @@ class WriterTextArea : StyleClassedTextArea() {
         this.readyProperty.addListener { observable, oldValue, newValue ->
             if (!oldValue && newValue) {
                 do {
-                    val queuedElement = this.queue.poll()
+                    val queuedElement = this.readyQueue.poll()
                     queuedElement?.invoke()
                 } while (queuedElement != null)
             }
@@ -150,7 +141,7 @@ class WriterTextArea : StyleClassedTextArea() {
         this.undoManager.forgetHistory()
         textInsertionStyle = null
         midChange = false
-        queue.clear()
+        readyQueue.clear()
         textSelectionMode = TextSelectionMode.None
     }
 
@@ -171,7 +162,7 @@ class WriterTextArea : StyleClassedTextArea() {
         if (this.ready) {
             callback()
         } else {
-            this.queue.offer(callback)
+            this.readyQueue.offer(callback)
         }
     }
 
@@ -221,20 +212,22 @@ class WriterTextArea : StyleClassedTextArea() {
         setStyleSpans(start, getStyleSpans(start, end).mapStyles { style -> style.plusDistinct(className) })
     }
 
-    /** Merges the style spans in the given range with the given style spans by adding each className from the given style spans to the current style spans. */
-    fun mergeStyles(start: Int, end: Int, styleSpans: StyleSpans<MutableCollection<String>>) {
+    /** Merges the style spans in the given range with the given style spans by adding each className from the given style spans to the current style spans in a union. */
+    fun unionStyles(start: Int, end: Int, styleSpans: StyleSpans<MutableCollection<String>>) {
         setStyleSpans(start, getStyleSpans(start, end).overlay(styleSpans) { first, second ->
             return@overlay first.plus(second)
         })
     }
 
-    /** Adds the given style class to each style span in the given ranges. This allows you to update multiple parts of the document in one pass. */
-    fun mergeStyles(ranges: List<IntRange>, className: String) {
-        if (ranges.isEmpty()) {
-            return
-        }
+    /** Merges the style spans in the given range with the given style spans by subtracting each className from the given style spans to the current style spans in an exclusion. */
+    fun excludeStyles(start: Int, end: Int, styleSpans: StyleSpans<MutableCollection<String>>) {
+        setStyleSpans(start, getStyleSpans(start, end).overlay(styleSpans) { first, second ->
+            return@overlay first.minus(second)
+        })
+    }
 
-        val styleSpans = StyleSpansBuilder<MutableCollection<String>>().apply {
+    private fun createStyleSpans(ranges: List<IntRange>, className: String): StyleSpans<MutableCollection<String>> {
+        return StyleSpansBuilder<MutableCollection<String>>().apply {
             ranges.forEachIndexed { index, it ->
                 add(mutableListOf(className), it.length)
 
@@ -247,8 +240,26 @@ class WriterTextArea : StyleClassedTextArea() {
                 }
             }
         }.create()
+    }
 
-        mergeStyles(ranges.first().first, ranges.last().last, styleSpans)
+    /** Adds the given style class to each style span in the given ranges. This allows you to update multiple parts of the document in one pass. */
+    fun mergeStyles(ranges: List<IntRange>, className: String) {
+        if (ranges.isEmpty()) {
+            return
+        }
+
+        val styleSpans = createStyleSpans(ranges, className)
+        unionStyles(ranges.first().first, ranges.last().last, styleSpans)
+    }
+
+    /** Clears the given style class from each style span in the given ranges. This allows you to update multiple parts of the document in one pass. */
+    fun clearStyles(ranges: List<IntRange>, className: String) {
+        if (ranges.isEmpty()) {
+            return
+        }
+
+        val styleSpans = createStyleSpans(ranges, className)
+        excludeStyles(ranges.first().first, ranges.last().last, styleSpans)
     }
 
     /** If text is selected, styles the selected text with the specified class. Otherwise, starts a new segment with the specified style class. */
@@ -373,7 +384,15 @@ class WriterTextArea : StyleClassedTextArea() {
             if (paragraphs.isNotEmpty()) {
                 replaceSelection(paragraphs)
             }
-        } else if (clipboard.hasString()) {
+        } else {
+            this.pasteUnformatted()
+        }
+    }
+
+    fun pasteUnformatted() {
+        val clipboard = Clipboard.getSystemClipboard()
+
+        if (clipboard.hasString()) {
             clipboard.string?.let { replaceSelection(it) }
         }
     }
@@ -387,38 +406,67 @@ class WriterTextArea : StyleClassedTextArea() {
         }
     }
 
-    /** Skims the text for any tokens that define a style range and applies the style. */
-    private fun updateStyles(): Task<MutableList<IntRange>> {
+    /** Skims the text for any tokens that define a comment range and applies the style. */
+    private fun updateComments(change: PlainTextChange): Task<Pair<List<IntRange>, List<IntRange>>> {
         return runAsync {
-            val indices = mutableListOf<IntRange>()
+            val insertionIndices = mutableSetOf<IntRange>()
+            val removalIndices = mutableSetOf<IntRange>()
 
-            AppConfig.commentTokens.forEach { token ->
-                var startIndex = text.indexOf(token.first)
+            AppConfig.commentTokens.forEach { (startToken, endToken) ->
+                val tokenList = if (endToken.isBlank()) listOf(startToken) else listOf(startToken, endToken)
+                val matchTokenList = listOf(startToken, if (endToken.isBlank()) "\n" else endToken)
 
-                while (startIndex != -1) {
-                    var endIndex = text.indexOf(if (token.second.isBlank()) "\\n" else token.second, startIndex)
-                    val found = endIndex != -1
+                if (change.inserted.isNotEmpty()) {
+                    var match = change.inserted.findAnyOf(tokenList)
 
-                    if (endIndex == -1 && paragraphs.lastIndex == offsetToPosition(startIndex, TwoDimensional.Bias.Backward).major) {
-                        endIndex = text.lastIndex
+                    while (match != null) {
+                        val (relativeIndex, token) = match
+                        val absoluteIndex = relativeIndex + change.position
+
+                        if (token == startToken) {
+                            text.findAnyOf(matchTokenList, absoluteIndex + token.length)?.also { (endIndex, nextToken) ->
+                                if (nextToken == matchTokenList.last()) {
+                                    insertionIndices.add(absoluteIndex..endIndex + nextToken.length)
+                                }
+                            }
+                        } else {
+                            text.findLastAnyOf(matchTokenList, absoluteIndex - token.length)?.also { (startIndex, previousToken) ->
+                                if (previousToken == matchTokenList.first()) {
+                                    insertionIndices.add(startIndex..absoluteIndex + token.length)
+                                }
+                            }
+                        }
+
+                        match = change.inserted.findAnyOf(tokenList, relativeIndex + token.length)
                     }
+                }
 
-                    if (endIndex != -1) {
-                        indices.add(startIndex..endIndex + 1)
+                if (change.removed.isNotEmpty()) {
+                    val startTokenIndex = change.removed.indexOf(startToken)
+                    val endTokenIndex = change.removed.indexOf(endToken)
 
-                        if (caretPosition == endIndex + 1 && found) {
-                            textInsertionStyle = mutableListOf("comment")
+                    if (startTokenIndex != -1) {
+                        text.findAnyOf(tokenList, change.position)?.also {
+                            if (it.second == endToken && text.findLastAnyOf(tokenList, change.position)?.second != startToken) {
+                                removalIndices.add(change.position..it.first + it.second.length)
+                            }
                         }
                     }
 
-                    startIndex = text.indexOf(token.first, startIndex + 1)
+                    if (endTokenIndex != -1) {
+                        text.findLastAnyOf(tokenList, change.position)?.also {
+                            if (it.second == startToken && text.findAnyOf(tokenList, change.position)?.second != endToken) {
+                                removalIndices.add(it.first..change.position)
+                            }
+                        }
+                    }
                 }
             }
 
-            return@runAsync indices
-        } ui {
-            clearStyle("comment")
-            mergeStyles(it, "comment")
+            return@runAsync insertionIndices.toList() to removalIndices.toList()
+        } ui { (insertionIndices, removalIndices) ->
+            clearStyles(removalIndices, "comment")
+            mergeStyles(insertionIndices, "comment")
 
             wordCountProperty.set(this.countWordsWithoutComments())
         }
