@@ -13,6 +13,7 @@ import javafx.geometry.Pos
 import javafx.scene.Group
 import javafx.scene.control.*
 import javafx.scene.input.KeyCode
+import javafx.scene.input.KeyEvent
 import javafx.scene.layout.*
 import javafx.stage.FileChooser
 import javafx.stage.WindowEvent
@@ -135,6 +136,13 @@ class WriterView : View("Skywriter") {
 
             model.progressTracker?.commit()
             model.progressTracker?.dispose()
+        }
+
+        root.scene.addEventFilter(KeyEvent.KEY_PRESSED) { event ->
+            if (event.isAltDown) {
+                // This prevents the menu bar from getting focus when ALT is pressed in the text area.
+                event.consume()
+            }
         }
     }
 

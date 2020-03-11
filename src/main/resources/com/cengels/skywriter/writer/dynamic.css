@@ -51,10 +51,6 @@
     -fx-padding: 0 0 20 0;
 }
 
-.caret {
-    -fx-stroke: -fill;
-}
-
 .styled-text-area .paragraph-box:first-paragraph {
     -fx-padding: 1000 0 0 0;
 }
