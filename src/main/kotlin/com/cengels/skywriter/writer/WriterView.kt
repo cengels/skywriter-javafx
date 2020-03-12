@@ -56,7 +56,9 @@ class WriterView : View("Skywriter") {
         }
 
         it.wordCountProperty.addListener { observable, oldValue, newValue ->
-            model.updateProgress(it.wordCount)
+            if (it.initialized) {
+                model.updateProgress(it.wordCount)
+            }
         }
 
         it.useMaxHeight = true

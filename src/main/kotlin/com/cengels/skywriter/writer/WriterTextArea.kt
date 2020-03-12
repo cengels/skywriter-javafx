@@ -116,6 +116,12 @@ class WriterTextArea : StyleClassedTextArea() {
             }
         }
 
+        this.readyProperty.addListener { observable, oldValue, newValue ->
+            if (!this.initialized && newValue) {
+                (initializedProperty as BooleanProperty).set(true)
+            }
+        }
+
         this.initializedProperty.addListener { observable, oldValue, newValue ->
             if (!oldValue && newValue) {
                 (wordCountProperty as IntegerProperty).set(this.countWordsWithoutComments())
@@ -150,12 +156,6 @@ class WriterTextArea : StyleClassedTextArea() {
         this.setOnNewSelectionDragFinished { /* overridden so the selection doesn't change on mouse release */ }
 
         smartReplacer.observe(this)
-
-        if (!this.ready) {
-            whenReady { (initializedProperty as BooleanProperty).set(true) }
-        } else {
-            runLater { (initializedProperty as BooleanProperty).set(true) }
-        }
     }
 
     /** Executes the given block with the [undoManager] ignoring any changes emitted during the execution. */
@@ -537,6 +537,10 @@ class WriterTextArea : StyleClassedTextArea() {
     }
 
     private fun getTextWithoutComments(): String {
+        if (text.isEmpty()) {
+            return ""
+        }
+
         var index = 0
         return getStyleSpans(0, text.lastIndex).fold("") { acc, styleSpan ->
             if (styleSpan.style.contains("comment")) {
