@@ -7,8 +7,8 @@ import org.fxmisc.richtext.model.RichTextChange;
 import org.fxmisc.richtext.model.TextChange;
 import org.fxmisc.undo.UndoManager;
 import org.fxmisc.undo.UndoManagerFactory;
+import org.fxmisc.undo.impl.MultiChangeUndoManagerImpl;
 import org.fxmisc.undo.impl.UnlimitedChangeQueue;
-import org.reactfx.EventStream;
 import org.reactfx.SuspendableYes;
 import org.reactfx.value.Val;
 
@@ -124,21 +124,24 @@ public final class UndoUtils {
     /**
      * Returns an UndoManager with an unlimited history that can undo/redo {@link RichTextChange}s. New changes
      * emitted from the stream will not be merged with the previous change after {@link #DEFAULT_PREVENT_MERGE_DELAY}
-     * <p>Undo/Redo changes will not be checked, as any changes made using {@code suspendUndo} will cause checking to fail.
+     * <p><b>Note</b>: that <u>only styling changes</u> may occur <u>during suspension</u> of the undo manager.
      */
-    public static <PS, SEG, S> UndoManager<List<RichTextChange<PS, SEG, S>>> richTextUncheckedUndoManager(
+    public static <PS, SEG, S> UndoManager<List<RichTextChange<PS, SEG, S>>> richTextSuspendableUndoManager(
             GenericStyledArea<PS, SEG, S> area, SuspendableYes suspendUndo) {
-        return richTextUncheckedUndoManager(area, DEFAULT_PREVENT_MERGE_DELAY, suspendUndo);
+        return richTextSuspendableUndoManager(area, DEFAULT_PREVENT_MERGE_DELAY, suspendUndo);
     }
 
     /**
      * Returns an UndoManager with an unlimited history that can undo/redo {@link RichTextChange}s. New changes
      * emitted from the stream will not be merged with the previous change after {@code preventMergeDelay}.
-     * <p>Undo/Redo changes will not be checked, as any changes made using {@code suspendUndo} will cause checking to fail.
+     * <p><b>Note</b>: that <u>only styling changes</u> may occur <u>during suspension</u> of the undo manager.
      */
-    public static <PS, SEG, S> UndoManager<List<RichTextChange<PS, SEG, S>>> richTextUncheckedUndoManager(
+    public static <PS, SEG, S> UndoManager<List<RichTextChange<PS, SEG, S>>> richTextSuspendableUndoManager(
             GenericStyledArea<PS, SEG, S> area, Duration preventMergeDelay, SuspendableYes suspendUndo) {
-        return new MultiChangeUndoManagerNoCheck<>
+    	
+    	RichTextChange.skipStyleComparison( true );
+    	
+        return new MultiChangeUndoManagerImpl<>
         (
           	new UnlimitedChangeQueue<>(),
           	TextChange::invert,

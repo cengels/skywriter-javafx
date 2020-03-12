@@ -74,13 +74,7 @@ class WriterTextArea : StyleClassedTextArea() {
             }
         }
 
-        // undoManager = UndoManagerFactory.unlimitedHistoryFactory().createMultiChangeUM(multiRichChanges().conditionOn(undoEnabled),
-        //     RichTextChange<MutableCollection<String>, String, MutableCollection<String>>::invert.javaFunction,
-        //     UndoUtils.applyMultiRichTextChange(this),
-        //     RichTextChange<MutableCollection<String>, String, MutableCollection<String>>::mergeWith.javaBiFunction,
-        //     RichTextChange<MutableCollection<String>, String, MutableCollection<String>>::isIdentity.javaPredicate)
-
-        undoManager = UndoUtils.richTextUncheckedUndoManager(this, undoEnabled)
+        undoManager = UndoUtils.richTextSuspendableUndoManager(this, undoEnabled)
 
         this.plainTextChanges().subscribe { change ->
             midChange = true
@@ -237,16 +231,20 @@ class WriterTextArea : StyleClassedTextArea() {
 
     /** Merges the style spans in the given range with the given style spans by adding each className from the given style spans to the current style spans in a union. */
     fun unionStyles(start: Int, end: Int, styleSpans: StyleSpans<MutableCollection<String>>) {
-        setStyleSpans(start, getStyleSpans(start, end).overlay(styleSpans) { first, second ->
-            return@overlay first.plus(second)
-        })
+        suspendUndo {
+            setStyleSpans(start, getStyleSpans(start, end).overlay(styleSpans) { first, second ->
+                return@overlay first.plus(second)
+            })
+        }
     }
 
     /** Merges the style spans in the given range with the given style spans by subtracting each className from the given style spans to the current style spans in an exclusion. */
     fun excludeStyles(start: Int, end: Int, styleSpans: StyleSpans<MutableCollection<String>>) {
-        setStyleSpans(start, getStyleSpans(start, end).overlay(styleSpans) { first, second ->
-            return@overlay first.minus(second)
-        })
+        suspendUndo {
+            setStyleSpans(start, getStyleSpans(start, end).overlay(styleSpans) { first, second ->
+                return@overlay first.minus(second)
+            })
+        }
     }
 
     private fun createStyleSpans(ranges: List<IntRange>, className: String): StyleSpans<MutableCollection<String>> {
