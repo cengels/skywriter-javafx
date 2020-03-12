@@ -535,11 +535,9 @@ class WriterView : View("Skywriter") {
             model.progressTracker = null
             textArea.reset()
             textArea.replace(it)
-            runAsync {} ui {
-                model.newProgressTracker(textArea.wordCount, file)
-                model.originalDocument = textArea.document.snapshot()
-                textArea.requestCenterCaret()
-            }
+            model.newProgressTracker(textArea.wordCount, file)
+            model.originalDocument = textArea.document.snapshot()
+            textArea.requestCenterCaret()
         }
         textArea.undoManager.forgetHistory()
     }

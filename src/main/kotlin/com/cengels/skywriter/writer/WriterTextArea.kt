@@ -20,15 +20,15 @@ import org.fxmisc.richtext.NavigationActions
 import org.fxmisc.richtext.StyleClassedTextArea
 import org.fxmisc.richtext.model.*
 import org.fxmisc.richtext.util.UndoUtils
-import org.fxmisc.undo.UndoManagerFactory
 import org.fxmisc.wellbehaved.event.EventPattern
 import org.fxmisc.wellbehaved.event.InputMap
 import org.fxmisc.wellbehaved.event.Nodes
 import org.reactfx.SuspendableYes
 import tornadofx.FX
 import tornadofx.getValue
-import tornadofx.setValue
 import tornadofx.runAsync
+import tornadofx.finally
+import tornadofx.runLater
 import tornadofx.ui
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -82,7 +82,7 @@ class WriterTextArea : StyleClassedTextArea() {
         }
 
         paragraphs.sizeProperty().addListener { observable, oldValue, newValue ->
-            runAsync {} ui {
+            runLater {
                 // dummy call to force a repaint and reapply padding to first and last paragraphs
                 setParagraphStyle(currentParagraph, getParagraph(currentParagraph).paragraphStyle)
             }
@@ -138,7 +138,7 @@ class WriterTextArea : StyleClassedTextArea() {
 
         smartReplacer.observe(this)
 
-        runAsync {} ui {
+        runLater {
             initialized = true
             onInitialized?.invoke(this)
         }

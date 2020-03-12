@@ -63,7 +63,7 @@ class TextAreaSearcher(private val context: WriterTextArea) {
         matchesBinding.addListener { observable, oldValue, newValue ->
             matchIndex = 0
 
-            runAsync { } ui {
+            runLater {
                 context.clearStyle("search-highlighting")
 
                 if (matches === newValue) {
