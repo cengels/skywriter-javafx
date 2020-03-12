@@ -8,8 +8,7 @@ import com.cengels.skywriter.persistence.codec.HtmlCodecs
 import com.cengels.skywriter.persistence.codec.RtfCodecs
 import com.cengels.skywriter.style.FormattingStylesheet
 import com.cengels.skywriter.util.*
-import javafx.beans.property.SimpleBooleanProperty
-import javafx.beans.property.SimpleIntegerProperty
+import javafx.beans.property.*
 import javafx.concurrent.Task
 import javafx.scene.Node
 import javafx.scene.control.IndexRange
@@ -26,35 +25,37 @@ import org.fxmisc.wellbehaved.event.Nodes
 import org.reactfx.SuspendableYes
 import tornadofx.FX
 import tornadofx.getValue
-import tornadofx.runAsync
-import tornadofx.finally
+import tornadofx.onChangeOnce
 import tornadofx.runLater
 import tornadofx.ui
+import tornadofx.runAsync
+import tornadofx.finally
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.text.BreakIterator
-import java.util.*
 
 class WriterTextArea : StyleClassedTextArea() {
     val smartReplacer: SmartReplacer = SmartReplacer(SmartReplacer.DEFAULT_QUOTES_MAP, SmartReplacer.DEFAULT_SYMBOL_MAP)
     val searcher = TextAreaSearcher(this)
-    val wordCountProperty = SimpleIntegerProperty(this.countWords())
+    val wordCountProperty: ReadOnlyIntegerProperty = SimpleIntegerProperty(this.countWords())
+    /** The current word count of the document. */
     val wordCount by wordCountProperty
-    val readyProperty = SimpleBooleanProperty(false)
+    val readyProperty: ReadOnlyBooleanProperty = SimpleBooleanProperty(false)
+    /** Whether the document is currently open to receive changes. Queue code by using whenReady(). */
     val ready by readyProperty
-    var onInitialized: ((textArea: WriterTextArea) -> Unit)? = null
-    var initialized: Boolean = false
-        private set
+    val initializedProperty: ReadOnlyBooleanProperty = SimpleBooleanProperty(false)
+    /** Whether the text area has finished initializing. */
+    val initialized: Boolean by initializedProperty
+    /** Alias for [content] with the appropriate generics. */
+    val document: EditableStyledDocument<MutableCollection<String>, String, MutableCollection<String>>?
+        get() = if (this.initialized) this.content else null
+    private var encoderCodec: DocumentCodec<Any>? = null
+    private var decoderCodecs: List<DocumentCodec<Any>> = listOf()
     private var midChange: Boolean = false
-    private val readyQueue: Queue<() -> Unit> = LinkedList()
     private var textSelectionMode: TextSelectionMode = TextSelectionMode.None
-    val document: EditableStyledDocument<MutableCollection<String>, String, MutableCollection<String>>
-        get() = this.content
-    var encoderCodec: DocumentCodec<Any>? = null
-    var decoderCodecs: List<DocumentCodec<Any>> = listOf()
     private var centerCaretRequested: Boolean = false
     private val virtualFlow: VirtualFlow<Any, Cell<Any, Node>> = this.children.filterIsInstance<VirtualFlow<Any, Cell<Any, Node>>>().single()
-    var undoEnabled = SuspendableYes()
+    private var undoEnabled = SuspendableYes()
 
     init {
         this.isWrapText = true
@@ -64,13 +65,15 @@ class WriterTextArea : StyleClassedTextArea() {
         decoderCodecs = listOf(HtmlCodecs.DOCUMENT_CODEC, RtfCodecs.DOCUMENT_CODEC)
 
         this.caretPositionProperty().addListener { _, _, _ ->
-            this.requestFollowCaret()
-            this.textInsertionStyle = null
+            if (this.initialized) {
+                this.requestFollowCaret()
+                this.textInsertionStyle = null
 
-            if (caretPosition != 0 && AppConfig.commentTokens.any {
-                    text.slice(caretPosition - it.second.length until caretPosition) == if (it.second.isBlank()) "\n" else it.second
-                }) {
-                textInsertionStyle = getStyleAtPosition(caretPosition).minus("comment")
+                if (caretPosition != 0 && AppConfig.commentTokens.any {
+                        text.slice(caretPosition - it.second.length until caretPosition) == if (it.second.isBlank()) "\n" else it.second
+                    }) {
+                    textInsertionStyle = getStyleAtPosition(caretPosition).minus("comment")
+                }
             }
         }
 
@@ -78,7 +81,18 @@ class WriterTextArea : StyleClassedTextArea() {
 
         this.plainTextChanges().subscribe { change ->
             midChange = true
-            updateComments(change)
+
+            if (this.initialized && change.inserted.any { !it.isLetterOrDigit() } || change.removed.any { !it.isLetterOrDigit() }) {
+                (wordCountProperty as IntegerProperty).set(this.countWordsWithoutComments())
+            }
+
+            updateComments(change).finally {
+                midChange = false
+
+                if (!this.isBeingUpdated) {
+                    (readyProperty as BooleanProperty).set(true)
+                }
+            }
         }
 
         paragraphs.sizeProperty().addListener { observable, oldValue, newValue ->
@@ -89,23 +103,22 @@ class WriterTextArea : StyleClassedTextArea() {
         }
 
         this.beingUpdatedProperty().addListener { observable, oldValue, newValue ->
-            if (oldValue && !newValue) {
-                if (midChange) {
-                    midChange = false
+            if (this.initialized) {
+                if (oldValue && !newValue) {
+                    if (!midChange) {
+                        (readyProperty as BooleanProperty).set(true)
+                    }
                 } else {
-                    readyProperty.set(true)
+                    (readyProperty as BooleanProperty).set(false)
                 }
-            } else {
-                readyProperty.set(false)
+            } else if (this.ready) {
+                (readyProperty as BooleanProperty).set(false)
             }
         }
 
-        this.readyProperty.addListener { observable, oldValue, newValue ->
+        this.initializedProperty.addListener { observable, oldValue, newValue ->
             if (!oldValue && newValue) {
-                do {
-                    val queuedElement = this.readyQueue.poll()
-                    queuedElement?.invoke()
-                } while (queuedElement != null)
+                (wordCountProperty as IntegerProperty).set(this.countWordsWithoutComments())
             }
         }
 
@@ -138,9 +151,10 @@ class WriterTextArea : StyleClassedTextArea() {
 
         smartReplacer.observe(this)
 
-        runLater {
-            initialized = true
-            onInitialized?.invoke(this)
+        if (!this.ready) {
+            whenReady { (initializedProperty as BooleanProperty).set(true) }
+        } else {
+            runLater { (initializedProperty as BooleanProperty).set(true) }
         }
     }
 
@@ -149,12 +163,12 @@ class WriterTextArea : StyleClassedTextArea() {
         undoEnabled.suspendWhile { op() }
     }
 
-    /** Resets any values that mutated since the creation of this text area back to their defaults, excluding the document itself. */
+    /** Resets any values that mutated since the creation of this text area back to their defaults, including the document itself. */
     fun reset() {
+        (this.initializedProperty as BooleanProperty).set(false)
         this.undoManager.forgetHistory()
         textInsertionStyle = null
         midChange = false
-        readyQueue.clear()
         textSelectionMode = TextSelectionMode.None
     }
 
@@ -170,12 +184,29 @@ class WriterTextArea : StyleClassedTextArea() {
         deleteText(if (text[previousWordBoundary].isLetterOrDigit()) previousWordBoundary else previousWordBoundary + 1, caretPosition)
     }
 
-    /** Queues the specified action until after the document has completed all its queued changes and is ready to accept new ones. */
+    /** Queues the specified call until after the document has completed all its queued changes and is ready to accept new ones. */
     fun whenReady(callback: () -> Unit) {
         if (this.ready) {
             callback()
         } else {
-            this.readyQueue.offer(callback)
+            this.readyProperty.onChangeOnce {
+                if (it == true) {
+                    callback()
+                }
+            }
+        }
+    }
+
+    /** Queues the specified call until after the document has finished initializing. */
+    fun whenInitialized(callback: (document: EditableStyledDocument<MutableCollection<String>, String, MutableCollection<String>>) -> Unit) {
+        if (this.initialized) {
+            callback(this.document!!)
+        } else {
+            this.initializedProperty.onChangeOnce {
+                if (it == true) {
+                    callback(this.document!!)
+                }
+            }
         }
     }
 
@@ -489,7 +520,9 @@ class WriterTextArea : StyleClassedTextArea() {
             clearStyles(removalIndices, "comment")
             mergeStyles(insertionIndices, "comment")
 
-            wordCountProperty.set(this.countWordsWithoutComments())
+            if (this.initialized) {
+                (wordCountProperty as IntegerProperty).set(this.countWordsWithoutComments())
+            }
         }
     }
 

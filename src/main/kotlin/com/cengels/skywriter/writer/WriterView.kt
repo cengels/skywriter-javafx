@@ -40,13 +40,13 @@ class WriterView : View("Skywriter") {
 
     val textArea = WriterTextArea().also {
         it.richChanges().subscribe { change ->
-            model.dirty = model.originalDocument != it.document.snapshot()
+            model.dirty = model.originalDocument != it.document?.snapshot()
             model.progressTracker?.lastChange = LocalDateTime.now()
             model.progressTracker?.scheduleReset()
         }
 
         model.originalDocumentProperty.addListener { observable, oldValue, newValue ->
-            model.dirty = newValue != it.document.snapshot()
+            model.dirty = newValue != it.document?.snapshot()
         }
 
         model.findAndReplaceStateProperty.addListener { observable, oldValue, newValue ->
@@ -183,8 +183,11 @@ class WriterView : View("Skywriter") {
                         warnOnUnsavedChanges { return@action }
 
                         textArea.reset()
+                        textArea.whenInitialized { document ->
+                            model.reset(document)
+                        }
+
                         textArea.replaceText("")
-                        model.reset(textArea.document)
                     }
                     item("Open...", KeyConfig.File.open).action {
                         openLoadDialog()
@@ -526,7 +529,7 @@ class WriterView : View("Skywriter") {
             return openSaveDialog()
         }
 
-        model.save(textArea.document)
+        textArea.document?.let { model.save(it) }
     }
 
     private fun open(file: File) {
@@ -534,10 +537,14 @@ class WriterView : View("Skywriter") {
         model.load(textArea.segOps).also {
             model.progressTracker = null
             textArea.reset()
+
+            textArea.whenInitialized { document ->
+                model.newProgressTracker(textArea.wordCount, file)
+                model.originalDocument = document.snapshot()
+                textArea.requestCenterCaret()
+            }
+
             textArea.replace(it)
-            model.newProgressTracker(textArea.wordCount, file)
-            model.originalDocument = textArea.document.snapshot()
-            textArea.requestCenterCaret()
         }
         textArea.undoManager.forgetHistory()
     }
