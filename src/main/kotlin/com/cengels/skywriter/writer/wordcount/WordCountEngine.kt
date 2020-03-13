@@ -66,16 +66,22 @@ class WordCountEngine {
 
     /** Sums the number of words without building any word statistics. This method is roughly 67% faster than [WordCountEngine.count()] and should be preferred whenever no detailed statistics are required. */
     fun sum(text: String): Int {
-        var counter = 0
+        var count = 0
 
-        forEachWord(text) { counter++ }
+        forEachWord(text) { count++ }
 
-        return counter
+        return count
     }
 
     /** Sums the number of words without building any word or section statistics. This method is roughly 67% faster than [WordCountEngine.count()] and should be preferred whenever no detailed statistics are required. */
     fun sum(document: StyleClassedDocument): Int {
-        return sum(document.text)
+        var count = 0
+
+        document.paragraphs.forEach {
+            forEachWord(getIncludedStyleSpans(it)) { count++ }
+        }
+
+        return count
     }
 
     private fun forEachWord(text: String, callback: (word: String) -> Unit) {
