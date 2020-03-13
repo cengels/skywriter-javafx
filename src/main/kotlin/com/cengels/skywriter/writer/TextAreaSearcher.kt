@@ -45,7 +45,7 @@ class TextAreaSearcher(private val context: WriterTextArea) {
     /** If true, Regex tokens in the search term will not be escaped. If false, literal matching is possible without explicit escapes, but you cannot use Regex in the search term. */
     val useRegex: Boolean by useRegexProperty
     private val searchRegexBinding = findTermProperty.objectBinding(findWholeWordsProperty, caseSensitiveProperty, useRegexProperty) {
-        if (it == null) {
+        if (it == null || it.isEmpty()) {
             return@objectBinding null
         }
 

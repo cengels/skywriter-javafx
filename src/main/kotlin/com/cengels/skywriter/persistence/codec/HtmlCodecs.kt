@@ -1,6 +1,8 @@
 package com.cengels.skywriter.persistence.codec
 
 import com.cengels.skywriter.style.FormattingStylesheet
+import com.cengels.skywriter.util.StyleClassedParagraph
+import com.cengels.skywriter.util.StyleClassedSegment
 import javafx.scene.input.DataFormat
 import org.fxmisc.richtext.model.Paragraph
 import org.fxmisc.richtext.model.SegmentOps
@@ -15,13 +17,13 @@ object HtmlCodecs : CodecGroup<Any, Element> {
     override val DOCUMENT_CODEC = object : DocumentCodec<Any> {
         override val dataFormat: DataFormat = DataFormat.HTML
 
-        override fun encode(writer: BufferedWriter, element: List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>>) {
+        override fun encode(writer: BufferedWriter, element: List<StyleClassedParagraph>) {
             element.forEach { PARAGRAPH_CODEC.encode(writer, it) }
 
             writer.close()
         }
 
-        override fun decode(input: Any): List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>> {
+        override fun decode(input: Any): List<StyleClassedParagraph> {
             if (input !is String) {
                 throw IllegalArgumentException("An HTML codec can only handle an input of type String, but input was of type ${input::class.simpleName}")
             }
@@ -63,7 +65,7 @@ object HtmlCodecs : CodecGroup<Any, Element> {
     }
 
     override val PARAGRAPH_CODEC = object : ParagraphCodec<Element> {
-        override fun encode(writer: BufferedWriter, element: Paragraph<MutableCollection<String>, String, MutableCollection<String>>) {
+        override fun encode(writer: BufferedWriter, element: StyleClassedParagraph) {
             val tag: String = element.paragraphStyle.find { it.startsWith('h') } ?: "p"
 
             writer.write("<$tag>")
@@ -71,7 +73,7 @@ object HtmlCodecs : CodecGroup<Any, Element> {
             writer.write("</$tag>")
         }
 
-        override fun decode(input: Element): Paragraph<MutableCollection<String>, String, MutableCollection<String>> {
+        override fun decode(input: Element): StyleClassedParagraph {
             val paragraphStyles: MutableCollection<String> = mutableListOf()
 
             if (input.tagName().startsWith("h")) {
@@ -83,7 +85,7 @@ object HtmlCodecs : CodecGroup<Any, Element> {
     }
 
     override val SEGMENT_CODEC = object : SegmentCodec<Element> {
-        override fun encode(writer: BufferedWriter, element: List<StyledSegment<String, MutableCollection<String>>>) {
+        override fun encode(writer: BufferedWriter, element: List<StyleClassedSegment>) {
             writer.write(element.joinToString("") {
                 val tags = mutableListOf<String>()
 
@@ -103,8 +105,8 @@ object HtmlCodecs : CodecGroup<Any, Element> {
             })
         }
 
-        override fun decode(input: Element): List<StyledSegment<String, MutableCollection<String>>> {
-            val styledSegments: MutableList<StyledSegment<String, MutableCollection<String>>> = mutableListOf()
+        override fun decode(input: Element): List<StyleClassedSegment> {
+            val styledSegments: MutableList<StyleClassedSegment> = mutableListOf()
 
             if (input.wholeOwnText().isNotEmpty()) {
                 val style: MutableCollection<String> = mutableListOf()

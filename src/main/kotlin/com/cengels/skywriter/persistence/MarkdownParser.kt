@@ -1,6 +1,7 @@
 package com.cengels.skywriter.persistence
 
 import com.cengels.skywriter.persistence.codec.MarkdownCodecs
+import com.cengels.skywriter.util.ReadOnlyStyleClassedDocument
 import org.fxmisc.richtext.model.*
 import java.io.*
 
@@ -17,7 +18,7 @@ object MarkdownParser {
         Pair("~", "strikethrough")
     )
 
-    fun save(file: File, document: ReadOnlyStyledDocument<MutableCollection<String>, String, MutableCollection<String>>) {
+    fun save(file: File, document: ReadOnlyStyleClassedDocument) {
         try {
             file.bufferedWriter().apply {
                 MarkdownCodecs.DOCUMENT_CODEC.encode(this, document.paragraphs)
@@ -30,7 +31,7 @@ object MarkdownParser {
         }
     }
 
-    fun load(file: File, segmentOps: SegmentOps<String, MutableCollection<String>>): ReadOnlyStyledDocument<MutableCollection<String>, String, MutableCollection<String>> {
+    fun load(file: File, segmentOps: SegmentOps<String, MutableCollection<String>>): ReadOnlyStyleClassedDocument {
         try {
             val bufferedReader = file.bufferedReader()
             segOps = segmentOps

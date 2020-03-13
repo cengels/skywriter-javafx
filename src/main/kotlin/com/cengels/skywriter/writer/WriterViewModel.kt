@@ -2,6 +2,9 @@ package com.cengels.skywriter.writer
 
 import com.cengels.skywriter.persistence.MarkdownParser
 import com.cengels.skywriter.progress.ProgressTracker
+import com.cengels.skywriter.util.EditableStyleClassedDocument
+import com.cengels.skywriter.util.ReadOnlyStyleClassedDocument
+import com.cengels.skywriter.util.StyleClassedDocument
 import javafx.beans.property.*
 import org.fxmisc.richtext.model.*
 import tornadofx.booleanBinding
@@ -25,7 +28,7 @@ class WriterViewModel {
     var showMenuBar by showMenuBarProperty
 
     var progressTracker: ProgressTracker? = null
-    val originalDocumentProperty = SimpleObjectProperty<ReadOnlyStyledDocument<MutableCollection<String>, String, MutableCollection<String>>?>()
+    val originalDocumentProperty = SimpleObjectProperty<ReadOnlyStyleClassedDocument?>()
     var originalDocument by originalDocumentProperty
     val wordsTodayProperty: SimpleIntegerProperty = SimpleIntegerProperty(getTodaysWords())
     val wordsToday by wordsTodayProperty
@@ -37,7 +40,7 @@ class WriterViewModel {
         return progressTracker?.progressToday?.sumBy { it.words } ?: 0
     }
 
-    fun save(document: EditableStyledDocument<MutableCollection<String>, String, MutableCollection<String>>) {
+    fun save(document: EditableStyleClassedDocument) {
         if (file == null) {
             throw NullPointerException("File cannot be null when attempting to save a document.")
         }
@@ -46,13 +49,13 @@ class WriterViewModel {
         originalDocument = document.snapshot()
     }
 
-    fun load(segmentOps: SegmentOps<String, MutableCollection<String>>): StyledDocument<MutableCollection<String>, String, MutableCollection<String>> {
+    fun load(segmentOps: SegmentOps<String, MutableCollection<String>>): StyleClassedDocument {
         val file = this.file ?: throw NullPointerException("File cannot be null when attempting to save a document.")
 
         return MarkdownParser.load(file, segmentOps)
     }
 
-    fun reset(document: EditableStyledDocument<MutableCollection<String>, String, MutableCollection<String>>) {
+    fun reset(document: EditableStyleClassedDocument) {
         originalDocument = document.snapshot()
         file = null
         newProgressTracker(0)

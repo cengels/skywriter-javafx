@@ -1,6 +1,8 @@
 package com.cengels.skywriter.persistence.codec
 
 import com.cengels.skywriter.persistence.*
+import com.cengels.skywriter.util.StyleClassedParagraph
+import com.cengels.skywriter.util.StyleClassedSegment
 import com.cengels.skywriter.util.surround
 import javafx.scene.input.DataFormat
 import org.fxmisc.richtext.model.*
@@ -12,7 +14,7 @@ object MarkdownCodecs : CodecGroup<BufferedReader, String> {
     override val DOCUMENT_CODEC = object : DocumentCodec<BufferedReader> {
         override val dataFormat: DataFormat by lazy { DataFormat("text/markdown") }
 
-        override fun encode(writer: BufferedWriter, element: List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>>) {
+        override fun encode(writer: BufferedWriter, element: List<StyleClassedParagraph>) {
             element.forEachIndexed { index, paragraph ->
                 PARAGRAPH_CODEC.encode(writer, paragraph)
 
@@ -22,9 +24,9 @@ object MarkdownCodecs : CodecGroup<BufferedReader, String> {
             }
         }
 
-        override fun decode(input: BufferedReader): List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>> {
+        override fun decode(input: BufferedReader): List<StyleClassedParagraph> {
             var line: String? = input.readLine() ?: ""
-            val paragraphs = mutableListOf<Paragraph<MutableCollection<String>, String, MutableCollection<String>>>()
+            val paragraphs = mutableListOf<StyleClassedParagraph>()
 
             while (line != null) {
                 var segmentText = ""
@@ -55,7 +57,7 @@ object MarkdownCodecs : CodecGroup<BufferedReader, String> {
     }
 
     override val PARAGRAPH_CODEC = object : ParagraphCodec<String> {
-        override fun encode(writer: BufferedWriter, element: Paragraph<MutableCollection<String>, String, MutableCollection<String>>) {
+        override fun encode(writer: BufferedWriter, element: StyleClassedParagraph) {
             val hashCount: Int? = Character.getNumericValue(element.paragraphStyle.find { it.matches(Regex("h\\d")) }?.last() ?: '0')
 
             if (hashCount != null) {
@@ -65,7 +67,7 @@ object MarkdownCodecs : CodecGroup<BufferedReader, String> {
             SEGMENT_CODEC.encode(writer, element.styledSegments)
         }
 
-        override fun decode(input: String): Paragraph<MutableCollection<String>, String, MutableCollection<String>> {
+        override fun decode(input: String): StyleClassedParagraph {
             val hashCount: Int = input.takeWhile { it == '#' }.length
             var segmentText = input.trimStart('#')
             val paragraphStyles: MutableList<String> = mutableListOf()
@@ -78,14 +80,14 @@ object MarkdownCodecs : CodecGroup<BufferedReader, String> {
                 paragraphStyles.add("h$hashCount")
             }
 
-            val textSegments: List<StyledSegment<String, MutableCollection<String>>> = SEGMENT_CODEC.decode(segmentText)
+            val textSegments: List<StyleClassedSegment> = SEGMENT_CODEC.decode(segmentText)
 
             return Paragraph(paragraphStyles, SegmentOps.styledTextOps<MutableCollection<String>>(), textSegments)
         }
     }
 
     override val SEGMENT_CODEC = object : SegmentCodec<String> {
-        override fun encode(writer: BufferedWriter, element: List<StyledSegment<String, MutableCollection<String>>>) {
+        override fun encode(writer: BufferedWriter, element: List<StyleClassedSegment>) {
             element.forEachIndexed { index, it ->
                 val escapedText: String = escape(it.segment)
 
@@ -109,8 +111,8 @@ object MarkdownCodecs : CodecGroup<BufferedReader, String> {
             }
         }
 
-        override fun decode(input: String): List<StyledSegment<String, MutableCollection<String>>> {
-            val segments: MutableList<StyledSegment<String, MutableCollection<String>>> = mutableListOf()
+        override fun decode(input: String): List<StyleClassedSegment> {
+            val segments: MutableList<StyleClassedSegment> = mutableListOf()
             var remainingString: String = input
             val openingTokens: MutableList<String> = mutableListOf()
 
@@ -185,7 +187,7 @@ private fun findNextToken(string: String): Pair<Int, String> {
 }
 
 /** Checks if the specified input string starts with a substring surrounded by delimiter and returns it as a StyledSegment. */
-private fun getSegment(input: String, delimiter: String, className: String): StyledSegment<String, MutableCollection<String>>? {
+private fun getSegment(input: String, delimiter: String, className: String): StyleClassedSegment? {
     if (input.startsWith(delimiter)) {
         return StyledSegment(input.slice(delimiter.length until input.length).substringBefore(delimiter), mutableListOf(className))
     }

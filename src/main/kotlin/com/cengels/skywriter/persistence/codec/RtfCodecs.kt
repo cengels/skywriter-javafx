@@ -2,10 +2,7 @@ package com.cengels.skywriter.persistence.codec
 
 import com.cengels.skywriter.enum.RtfCommand
 import com.cengels.skywriter.style.FormattingStylesheet
-import com.cengels.skywriter.util.containsAny
-import com.cengels.skywriter.util.indexOfUnescaped
-import com.cengels.skywriter.util.remove
-import com.cengels.skywriter.util.removeUnescaped
+import com.cengels.skywriter.util.*
 import javafx.scene.input.DataFormat
 import org.fxmisc.richtext.model.Paragraph
 import org.fxmisc.richtext.model.SegmentOps
@@ -23,20 +20,20 @@ object RtfCodecs : CodecGroup<Any, Iterable<RtfCodecs.CommandSegment>> {
     override val DOCUMENT_CODEC = object : DocumentCodec<Any> {
         override val dataFormat: DataFormat = DataFormat.RTF
 
-        override fun encode(writer: BufferedWriter, element: List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>>) {
+        override fun encode(writer: BufferedWriter, element: List<StyleClassedParagraph>) {
             element.forEach { PARAGRAPH_CODEC.encode(writer, it) }
 
             writer.close()
         }
 
-        override fun decode(input: Any): List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>> {
+        override fun decode(input: Any): List<StyleClassedParagraph> {
             if (input !is String) {
                 throw IllegalArgumentException("An RTF codec can only handle an input of type String, but input was of type ${input::class.simpleName}")
             }
 
             val cleanedInput = cleanRtfString(input)
             val segments = findCommands(cleanedInput)
-            val paragraphs = ArrayDeque<Paragraph<MutableCollection<String>, String, MutableCollection<String>>>()
+            val paragraphs = ArrayDeque<StyleClassedParagraph>()
             var currentSegments = ArrayDeque<CommandSegment>()
 
             segments.forEach {
@@ -57,11 +54,11 @@ object RtfCodecs : CodecGroup<Any, Iterable<RtfCodecs.CommandSegment>> {
     }
 
     override val PARAGRAPH_CODEC = object : ParagraphCodec<Iterable<CommandSegment>> {
-        override fun encode(writer: BufferedWriter, element: Paragraph<MutableCollection<String>, String, MutableCollection<String>>) {
+        override fun encode(writer: BufferedWriter, element: StyleClassedParagraph) {
             TODO("not implemented")
         }
 
-        override fun decode(input: Iterable<CommandSegment>): Paragraph<MutableCollection<String>, String, MutableCollection<String>> {
+        override fun decode(input: Iterable<CommandSegment>): StyleClassedParagraph {
             // Paragraph styles are currently not supported by this codec.
 
             return Paragraph(mutableListOf(), SegmentOps.styledTextOps(), SEGMENT_CODEC.decode(input))
@@ -69,11 +66,11 @@ object RtfCodecs : CodecGroup<Any, Iterable<RtfCodecs.CommandSegment>> {
     }
 
     override val SEGMENT_CODEC = object : SegmentCodec<Iterable<CommandSegment>> {
-        override fun encode(writer: BufferedWriter, element: List<StyledSegment<String, MutableCollection<String>>>) {
+        override fun encode(writer: BufferedWriter, element: List<StyleClassedSegment>) {
             TODO("not implemented")
         }
 
-        override fun decode(input: Iterable<CommandSegment>): List<StyledSegment<String, MutableCollection<String>>> {
+        override fun decode(input: Iterable<CommandSegment>): List<StyleClassedSegment> {
             return input.map { (segment, commands) ->
                 val tabs = "\t".repeat(commands.count { RtfCommand.TAB_INDICATORS.contains(it) })
                 StyledSegment(tabs + segment, mapToStyles(commands))

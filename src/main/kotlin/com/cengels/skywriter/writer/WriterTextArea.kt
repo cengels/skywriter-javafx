@@ -47,7 +47,7 @@ class WriterTextArea : StyleClassedTextArea() {
     /** Whether the text area has finished initializing. */
     val initialized: Boolean by initializedProperty
     /** Alias for [content] with the appropriate generics. */
-    val document: EditableStyledDocument<MutableCollection<String>, String, MutableCollection<String>>?
+    val document: EditableStyleClassedDocument?
         get() = if (this.initialized) this.content else null
     private var encoderCodec: DocumentCodec<Any>? = null
     private var decoderCodecs: List<DocumentCodec<Any>> = listOf()
@@ -198,7 +198,7 @@ class WriterTextArea : StyleClassedTextArea() {
     }
 
     /** Queues the specified call until after the document has finished initializing. */
-    fun whenInitialized(callback: (document: EditableStyledDocument<MutableCollection<String>, String, MutableCollection<String>>) -> Unit) {
+    fun whenInitialized(callback: (document: EditableStyleClassedDocument) -> Unit) {
         if (this.initialized) {
             callback(this.document!!)
         } else {
@@ -211,7 +211,7 @@ class WriterTextArea : StyleClassedTextArea() {
     }
 
     /** Gets the paragraph at the specified absolute character position. */
-    fun getParagraphAt(characterPosition: Int): Paragraph<MutableCollection<String>, String, MutableCollection<String>> {
+    fun getParagraphAt(characterPosition: Int): StyleClassedParagraph {
         return getParagraph(getParagraphIndexAt(characterPosition))
     }
 
@@ -424,7 +424,7 @@ class WriterTextArea : StyleClassedTextArea() {
 
         if (decoderCodec != null) {
             val contents = clipboard.getContent(decoderCodec.dataFormat)
-            var paragraphs: List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>> = listOf()
+            var paragraphs: List<StyleClassedParagraph> = listOf()
 
             try {
                 paragraphs = decoderCodec.decode(contents)
@@ -450,7 +450,7 @@ class WriterTextArea : StyleClassedTextArea() {
     }
 
     /** Replaces the contents of the text area with the specified list of paragraphs. */
-    fun replaceSelection(paragraphs: List<Paragraph<MutableCollection<String>, String, MutableCollection<String>>>) {
+    fun replaceSelection(paragraphs: List<StyleClassedParagraph>) {
         ReadOnlyStyledDocumentBuilder<MutableCollection<String>, String, MutableCollection<String>>(segOps, mutableListOf()).apply {
             paragraphs.forEach { addParagraph(it.styledSegments, it.paragraphStyle) }
         }.build().apply {
