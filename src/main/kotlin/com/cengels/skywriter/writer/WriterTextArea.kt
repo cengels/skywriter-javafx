@@ -82,7 +82,7 @@ class WriterTextArea : StyleClassedTextArea() {
         this.plainTextChanges().subscribe { change ->
             midChange = true
 
-            if (this.initialized && change.inserted.any { !it.isLetterOrDigit() } || change.removed.any { !it.isLetterOrDigit() }) {
+            if (this.initialized) {
                 (wordCountProperty as IntegerProperty).set(this.countWordsWithoutComments())
             }
 
@@ -534,6 +534,14 @@ class WriterTextArea : StyleClassedTextArea() {
     /** Counts the number of words in the text area, minus any comments. */
     private fun countWordsWithoutComments(): Int {
         return getTextWithoutComments().countWords()
+    }
+
+    /** Highlights all occurrences of the specified string in the document. */
+    fun highlight(searchString: String, className: String, wholeWords: Boolean = false, caseSensitive: Boolean = false) {
+        val matches = TextAreaSearcher.assembleRegex(searchString, wholeWords, caseSensitive, useRegex = false)
+            .findAll(this.text)
+
+        mergeStyles(matches.map { it.range.first..it.range.last + 1 }.toList(), className)
     }
 
     private fun getTextWithoutComments(): String {

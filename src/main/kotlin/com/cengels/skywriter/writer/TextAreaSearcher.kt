@@ -12,6 +12,25 @@ import java.util.regex.PatternSyntaxException
  * Changing the find term automatically looks for the new matches and updates the TextAreaSearcher accordingly.
  **/
 class TextAreaSearcher(private val context: WriterTextArea) {
+    companion object {
+        /** Assembles a regex that can be used to find matches of the search term across a range of text. */
+        fun assembleRegex(searchTerm: String, wholeWords: Boolean = false, caseSensitive: Boolean = false, useRegex: Boolean = false): Regex {
+            if (searchTerm.isEmpty()) {
+                throw IllegalArgumentException("searchTerm must be a non-empty String.")
+            }
+
+            val surrounding = if (wholeWords) "\\b+" else ""
+            val searchString = if (useRegex) searchTerm else Regex.escape(searchTerm)
+            val options = mutableSetOf<RegexOption>()
+
+            if (!caseSensitive) {
+                options.add(RegexOption.IGNORE_CASE)
+            }
+
+            return Regex("$surrounding$searchString$surrounding", options)
+        }
+    }
+
     val findTermProperty = SimpleStringProperty("")
     val findTerm: String by findTermProperty
     val replaceTermProperty = SimpleStringProperty("")
@@ -26,22 +45,14 @@ class TextAreaSearcher(private val context: WriterTextArea) {
     /** If true, Regex tokens in the search term will not be escaped. If false, literal matching is possible without explicit escapes, but you cannot use Regex in the search term. */
     val useRegex: Boolean by useRegexProperty
     private val searchRegexBinding = findTermProperty.objectBinding(findWholeWordsProperty, caseSensitiveProperty, useRegexProperty) {
-        val surrounding = if (findWholeWords) "\\b+" else ""
-        val searchString = if (useRegex || it == null) it else Regex.escape(it)
-        val options = mutableSetOf<RegexOption>()
-
-        if (!caseSensitive) {
-            options.add(RegexOption.IGNORE_CASE)
+        if (it == null) {
+            return@objectBinding null
         }
 
-        if (it == null || it.isEmpty()) {
+        try {
+            assembleRegex(it, this.findWholeWords, this.caseSensitive, this.useRegex)
+        } catch (e: PatternSyntaxException) {
             null
-        } else {
-            try {
-                Regex("$surrounding$searchString$surrounding", options)
-            } catch (e: PatternSyntaxException) {
-                null
-            }
         }
     }
     private val searchRegex: Regex? by searchRegexBinding
@@ -73,6 +84,7 @@ class TextAreaSearcher(private val context: WriterTextArea) {
         }
     }
 
+    /** Highlights all matches of the search term in the document. */
     fun highlightMatches() {
         context.mergeStyles(matches.map { it.range.first..it.range.last + 1 }, "search-highlighting")
     }
