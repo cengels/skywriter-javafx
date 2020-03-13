@@ -4,6 +4,7 @@ import com.cengels.skywriter.persistence.*
 import com.cengels.skywriter.util.StyleClassedParagraph
 import com.cengels.skywriter.util.StyleClassedSegment
 import com.cengels.skywriter.util.surround
+import com.cengels.skywriter.util.toDigit
 import javafx.scene.input.DataFormat
 import org.fxmisc.richtext.model.*
 import org.jsoup.nodes.Element
@@ -58,7 +59,7 @@ object MarkdownCodecs : CodecGroup<BufferedReader, String> {
 
     override val PARAGRAPH_CODEC = object : ParagraphCodec<String> {
         override fun encode(writer: BufferedWriter, element: StyleClassedParagraph) {
-            val hashCount: Int? = Character.getNumericValue(element.paragraphStyle.find { it.matches(Regex("h\\d")) }?.last() ?: '0')
+            val hashCount: Int? = element.paragraphStyle.find { it.matches(Regex("h\\d")) }?.last()?.toDigit() ?: 0
 
             if (hashCount != null) {
                 writer.append("#".repeat(hashCount))

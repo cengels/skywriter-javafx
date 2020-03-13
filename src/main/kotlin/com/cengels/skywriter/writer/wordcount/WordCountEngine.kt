@@ -3,6 +3,7 @@ package com.cengels.skywriter.writer.wordcount
 import com.cengels.skywriter.util.StyleClassedDocument
 import com.cengels.skywriter.util.StyleClassedParagraph
 import com.cengels.skywriter.util.regionMatches
+import com.cengels.skywriter.util.toDigit
 import org.fxmisc.richtext.model.StyledDocument
 import kotlin.text.StringBuilder
 
@@ -38,7 +39,7 @@ class WordCountEngine {
                 }
 
                 currentSection = paragraph.text
-                currentSectionLevel = headingStyle[1].toInt()
+                currentSectionLevel = headingStyle[1].toDigit()
                 currentSectionWords = mutableMapOf()
             }
 

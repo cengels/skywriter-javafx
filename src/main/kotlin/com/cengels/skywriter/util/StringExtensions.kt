@@ -90,3 +90,14 @@ fun CharSequence.containsAny(vararg chars: Char): Boolean {
 fun CharSequence.regionMatches(textToCompare: CharSequence, startingIndex: Int): Boolean {
     return this.regionMatches(startingIndex, textToCompare, 0, textToCompare.length, ignoreCase = true)
 }
+
+/** Converts this character to a digit. If the character cannot be converted to a digit, an error is thrown. */
+fun Char.toDigit(): Int {
+    val digit = Character.getNumericValue(this)
+
+    if (digit < 0) {
+        throw NumberFormatException("Tried to convert Char to Int, but this Char is not a digit.")
+    }
+
+    return digit
+}
