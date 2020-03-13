@@ -525,7 +525,7 @@ class WriterTextArea : StyleClassedTextArea() {
     }
 
     private fun countWords(range: IndexRange): Int {
-        return wordCountEngine.count(this.subDocument(range)).sumBy { it.wordCount }
+        return wordCountEngine.sum(this.subDocument(range))
     }
 
     /** Counts the number of words in the text area. */
