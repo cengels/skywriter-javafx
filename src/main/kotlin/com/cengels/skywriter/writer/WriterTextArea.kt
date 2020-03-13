@@ -8,6 +8,7 @@ import com.cengels.skywriter.persistence.codec.HtmlCodecs
 import com.cengels.skywriter.persistence.codec.RtfCodecs
 import com.cengels.skywriter.style.FormattingStylesheet
 import com.cengels.skywriter.util.*
+import com.cengels.skywriter.writer.wordcount.WordCountEngine
 import javafx.beans.property.*
 import javafx.concurrent.Task
 import javafx.scene.Node
@@ -49,6 +50,7 @@ class WriterTextArea : StyleClassedTextArea() {
     /** Alias for [content] with the appropriate generics. */
     val document: EditableStyleClassedDocument?
         get() = if (this.initialized) this.content else null
+    private val wordCountEngine = WordCountEngine()
     private var encoderCodec: DocumentCodec<Any>? = null
     private var decoderCodecs: List<DocumentCodec<Any>> = listOf()
     private var midChange: Boolean = false
@@ -77,13 +79,14 @@ class WriterTextArea : StyleClassedTextArea() {
             }
         }
 
+        wordCountEngine.behaviour.excludedStyles = listOf("search-highlighting", "comment")
         undoManager = UndoUtils.richTextSuspendableUndoManager(this, undoEnabled)
 
         this.plainTextChanges().subscribe { change ->
             midChange = true
 
             if (this.initialized) {
-                (wordCountProperty as IntegerProperty).set(this.countWordsWithoutComments())
+                (wordCountProperty as IntegerProperty).set(this.countWords())
             }
 
             updateComments(change).finally {
@@ -124,7 +127,7 @@ class WriterTextArea : StyleClassedTextArea() {
 
         this.initializedProperty.addListener { observable, oldValue, newValue ->
             if (!oldValue && newValue) {
-                (wordCountProperty as IntegerProperty).set(this.countWordsWithoutComments())
+                (wordCountProperty as IntegerProperty).set(this.countWords())
             }
         }
 
@@ -223,11 +226,6 @@ class WriterTextArea : StyleClassedTextArea() {
     fun updateSelectionWith(className: String) {
         val selection: IndexRange = this.selection
         this.toggleStyleClass(selection.start, selection.end, className)
-    }
-
-    /** Counts the number of selected words in the text area. */
-    fun countSelectedWords(): Int {
-        return selectedText.countWords()
     }
 
     fun isRangeStyled(start: Int, end: Int, className: String): Boolean {
@@ -521,19 +519,27 @@ class WriterTextArea : StyleClassedTextArea() {
             mergeStyles(insertionIndices, "comment")
 
             if (this.initialized) {
-                (wordCountProperty as IntegerProperty).set(this.countWordsWithoutComments())
+                (wordCountProperty as IntegerProperty).set(this.countWords())
             }
         }
     }
 
-    /** Counts the number of words in the text area. */
-    private fun countWords(): Int {
-        return text.countWords()
+    private fun countWords(range: IndexRange): Int {
+        return wordCountEngine.count(this.subDocument(range)).sumBy { it.wordCount }
     }
 
-    /** Counts the number of words in the text area, minus any comments. */
-    private fun countWordsWithoutComments(): Int {
-        return getTextWithoutComments().countWords()
+    /** Counts the number of words in the text area. */
+    private fun countWords(): Int {
+        if (this.text.isEmpty()) {
+            return 0
+        }
+
+        return this.countWords(IndexRange(0, this.text.lastIndex))
+    }
+
+    /** Counts the number of selected words in the text area. */
+    fun countSelectedWords(): Int {
+        return this.countWords(this.selection)
     }
 
     /** Highlights all occurrences of the specified string in the document. */
@@ -544,7 +550,7 @@ class WriterTextArea : StyleClassedTextArea() {
         mergeStyles(matches.map { it.range.first..it.range.last + 1 }.toList(), className)
     }
 
-    private fun getTextWithoutComments(): String {
+    private fun getTextWithoutComments(from: Int, to: Int): String {
         if (text.isEmpty()) {
             return ""
         }

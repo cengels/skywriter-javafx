@@ -2,18 +2,6 @@ package com.cengels.skywriter.util
 
 import com.cengels.skywriter.persistence.codec.isEscaped
 
-private val WORD_REGEX = Regex("\\b\\S+\\b")
-
-/** Counts the number of words in the [String]. */
-fun CharSequence.splitWords(): List<String> {
-    return this.split(WORD_REGEX)
-}
-
-/** Counts the words by applying the regex `\b\S+\b`. */
-fun CharSequence.countWords(): Int {
-    return this.splitWords().size - 1
-}
-
 /** Surrounds the [String] with the specified text. */
 fun CharSequence.surround(with: CharSequence): String = "$with$this$with"
 
@@ -96,4 +84,9 @@ fun CharSequence.findWordBoundaries(at: Int): IntRange {
 
 fun CharSequence.containsAny(vararg chars: Char): Boolean {
     return this.indexOfAny(chars) != -1
+}
+
+/** Checks if this [CharSequence], starting at the specified [startingIndex], matches with the specified [String]. */
+fun CharSequence.regionMatches(textToCompare: CharSequence, startingIndex: Int): Boolean {
+    return this.regionMatches(startingIndex, textToCompare, 0, textToCompare.length, ignoreCase = true)
 }
