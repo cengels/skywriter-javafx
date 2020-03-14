@@ -1,10 +1,14 @@
 package com.cengels.skywriter.fragments
 
+import javafx.geometry.Point2D
+import javafx.scene.Node
+import javafx.scene.input.MouseEvent
 import tornadofx.*
 
 class ThemedTitlebar(val viewTitle: String, val showMinimize: Boolean = false, val showMaximize: Boolean = true, val showClose: Boolean = true) : Fragment() {
     override val root = borderpane {
         addClass("title-bar")
+        makeDraggable(this)
 
         left {
             label(viewTitle)
@@ -22,6 +26,30 @@ class ThemedTitlebar(val viewTitle: String, val showMinimize: Boolean = false, v
                     button("X").action { close() }
                 }
             }
+        }
+    }
+
+    private fun makeDraggable(component: Node) {
+        var startEventPosition: Point2D? = null
+        var startStagePosition: Point2D? = null
+
+        component.addEventHandler(MouseEvent.MOUSE_PRESSED) { event ->
+            startEventPosition = Point2D(event.screenX, event.screenY)
+            currentStage?.let { startStagePosition = Point2D(it.x, it.y) }
+        }
+
+        component.addEventHandler(MouseEvent.MOUSE_DRAGGED) { event ->
+            val stage = currentStage ?: return@addEventHandler
+            val eventStart = startEventPosition ?: return@addEventHandler
+            val stageStart = startStagePosition ?: return@addEventHandler
+
+            stage.x = stageStart.x + event.screenX - eventStart.x
+            stage.y = stageStart.y + event.screenY - eventStart.y
+        }
+
+        component.addEventHandler(MouseEvent.MOUSE_RELEASED) {
+            startEventPosition = null
+            startStagePosition = null
         }
     }
 }
