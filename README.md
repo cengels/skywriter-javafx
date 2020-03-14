@@ -37,7 +37,7 @@ Skywriter is specifically designed for writers of manuscripts and supports a num
 - [x] Basic formatting
 - [x] Theming ([#2](https://github.com/cengels/skywriter/issues/2))
 - [x] Smart quotes ([#4](https://github.com/cengels/skywriter/issues/4))
-- [ ] Find and replace ([#5](https://github.com/cengels/skywriter/issues/5))
+- [x] Find and replace ([#5](https://github.com/cengels/skywriter/issues/5))
 - [ ] Spellcheck ([#7](https://github.com/cengels/skywriter/issues/7))
 - [x] Tracker for words written per day ([#9](https://github.com/cengels/skywriter/issues/9))
 - [x] Tracker for time written per day ([#10](https://github.com/cengels/skywriter/issues/10))
