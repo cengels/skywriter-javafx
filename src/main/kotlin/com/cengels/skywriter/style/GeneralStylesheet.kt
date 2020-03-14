@@ -28,10 +28,6 @@ class GeneralStylesheet : Stylesheet() {
             backgroundColor = MultiValue(arrayOf(Color.rgb(244, 244, 244)))
         }
 
-        themedView {
-            backgroundColor += Color.ORANGE
-        }
-
         plainButton {
             backgroundColor += Color.TRANSPARENT
             borderWidth += CssBox(0.px, 0.px, 0.px, 0.px)

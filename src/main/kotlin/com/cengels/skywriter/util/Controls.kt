@@ -1,6 +1,7 @@
 package com.cengels.skywriter.util
 
 import com.cengels.skywriter.enum.FieldType
+import com.cengels.skywriter.style.WriterViewStylesheet
 import com.cengels.skywriter.util.convert.EnumConverter
 import com.cengels.skywriter.util.convert.SuffixConverter
 import com.sun.javafx.scene.control.skin.ComboBoxListViewSkin
@@ -250,10 +251,10 @@ fun Node.popup(op: VBox.(popup: Popup) -> Unit = {}): Popup = Popup().apply {
     val popup = this
 
     content.add(VBox().apply {
-        initializeStyle()
+        // initializeStyle()
         spacing = 7.5
         useMaxSize = true
-        addClass("popup-box")
+        addClass(WriterViewStylesheet.popupBox)
         op(this, popup)
     })
 }

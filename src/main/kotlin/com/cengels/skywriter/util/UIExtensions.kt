@@ -2,7 +2,6 @@ package com.cengels.skywriter.util
 
 import com.cengels.skywriter.enum.ImageSizingType
 import com.cengels.skywriter.theming.ThemesManager
-import com.cengels.skywriter.util.convert.ColorConverter
 import javafx.animation.Animation
 import javafx.animation.FadeTransition
 import javafx.animation.Interpolator
@@ -10,22 +9,24 @@ import javafx.animation.Timeline
 import javafx.beans.Observable
 import javafx.beans.binding.Binding
 import javafx.beans.property.Property
-import javafx.beans.property.ReadOnlyProperty
 import javafx.beans.value.ObservableBooleanValue
 import javafx.beans.value.ObservableValue
 import javafx.beans.value.WritableValue
 import javafx.geometry.Insets
 import javafx.scene.Node
+import javafx.scene.Scene
 import javafx.scene.image.Image
 import javafx.scene.layout.*
+import javafx.scene.paint.Color
 import javafx.stage.FileChooser
 import javafx.util.Duration
 import tornadofx.*
-import java.awt.Color
+import kotlin.reflect.KClass
+import kotlin.reflect.full.primaryConstructor
 
 /** Creates a binding that automatically converts the [java.awt.Color] values into [javafx.scene.paint.Paint] values. */
  fun Color.toBackground(): Background {
-     return Background(BackgroundFill(ColorConverter.convert(this), CornerRadii.EMPTY, Insets.EMPTY))
+     return Background(BackgroundFill(this, CornerRadii.EMPTY, Insets.EMPTY))
  }
 
 /** Creates a binding that automatically converts the [javafx.scene.paint.Color] values into [javafx.scene.paint.Paint] values. */
@@ -40,7 +41,7 @@ fun Property<javafx.scene.paint.Color>.backgroundBinding(): Binding<Background> 
 
 val imageExtensionFilter: FileChooser.ExtensionFilter by lazy { FileChooser.ExtensionFilter("Images", "*.JPG", "*.BMP", "*.PNG", "*.GIF", "*.JPEG", "*.MPO") }
 
-fun getBackgroundFor(color: javafx.scene.paint.Color, image: String? = null, imageSizingType: ImageSizingType = ImageSizingType.CONTAIN): Background {
+fun getBackgroundFor(color: Color, image: String? = null, imageSizingType: ImageSizingType = ImageSizingType.CONTAIN): Background {
     if (image.isNullOrBlank()) {
         return Background(BackgroundFill(color, CornerRadii.EMPTY, Insets.EMPTY))
     }
@@ -56,24 +57,33 @@ fun getBackgroundFor(color: javafx.scene.paint.Color, image: String? = null, ima
                 imageSizingType == ImageSizingType.COVER))))
 }
 
-fun getBackgroundFor(color: Color, image: String? = null, imageSizingType: ImageSizingType = ImageSizingType.CONTAIN): Background {
-    return getBackgroundFor(ColorConverter.convert(color), image, imageSizingType)
-}
-
 /** Shifts the brightness of this color by the specified value. If the brightness is already at its bounds (meaning pure white or pure black), the shift is inverted instead. */
-fun javafx.scene.paint.Color.shiftBy(value: Double): javafx.scene.paint.Color {
+fun Color.shiftBy(value: Double): Color {
     val invert = this.brightness + value <= 0.0 || this.brightness + value >= 1.0
     return deriveColor(0.0, 1.0, 1.0 + (if (invert) -value else value), 1.0)
 }
 
 /** Adds a change listener to the selected Property<T> and calls it immediately. */
-fun <T> ReadOnlyProperty<T>.onChangeAndNow(op: (it: T?) -> Unit) {
+fun <T> ObservableValue<T>.onChangeAndNow(op: (it: T?) -> Unit) {
     this.onChange(op)
     op(this.value)
 }
 
-fun Node.initializeStyle() {
-    this.styleProperty().bind(ThemesManager.selectedThemeProperty.stringBinding { it!!.toStylesheet() })
+/**
+ * Adds an instance of the specified stylesheet class to the scene and automatically updates it if the selected application theme changes.
+ * The added stylesheet must have a public constructor with a first argument of type [Theme].
+ **/
+fun Scene.addThemedStylesheet(stylesheet: KClass<out Stylesheet>) {
+    var currentStylesheet: Stylesheet? = null
+
+    ThemesManager.selectedThemeProperty.onChangeAndNow {
+        if (it != null) {
+            currentStylesheet?.let { stylesheet -> this.stylesheets.remove(stylesheet.externalForm) }
+            currentStylesheet = stylesheet.primaryConstructor?.call(it)?.also { stylesheet ->
+                this.stylesheets.add(stylesheet.externalForm)
+            } ?: throw IllegalArgumentException("The specified stylesheet does not have an accessible primary constructor.")
+        }
+    }
 }
 
 /** Checks if this element has any children that are currently focused. */

@@ -3,7 +3,9 @@ package com.cengels.skywriter.writer
 import com.cengels.skywriter.enum.Heading
 import com.cengels.skywriter.persistence.AppConfig
 import com.cengels.skywriter.persistence.KeyConfig
+import com.cengels.skywriter.style.FormattingStylesheet
 import com.cengels.skywriter.style.GeneralStylesheet
+import com.cengels.skywriter.style.WriterViewStylesheet
 import com.cengels.skywriter.theming.ThemesManager
 import com.cengels.skywriter.theming.ThemesView
 import com.cengels.skywriter.util.*
@@ -146,11 +148,14 @@ class WriterView : View("Skywriter") {
                 event.consume()
             }
         }
+
+        root.scene.addThemedStylesheet(WriterViewStylesheet::class)
+        root.scene.addThemedStylesheet(FormattingStylesheet::class)
     }
 
     override val root = borderpane {
         setPrefSize(800.0, 600.0)
-        initializeStyle()
+        // initializeStyle()
 
         setOnMouseMoved { event ->
             if (primaryStage.isFullScreen) {
@@ -331,7 +336,7 @@ class WriterView : View("Skywriter") {
                 }
 
                 findBar = borderpane findbar@ {
-                    addClass("find-bar")
+                    addClass(WriterViewStylesheet.findBar)
                     alignment = Pos.BOTTOM_CENTER
                     isPickOnBounds = false
                     // binding must be a field, otherwise the garbage collector will destroy it
@@ -371,7 +376,7 @@ class WriterView : View("Skywriter") {
                                             isFocusTraversable = false
                                             tooltip("Find previous occurrence")
                                             graphic = Group().apply {
-                                                addClass("svg")
+                                                addClass(WriterViewStylesheet.svg)
                                                 line(5, 14, 5, 0) { strokeWidth = 2.0 }
                                                 polyline(0, 7, 5, 0, 10, 7) { strokeWidth = 2.0 }
                                             }
@@ -382,7 +387,7 @@ class WriterView : View("Skywriter") {
                                             isFocusTraversable = false
                                             tooltip("Find next occurrence")
                                             graphic = Group().apply {
-                                                addClass("svg")
+                                                addClass(WriterViewStylesheet.svg)
                                                 line(5, 0, 5, 14) { strokeWidth = 2.0 }
                                                 polyline(10, 7, 5, 14, 0, 7) { strokeWidth = 2.0 }
                                             }
@@ -426,14 +431,14 @@ class WriterView : View("Skywriter") {
 
                                 hbox(10) {
                                     button("Replace") {
-                                        addClass("text-button")
+                                        addClass(WriterViewStylesheet.textButton)
                                         isFocusTraversable = false
                                         enableWhen { textArea.searcher.countBinding.isNotEqualTo(0) }
                                         prefWidth = 90.0
                                         action { textArea.searcher.replaceCurrent() }
                                     }
                                     button("Replace all") {
-                                        addClass("text-button")
+                                        addClass(WriterViewStylesheet.textButton)
                                         isFocusTraversable = false
                                         enableWhen { textArea.searcher.countBinding.booleanBinding {
                                             it != 0
@@ -451,7 +456,7 @@ class WriterView : View("Skywriter") {
                             addClass(GeneralStylesheet.plainButton)
                             action { model.findAndReplaceState = WriterViewModel.FindAndReplace.None }
                             graphic = svgpath("M0 0 9 9 M9 0 0 9") {
-                                addClass("svg")
+                                addClass(WriterViewStylesheet.svg)
                                 strokeWidth = 2.0
                             }
                         }
@@ -464,7 +469,7 @@ class WriterView : View("Skywriter") {
             useMaxWidth = true
 
             statusBar = stackpane {
-                addClass("status-bar")
+                addClass(WriterViewStylesheet.statusBar)
                 managedWhen(visibleProperty())
                 hiddenWhen(primaryStage.fullScreenProperty().and(model.showStatusBarProperty.not()))
 
@@ -476,7 +481,7 @@ class WriterView : View("Skywriter") {
                     label(model.wordsTodayProperty.stringBinding {
                         "${model.wordsToday} added today"
                     }) {
-                        addClass("clickable")
+                        addClass(WriterViewStylesheet.clickable)
                         // manual offset necessary as width information is not available during show()
                         popupOnClick(200, offsetX = -137.5 + 44.5, offsetY = -10) { popup ->
                             label("Enter a new word count")

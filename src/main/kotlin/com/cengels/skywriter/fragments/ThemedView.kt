@@ -15,6 +15,9 @@ abstract class ThemedView(title: String) : View(title) {
     /** The root of this [ThemedView] will always be a [BorderPane] containing the titlebar and the [content]. */
     final override val root = borderpane {
         addClass("themed-view")
+        style {
+            backgroundColor += c("#584C8D")
+        }
 
         top {
             this += ThemedTitlebar(title)

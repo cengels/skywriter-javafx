@@ -1,14 +1,12 @@
 package com.cengels.skywriter.theming
 
 import com.cengels.skywriter.fragments.ThemedView
-import com.cengels.skywriter.util.convert.ColorConverter
 import com.cengels.skywriter.util.getBackgroundFor
 import javafx.geometry.Pos
 import javafx.scene.control.ButtonBar
 import javafx.scene.control.ButtonType
 import javafx.scene.control.ScrollPane
 import javafx.scene.layout.*
-import javafx.scene.paint.Color
 import javafx.scene.text.Font
 import javafx.scene.text.TextAlignment
 import tornadofx.*
@@ -84,7 +82,7 @@ class ThemesView(val themesManager: ThemesManager) : ThemedView("Themes") {
                                     background = getBackgroundFor(it.documentBackground)
                                     text = "A"
                                     font = Font.font(it.fontFamily, (it.fontSize * 3.0).coerceIn(30.0, 100.0))
-                                    textFill = ColorConverter.convert(it.fontColor)
+                                    textFill = it.fontColor
                                     alignment = Pos.CENTER
                                 }
                             }
