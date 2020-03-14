@@ -1,5 +1,6 @@
 package com.cengels.skywriter.fragments
 
+import com.cengels.skywriter.style.ThemedStylesheet
 import javafx.scene.Parent
 import javafx.stage.Modality
 import javafx.stage.StageStyle
@@ -13,21 +14,16 @@ abstract class ThemedView(title: String) : View(title) {
     var resizable: Boolean = true
 
     /** The root of this [ThemedView] will always be a [BorderPane] containing the titlebar and the [content]. */
-    final override val root = borderpane {
-        addClass("themed-view")
-        style {
-            backgroundColor += c("#584C8D")
-        }
+    final override val root = vbox(0) {
+        addClass(ThemedStylesheet.themedView)
 
-        top {
-            this += ThemedTitlebar(title)
-        }
+        this += ThemedTitlebar(title)
     }
 
     override fun onDock() {
         super.onDock()
 
-        root.bottom = content
+        root += content
     }
 
     /** Sets the window's initial size. Should be called in [onBeforeShow] to ensure a stage exists. */

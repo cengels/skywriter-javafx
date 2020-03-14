@@ -1,17 +1,22 @@
 package com.cengels.skywriter.fragments
 
+import com.cengels.skywriter.style.ThemedStylesheet
 import javafx.geometry.Point2D
+import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.input.MouseEvent
 import tornadofx.*
 
 class ThemedTitlebar(val viewTitle: String, val showMinimize: Boolean = false, val showMaximize: Boolean = true, val showClose: Boolean = true) : Fragment() {
     override val root = borderpane {
-        addClass("title-bar")
+        addClass(ThemedStylesheet.titleBar)
         makeDraggable(this)
 
         left {
-            label(viewTitle)
+            stackpane {
+                alignment = Pos.CENTER
+                label(viewTitle)
+            }
         }
 
         right {

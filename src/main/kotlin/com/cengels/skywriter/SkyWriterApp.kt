@@ -17,7 +17,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import javax.swing.filechooser.FileSystemView
 
-class SkyWriterApp : App(WriterView::class, GeneralStylesheet::class) {
+class SkyWriterApp : App(WriterView::class, GeneralStylesheet::class, ThemedStylesheet::class) {
     companion object {
         private val isWindows = OSInfo.getOSType() == OSInfo.OSType.WINDOWS
         /** A [Path] corresponding to the user's home directory. On Windows, this will generally be `%USER%/AppData/Roaming`. On all other operating systems, the property `user.home` is used. */
