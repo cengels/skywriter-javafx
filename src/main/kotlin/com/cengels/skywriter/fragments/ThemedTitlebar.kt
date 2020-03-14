@@ -2,19 +2,25 @@ package com.cengels.skywriter.fragments
 
 import tornadofx.*
 
-class ThemedTitlebar : Fragment("title bar") {
+class ThemedTitlebar(val viewTitle: String, val showMinimize: Boolean = false, val showMaximize: Boolean = true, val showClose: Boolean = true) : Fragment() {
     override val root = borderpane {
         addClass("title-bar")
 
         left {
-            label(modalStage?.title ?: "Untitled Stage")
+            label(viewTitle)
         }
 
         right {
             hbox {
-                button("_").action { modalStage!!.isIconified = true }
-                button("#").action { modalStage!!.isMaximized = !modalStage!!.isMaximized }
-                button("X").action { close() }
+                if (showMinimize) {
+                    button("_").action { currentStage?.isIconified = true }
+                }
+                if (showMaximize) {
+                    button("#").action { currentStage?.isMaximized = !currentStage!!.isMaximized }
+                }
+                if (showClose) {
+                    button("X").action { close() }
+                }
             }
         }
     }

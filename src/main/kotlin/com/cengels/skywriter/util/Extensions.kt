@@ -72,6 +72,11 @@ fun MatchResult.replace(replacementString: String): String {
     return result
 }
 
+/** Checks whether this object is equal to any of the specified objects. Uses structural equality. */
+fun <T> T.isAnyOf(vararg comparables: T): Boolean {
+    return comparables.any { it == this }
+}
+
 val <A, R> java.util.function.Function<A, R>.kotlinFunction: (A) -> R
     get() = { this.apply(it) }
 

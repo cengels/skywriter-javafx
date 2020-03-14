@@ -1,5 +1,6 @@
 package com.cengels.skywriter.theming
 
+import com.cengels.skywriter.fragments.ThemedView
 import com.cengels.skywriter.util.convert.ColorConverter
 import com.cengels.skywriter.util.getBackgroundFor
 import javafx.geometry.Pos
@@ -12,14 +13,14 @@ import javafx.scene.text.Font
 import javafx.scene.text.TextAlignment
 import tornadofx.*
 
-class ThemesView(val themesManager: ThemesManager) : View("Themes") {
+class ThemesView(val themesManager: ThemesManager) : ThemedView("Themes") {
     override fun onDock() {
         super.onDock()
 
         themesManager.initializeFonts()
     }
 
-    override val root = borderpane {
+    override val content = borderpane {
         minHeight = 350.0
         minWidth = 500.0
 
