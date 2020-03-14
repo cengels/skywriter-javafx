@@ -20,10 +20,13 @@ class ThemesView(val themesManager: ThemesManager) : ThemedView("Themes") {
         themesManager.initializeFonts()
     }
 
-    override val content = borderpane {
-        minHeight = 350.0
-        minWidth = 500.0
+    override fun onBeforeShow() {
+        super.onBeforeShow()
+        setWindowMinSize(500.0, 350.0)
+        setWindowInitialSize(750.0, 450.0)
+    }
 
+    override val content = borderpane {
         center {
             this.useMaxWidth = true
             this.useMaxHeight = true
