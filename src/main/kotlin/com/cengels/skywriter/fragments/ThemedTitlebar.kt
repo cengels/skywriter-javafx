@@ -1,34 +1,47 @@
 package com.cengels.skywriter.fragments
 
+import com.cengels.skywriter.SkyWriterApp
 import com.cengels.skywriter.style.ThemedStylesheet
+import com.cengels.skywriter.svg.Icons
+import com.cengels.skywriter.util.SpacedLabel
+import com.cengels.skywriter.util.svgbutton
 import javafx.geometry.Point2D
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.input.MouseEvent
 import tornadofx.*
 
-class ThemedTitlebar(val viewTitle: String, val showMinimize: Boolean = false, val showMaximize: Boolean = true, val showClose: Boolean = true) : Fragment() {
+class ThemedTitlebar(
+    val viewTitle: String,
+    val showMinimize: Boolean = true,
+    val showMaximize: Boolean = true,
+    val showClose: Boolean = true,
+    val showIcon: Boolean = true
+) : Fragment() {
     override val root = borderpane {
         addClass(ThemedStylesheet.titleBar)
         makeDraggable(this)
 
         left {
-            stackpane {
+            hbox(11) {
                 alignment = Pos.CENTER
-                label(viewTitle)
+                if (showIcon) {
+                    this += Icons.SKY_WRITER
+                }
+                this += SpacedLabel(viewTitle, 0.4)
             }
         }
 
         right {
             hbox {
                 if (showMinimize) {
-                    button("_").action { currentStage?.isIconified = true }
+                    svgbutton(Icons.HORIZONTAL_LINE).action { currentStage?.isIconified = true }
                 }
                 if (showMaximize) {
-                    button("#").action { currentStage?.isMaximized = !currentStage!!.isMaximized }
+                    svgbutton(Icons.CORNERLESS_SQUARE).action { currentStage?.isMaximized = !currentStage!!.isMaximized }
                 }
                 if (showClose) {
-                    button("X").action { close() }
+                    svgbutton(Icons.X).action { close() }
                 }
             }
         }

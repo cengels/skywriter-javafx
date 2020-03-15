@@ -1,6 +1,7 @@
 package com.cengels.skywriter.style
 
 import com.cengels.skywriter.theming.Theme
+import com.cengels.skywriter.util.allDescendants
 import com.cengels.skywriter.util.shiftBy
 import javafx.scene.Cursor
 import javafx.scene.effect.BlurType
@@ -19,7 +20,6 @@ class WriterViewStylesheet(theme: Theme) : Stylesheet() {
         val paragraphBox by cssclass()
         val findBar by cssclass()
         val container by cssclass()
-        val plainButton by cssclass()
         val textButton by cssclass()
         val svg by cssclass()
         val clickable by cssclass()
@@ -48,7 +48,7 @@ class WriterViewStylesheet(theme: Theme) : Stylesheet() {
         }
 
         styledTextArea {
-            s("*") {
+            star {
                 textAlignment = theme.textAlignment
                 fontSmoothingType = FontSmoothingType.GRAY
             }
@@ -119,22 +119,14 @@ class WriterViewStylesheet(theme: Theme) : Stylesheet() {
                 }
             }
         }
-        
-        plainButton {
-            svg {
-                s("*") {
-                    stroke = theme.fontColor
-                }
 
+        GeneralStylesheet.plainButton {
+            s(svg, svg.allDescendants) {
                 stroke = theme.fontColor
             }
 
             and(hover) {
-                svg {
-                    s("*") {
-                        stroke = desaturatedFontColor
-                    }
-
+                s(svg, svg.allDescendants) {
                     stroke = desaturatedFontColor
                 }
             }
@@ -172,7 +164,7 @@ class WriterViewStylesheet(theme: Theme) : Stylesheet() {
             backgroundColor += theme.documentBackground.shiftBy(-0.05)
             backgroundRadius += box(0.px, 0.px, 6.px, 6.px)
 
-            s("*") {
+            star {
                 fill = theme.fontColor
                 textFill = theme.fontColor
             }
@@ -206,7 +198,7 @@ class WriterViewStylesheet(theme: Theme) : Stylesheet() {
             backgroundRadius += box(3.px)
             effect = DropShadow(BlurType.GAUSSIAN, Color(0.0, 0.0, 0.0, 0.3), 12.0, 0.0, 2.0, 2.0)
 
-            s("*") {
+            star {
                 fill = theme.fontColor
                 textFill = theme.fontColor
             }

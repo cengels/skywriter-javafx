@@ -29,6 +29,15 @@ import kotlin.reflect.full.primaryConstructor
      return Background(BackgroundFill(this, CornerRadii.EMPTY, Insets.EMPTY))
  }
 
+fun Color.shift(hueBy: Double = 0.0, saturationBy: Double = 0.0, brightnessBy: Double = 0.0, opacityBy: Double = 0.0): Color {
+    return this.deriveColor(
+        hueBy,
+        1 + saturationBy / this.saturation,
+        1 + brightnessBy / this.brightness,
+        1 + opacityBy / this.opacity
+    )
+}
+
 /** Creates a binding that automatically converts the [javafx.scene.paint.Color] values into [javafx.scene.paint.Paint] values. */
 fun Property<javafx.scene.paint.Color>.backgroundBinding(): Binding<Background> {
     return this.objectBinding {

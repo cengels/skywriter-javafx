@@ -8,6 +8,7 @@ import javafx.scene.image.Image
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCodeCombination
 import javafx.scene.input.KeyCombination
+import javafx.scene.text.Font
 import javafx.stage.Stage
 import javafx.stage.WindowEvent
 import sun.awt.OSInfo
@@ -24,6 +25,8 @@ class SkyWriterApp : App(WriterView::class, GeneralStylesheet::class, ThemedStyl
         val homeDirectory: Path = Paths.get(if (isWindows) System.getenv("APPDATA") else System.getProperty("user.home"))
         /** Skywriter's application directory within the user's home directory. This is where configuration files and historical data will be stored. */
         val applicationDirectory: Path = homeDirectory.resolve(if (isWindows) "Skywriter" else "skywriter")
+        val applicationIcon = Image(SkyWriterApp::class.java.getResourceAsStream("air.png"))
+        val applicationFont: Font = Font.loadFont(SkyWriterApp::class.java.getResource("Nunito-Regular.ttf").toExternalForm(), 10.7)
 
         @JvmStatic
         fun main(args: Array<String>) {
@@ -58,6 +61,6 @@ class SkyWriterApp : App(WriterView::class, GeneralStylesheet::class, ThemedStyl
 
         super.start(stage)
 
-        stage.icons.add(Image(this::class.java.getResourceAsStream("air.png")))
+        stage.icons.add(applicationIcon)
     }
 }

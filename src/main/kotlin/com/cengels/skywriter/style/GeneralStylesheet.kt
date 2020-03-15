@@ -1,6 +1,7 @@
 package com.cengels.skywriter.style
 
 import javafx.scene.paint.Color
+import javafx.scene.text.FontSmoothingType
 import tornadofx.*
 
 class GeneralStylesheet : Stylesheet() {

@@ -2,6 +2,8 @@ package com.cengels.skywriter.fragments
 
 import com.cengels.skywriter.style.ThemedStylesheet
 import javafx.scene.Parent
+import javafx.scene.paint.Color
+import javafx.scene.shape.Rectangle
 import javafx.stage.Modality
 import javafx.stage.StageStyle
 import tornadofx.*
@@ -30,6 +32,20 @@ abstract class ThemedView(title: String) : View(title) {
     fun setWindowInitialSize(width: Number, height: Number) = currentStage?.apply {
         this.width = width.toDouble()
         this.height = height.toDouble()
+    }
+
+    override fun onBeforeShow() {
+        super.onBeforeShow()
+
+        this.root.scene.fill = Color.TRANSPARENT
+        currentStage?.apply {
+            root.clipProperty().bind(this.heightProperty().objectBinding(this.widthProperty()) {
+                Rectangle(this.width, this.height).apply {
+                    arcWidth = ThemedStylesheet.cornerRadius.value
+                    arcHeight = ThemedStylesheet.cornerRadius.value
+                }
+            })
+        }
     }
 
     /**

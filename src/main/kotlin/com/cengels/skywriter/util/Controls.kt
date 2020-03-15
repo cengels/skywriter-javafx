@@ -1,6 +1,8 @@
 package com.cengels.skywriter.util
 
 import com.cengels.skywriter.enum.FieldType
+import com.cengels.skywriter.style.GeneralStylesheet
+import com.cengels.skywriter.style.ThemedStylesheet
 import com.cengels.skywriter.style.WriterViewStylesheet
 import com.cengels.skywriter.util.convert.EnumConverter
 import com.cengels.skywriter.util.convert.SuffixConverter
@@ -15,12 +17,16 @@ import javafx.scene.control.*
 import javafx.scene.layout.Pane
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
+import javafx.scene.shape.Line
+import javafx.scene.shape.SVGPath
+import javafx.scene.shape.Shape
 import javafx.scene.text.Font
 import javafx.stage.Popup
 import javafx.stage.PopupWindow
 import javafx.util.StringConverter
 import javafx.util.converter.PercentageStringConverter
 import tornadofx.*
+import tornadofx.Stylesheet.Companion.star
 import java.time.Instant
 import kotlin.math.min
 
@@ -290,3 +296,35 @@ fun Node.popupOnClick(fadeDurationMs: Number = 0.0, offsetX: Number = 0.0, offse
         op(this, popup)
     }
 }
+
+fun SVGPath(path: String): SVGPath = SVGPath().apply {
+    addClass(ThemedStylesheet.svg)
+    content = path
+}
+
+fun SVGLine(x1: Double, y1: Double, x2: Double, y2: Double): Line = Line(x1, y1, x2, y2).apply {
+    addClass(ThemedStylesheet.svg)
+}
+
+fun EventTarget.svgbutton(path: String, op: Button.() -> Unit = {}): Button {
+    return svgbutton(SVGPath(path), op)
+}
+
+fun EventTarget.svgbutton(svg: Shape, op: Button.() -> Unit = {}): Button {
+    if (!svg.hasClass(ThemedStylesheet.svg)) {
+        svg.addClass(ThemedStylesheet.svg)
+    }
+
+    return button(graphic = svg) {
+        addClass(GeneralStylesheet.plainButton)
+        useMaxSize = true
+
+        op(this)
+    }
+}
+
+fun SelectionHolder.s(selector: String) = select(selector) {}
+
+/** Represents a selector of style "`element *`". */
+val Scoped.allDescendants
+    get() = this contains star
