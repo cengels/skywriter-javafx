@@ -1,6 +1,5 @@
 package com.cengels.skywriter.fragments
 
-import com.cengels.skywriter.SkyWriterApp
 import com.cengels.skywriter.style.ThemedStylesheet
 import com.cengels.skywriter.svg.Icons
 import com.cengels.skywriter.util.SpacedLabel

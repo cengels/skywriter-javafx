@@ -41,8 +41,8 @@ abstract class ThemedView(title: String) : View(title) {
         currentStage?.apply {
             root.clipProperty().bind(this.heightProperty().objectBinding(this.widthProperty()) {
                 Rectangle(this.width, this.height).apply {
-                    arcWidth = ThemedStylesheet.cornerRadius.value
-                    arcHeight = ThemedStylesheet.cornerRadius.value
+                    arcWidth = ThemedStylesheet.cornerRadius.value * 2
+                    arcHeight = ThemedStylesheet.cornerRadius.value * 2
                 }
             })
         }

@@ -22,7 +22,7 @@ class ThemedStylesheet : Stylesheet() {
         val lightFontColor = c("#d6d3db")
         val titleBarHeight = 30.px
         val titleBarButtonWidth = 40.px
-        val cornerRadius = 20.px
+        val cornerRadius = 16.px
         const val titleBarIconScale = 0.9
     }
 
