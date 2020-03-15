@@ -1,17 +1,23 @@
 package com.cengels.skywriter.theming
 
 import com.cengels.skywriter.fragments.ThemedView
+import com.cengels.skywriter.style.ThemedStylesheet
+import com.cengels.skywriter.style.ThemingStylesheet
+import com.cengels.skywriter.util.bindSelectedItem
 import com.cengels.skywriter.util.getBackgroundFor
+import com.cengels.skywriter.util.onChangeAndNow
+import com.cengels.skywriter.util.setRadiusClip
 import javafx.geometry.Pos
 import javafx.scene.control.ButtonBar
 import javafx.scene.control.ButtonType
 import javafx.scene.control.ScrollPane
 import javafx.scene.layout.*
+import javafx.scene.paint.Color
 import javafx.scene.text.Font
 import javafx.scene.text.TextAlignment
 import tornadofx.*
 
-class ThemesView(val themesManager: ThemesManager) : ThemedView("Themes") {
+class ThemesView(val themesManager: ThemesManager) : ThemedView("Themes", ThemingStylesheet()) {
     override fun onDock() {
         super.onDock()
 
@@ -30,35 +36,33 @@ class ThemesView(val themesManager: ThemesManager) : ThemedView("Themes") {
             this.useMaxHeight = true
 
             scrollpane {
-                this.useMaxWidth = true
-                this.useMaxHeight = true
-                this.hbarPolicy = ScrollPane.ScrollBarPolicy.NEVER
+                hbarPolicy = ScrollPane.ScrollBarPolicy.NEVER
+                vbarPolicy = ScrollPane.ScrollBarPolicy.AS_NEEDED
+                // fitTo properties cause the scrollbars to always be visible
 
                 datagrid(themesManager.themes) {
-                    this.useMaxWidth = true
-                    this.useMaxHeight = true
-                    selectionModel.selectedItemProperty().onChange {
-                        if (it != null) {
-                            themesManager.selectedTheme = it
-                        }
-                    }
+                    addClass(ThemingStylesheet.themesGrid)
 
-                    themesManager.selectedThemeProperty.onChange {
-                        this.selectionModel.select(it)
-                    }
+                    minHeightProperty().bind(this@scrollpane.heightProperty())
+                    minWidthProperty().bind(this@scrollpane.widthProperty())
+
+                    bindSelectedItem(themesManager.selectedThemeProperty)
 
                     cellFormat {
-                        toggleClass(CssRule.c("selected"), this.isSelected)
+                        toggleClass(Stylesheet.selectedClass, this.selectedProperty())
                     }
 
                     cellCache {
                         vbox {
                             useMaxWidth = true
                             alignment = Pos.CENTER
+                            setRadiusClip(ThemedStylesheet.cornerRadius.value)
                             gridpane {
-                                this.background =  getBackgroundFor(it!!.windowBackground, it.backgroundImage, it.backgroundImageSizingType)
+                                addClass(ThemingStylesheet.gridPane)
+                                this.background =  getBackgroundFor(it.windowBackground, it.backgroundImage, it.backgroundImageSizingType)
                                 this.useMaxWidth = true
                                 this.useMaxHeight = true
+                                setRadiusClip(ThemedStylesheet.cornerRadius.value)
                                 vgrow = Priority.ALWAYS
                                 this.columnConstraints.addAll(
                                     ColumnConstraints().apply { this.hgrow = Priority.ALWAYS },
@@ -87,6 +91,7 @@ class ThemesView(val themesManager: ThemesManager) : ThemedView("Themes") {
                                 }
                             }
                             label(it.name) {
+                                addClass(ThemedStylesheet.skyText)
                                 hgrow = Priority.ALWAYS
                                 textAlignment = TextAlignment.CENTER
                             }

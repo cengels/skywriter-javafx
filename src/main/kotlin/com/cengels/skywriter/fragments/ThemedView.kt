@@ -1,6 +1,7 @@
 package com.cengels.skywriter.fragments
 
 import com.cengels.skywriter.style.ThemedStylesheet
+import com.cengels.skywriter.util.setRadiusClip
 import javafx.scene.Parent
 import javafx.scene.paint.Color
 import javafx.scene.shape.Rectangle
@@ -9,7 +10,7 @@ import javafx.stage.StageStyle
 import tornadofx.*
 
 /** Represents a [View] that uses its own themed title bar rather than the default JavaFX one. */
-abstract class ThemedView(title: String) : View(title) {
+abstract class ThemedView(title: String, val stylesheet: Stylesheet? = null) : View(title) {
     /** The [ThemedView]'s content. The element specified here will be added to the [root] and represents the window's content, aside from the title bar. */
     abstract val content: Parent
     /** If true, any instances of this view opened as modals are resizable. */
@@ -37,14 +38,13 @@ abstract class ThemedView(title: String) : View(title) {
     override fun onBeforeShow() {
         super.onBeforeShow()
 
+        if (stylesheet != null) {
+            this.root.scene.stylesheets.add(this.stylesheet.externalForm)
+        }
+
         this.root.scene.fill = Color.TRANSPARENT
         currentStage?.apply {
-            root.clipProperty().bind(this.heightProperty().objectBinding(this.widthProperty()) {
-                Rectangle(this.width, this.height).apply {
-                    arcWidth = ThemedStylesheet.cornerRadius.value * 2
-                    arcHeight = ThemedStylesheet.cornerRadius.value * 2
-                }
-            })
+            root.setRadiusClip(ThemedStylesheet.cornerRadius.value)
         }
     }
 

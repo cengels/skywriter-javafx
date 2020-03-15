@@ -16,10 +16,7 @@ class ThemedStylesheet : Stylesheet() {
         val svg by cssclass()
         val spacedLabel by cssclass()
         val spacedLabelText by cssclass()
-        val accent = c("#584C8D")
-        val accentDark = c("#483e75")
-        val accentDarker = c("#231e38")
-        val lightFontColor = c("#d6d3db")
+        val skyText by cssclass()
         val titleBarHeight = 30.px
         val titleBarButtonWidth = 40.px
         val cornerRadius = 16.px
@@ -28,21 +25,22 @@ class ThemedStylesheet : Stylesheet() {
 
     init {
         themedView {
+            backgroundColor += Colors.accentBackground
             backgroundRadius += box(cornerRadius)
             borderRadius += box(cornerRadius)
+
+            s(spacedLabelText, skyText) {
+                font = SkyWriterApp.applicationFont
+
+                +fontSmoothing(Colors.lightFontColor)
+            }
         }
 
         titleBar {
-            backgroundColor += accent
+            backgroundColor += Colors.accent
             minHeight = titleBarHeight
             maxHeight = titleBarHeight
             padding = box(0.px, 0.px, 0.px, 8.px)
-
-            spacedLabelText {
-                font = SkyWriterApp.applicationFont
-
-                +fontSmoothing(lightFontColor)
-            }
 
             GeneralStylesheet.plainButton {
                 padding = box(0.px)
@@ -53,7 +51,7 @@ class ThemedStylesheet : Stylesheet() {
                 maxHeight = titleBarHeight - 1
 
                 and(hover) {
-                    backgroundColor += accentDark
+                    backgroundColor += Colors.accentDark
                 }
 
                 svg {
@@ -63,7 +61,7 @@ class ThemedStylesheet : Stylesheet() {
             }
 
             applicationIcon {
-                fill = lightFontColor
+                fill = Colors.lightFontColor
             }
         }
 
@@ -71,7 +69,7 @@ class ThemedStylesheet : Stylesheet() {
             cursor = Cursor.HAND
 
             s(svg, svg.allDescendants) {
-                stroke = lightFontColor
+                stroke = Colors.lightFontColor
                 strokeWidth = 2.px
                 strokeLineCap = StrokeLineCap.ROUND
             }

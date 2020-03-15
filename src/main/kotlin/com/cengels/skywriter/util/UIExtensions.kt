@@ -12,13 +12,17 @@ import javafx.beans.property.Property
 import javafx.beans.value.ObservableBooleanValue
 import javafx.beans.value.ObservableValue
 import javafx.beans.value.WritableValue
+import javafx.css.Styleable
+import javafx.event.EventTarget
 import javafx.geometry.Insets
 import javafx.scene.Node
 import javafx.scene.Scene
 import javafx.scene.image.Image
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
+import javafx.scene.shape.Rectangle
 import javafx.stage.FileChooser
+import javafx.stage.Window
 import javafx.util.Duration
 import tornadofx.*
 import kotlin.reflect.KClass
@@ -152,4 +156,34 @@ fun Node.fadeWhen(playWhen: ObservableBooleanValue, durationMs: Number = 200): F
             }
         }
     }
+}
+
+fun <T> DataGrid<T>.bindSelectedItem(property: ObservableValue<T?>) {
+    // skin is null during initialization, which causes an exception
+    this.skinProperty().onChangeOnce { skin ->
+        val value = property.value
+        if (skin != null && value != null) {
+            this.selectionModel.select(value)
+        }
+    }
+
+    property.onChange { newValue ->
+        if (newValue == null) this.selectionModel.clearSelection() else this.selectionModel.select(newValue)
+    }
+
+    if (property is Property<*>) {
+        selectionModel.selectedItemProperty().onChange {
+            property.value = it
+        }
+    }
+}
+
+/** Sets a clip with the specified background radius to this node that resizes according to the node's own size. */
+fun Region.setRadiusClip(radius: Number) {
+    clipProperty().bind(heightProperty().objectBinding(widthProperty()) {
+        Rectangle(widthProperty().value, heightProperty().value).apply {
+            arcWidth = radius.toDouble() * 2
+            arcHeight = radius.toDouble() * 2
+        }
+    })
 }
