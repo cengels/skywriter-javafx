@@ -26,7 +26,7 @@ class SkyWriterApp : App(WriterView::class, GeneralStylesheet::class, ThemedStyl
         /** Skywriter's application directory within the user's home directory. This is where configuration files and historical data will be stored. */
         val applicationDirectory: Path = homeDirectory.resolve(if (isWindows) "Skywriter" else "skywriter")
         val applicationIcon = Image(SkyWriterApp::class.java.getResourceAsStream("air.png"))
-        val applicationFont: Font = Font.loadFont(SkyWriterApp::class.java.getResource("Nunito-Regular.ttf").toExternalForm(), 10.7)
+        val applicationFont: Font = Font.loadFont(SkyWriterApp::class.java.getResource("Baloo2-Regular.ttf").toExternalForm(), 10.7)
 
         @JvmStatic
         fun main(args: Array<String>) {

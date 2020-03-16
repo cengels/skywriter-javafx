@@ -5,7 +5,6 @@ import com.cengels.skywriter.util.allDescendants
 import javafx.scene.Cursor
 import javafx.scene.paint.Color
 import javafx.scene.shape.StrokeLineCap
-import javafx.scene.text.FontSmoothingType
 import tornadofx.*
 
 class ThemedStylesheet : Stylesheet() {
@@ -17,8 +16,10 @@ class ThemedStylesheet : Stylesheet() {
         val spacedLabel by cssclass()
         val spacedLabelText by cssclass()
         val skyText by cssclass()
+        val skyButton by cssclass()
         val buttonBox by cssclass()
         val trackBackground by cssclass()
+
         val titleBarHeight = 30.px
         val titleBarButtonWidth = 40.px
         val cornerRadius = 16.px
@@ -27,94 +28,107 @@ class ThemedStylesheet : Stylesheet() {
 
     init {
         themedView {
-            backgroundColor += Colors.accentBackground
+            backgroundColor += Colors.Background.REGULAR
             backgroundRadius += box(cornerRadius)
             borderRadius += box(cornerRadius)
 
             s(spacedLabelText, skyText) {
                 font = SkyWriterApp.applicationFont
-
-                +fontSmoothing(Colors.lighterFontColor)
+                fill = Colors.Font.REGULAR
+                textFill = Colors.Font.REGULAR
             }
-        }
-
-        titleBar {
-            backgroundColor += Colors.accent
-            minHeight = titleBarHeight
-            maxHeight = titleBarHeight
-            padding = box(0.px, 0.px, 0.px, 8.px)
-
-            GeneralStylesheet.plainButton {
-                padding = box(0.px)
-                minWidth = titleBarButtonWidth
-                maxWidth = titleBarButtonWidth
-                // It is unclear why the -1 is necessary here, but it is.
-                minHeight = titleBarHeight - 1
-                maxHeight = titleBarHeight - 1
-
-                and(hover) {
-                    backgroundColor += Colors.accentDark
-                }
-
-                svg {
-                    scaleX = titleBarIconScale
-                    scaleY = titleBarIconScale
-                }
-            }
-
-            applicationIcon {
-                fill = Colors.lighterFontColor
-            }
-        }
-
-        GeneralStylesheet.plainButton {
-            cursor = Cursor.HAND
-
-            s(svg, svg.allDescendants) {
-                stroke = Colors.lighterFontColor
-                strokeWidth = 2.px
-                strokeLineCap = StrokeLineCap.ROUND
-            }
-        }
-
-        s(buttonBox, buttonBar) {
-            padding = box(6.px)
 
             button {
+                +selectable
+            }
+
+            titleBar {
+                backgroundColor += Colors.Primary.REGULAR
+                minHeight = titleBarHeight
+                maxHeight = titleBarHeight
+                padding = box(0.px, 0.px, 0.px, 8.px)
+
+                GeneralStylesheet.plainButton {
+                    padding = box(0.px)
+                    minWidth = titleBarButtonWidth
+                    maxWidth = titleBarButtonWidth
+                    // It is unclear why the -1 is necessary here, but it is.
+                    minHeight = titleBarHeight - 1
+                    maxHeight = titleBarHeight - 1
+
+                    backgroundColor += Color.TRANSPARENT
+
+                    and(hover) {
+                        backgroundColor += Colors.Background.REGULAR
+                    }
+
+                    svg {
+                        scaleX = titleBarIconScale
+                        scaleY = titleBarIconScale
+                    }
+                }
+
+                applicationIcon {
+                    fill = Colors.Font.REGULAR
+                }
+            }
+
+            GeneralStylesheet.plainButton {
+                s(svg, svg.allDescendants) {
+                    stroke = Colors.Font.REGULAR
+                    strokeWidth = 2.px
+                    strokeLineCap = StrokeLineCap.ROUND
+                }
+            }
+
+            s(buttonBox, buttonBar) {
+                padding = box(6.px)
+            }
+
+            buttonBar {
+                minHeight = 40.px
+            }
+
+            s(buttonBox contains button, buttonBar contains button, skyButton) {
                 minWidth = 7.5.em
                 minHeight = 0.9.em
                 borderWidth += CssBox(0.px, 0.px, 0.px, 0.px)
-                backgroundColor += Colors.accentDark
-                textFill = Colors.lightFontColor
+                textFill = Colors.Font.REGULAR
                 font = SkyWriterApp.applicationFont
                 fontSize = 10.pt
                 padding = box(3.px)
+            }
 
-                and(hover) {
-                    backgroundColor += Colors.accentSelected
+            scrollBar {
+                backgroundColor += Color.TRANSPARENT
+                minWidth = 20.px
+
+                trackBackground {
+                    backgroundColor += Color.TRANSPARENT
+                }
+
+                s(incrementButton, decrementButton) {
+                    fill = Color.TRANSPARENT
+                    backgroundColor += Color.TRANSPARENT
+                }
+
+                thumb {
+                    backgroundColor += Colors.Background.LOW
+                    +selectable
                 }
             }
-        }
 
-        scrollBar {
-            backgroundColor += Color.TRANSPARENT
-            minWidth = 20.px
-
-            trackBackground {
-                backgroundColor += Color.TRANSPARENT
+            s(form contains label, form contains text, textField, comboBoxBase contains label) {
+                font = SkyWriterApp.applicationFont
+                fill = Colors.Font.LOW
+                textFill = Colors.Font.LOW
             }
 
-            s(incrementButton, decrementButton) {
-                fill = Color.TRANSPARENT
-                backgroundColor += Color.TRANSPARENT
+            textField {
             }
 
-            thumb {
-                backgroundColor += Colors.accentDark
-
-                and(hover) {
-                    backgroundColor += Colors.accentDarker
-                }
+            comboBoxBase {
+                +selectable
             }
         }
     }

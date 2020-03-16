@@ -12,14 +12,10 @@ class ThemingStylesheet : Stylesheet() {
 
     init {
         themesGrid contains datagridCell {
-            backgroundColor += Colors.accentDarker
             padding = box(6.px)
             backgroundRadius += box(ThemedStylesheet.cornerRadius)
             borderRadius += box(ThemedStylesheet.cornerRadius)
-
-            and(selectedClass) {
-                backgroundColor += Colors.accentSelected
-            }
+            +selectable
         }
 
         themeLabel {

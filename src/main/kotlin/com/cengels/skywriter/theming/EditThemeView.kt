@@ -2,28 +2,29 @@ package com.cengels.skywriter.theming
 
 import com.cengels.skywriter.enum.FieldType
 import com.cengels.skywriter.fragments.Dialog
+import com.cengels.skywriter.style.ThemedStylesheet
+import com.cengels.skywriter.style.ThemingStylesheet
+import com.cengels.skywriter.svg.Icons
 import com.cengels.skywriter.util.*
 import javafx.application.Platform
-import javafx.beans.binding.DoubleBinding
 import javafx.beans.property.Property
 import javafx.geometry.Pos
 import javafx.scene.control.ButtonBar
-import javafx.scene.control.ListCell
 import javafx.scene.control.OverrunStyle
 import javafx.scene.control.ScrollPane
 import javafx.scene.effect.BlurType
 import javafx.scene.effect.DropShadow
-import javafx.scene.layout.*
+import javafx.scene.layout.HBox
+import javafx.scene.layout.Priority
+import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
-import javafx.scene.shape.SVGPath
 import javafx.scene.text.Font
-import javafx.scene.transform.Transform
 import javafx.stage.Screen
 import tornadofx.*
 import java.io.File
-import kotlin.math.ceil
 
-class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialog<Theme>(if (theme.name.isNotEmpty()) "Edit theme" else "Add theme") {
+class EditThemeView(theme: Theme, private val otherThemes: List<String>)
+    : Dialog<Theme>(if (theme.name.isNotEmpty()) "Edit theme" else "Add theme", ThemingStylesheet()) {
     private val model: EditThemeViewModel = EditThemeViewModel(theme)
     private var textAreaBox: VBox? = null
 
@@ -36,7 +37,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
         Platform.runLater { textAreaBox?.requestLayout() }
     }
 
-    override val root = borderpane {
+    override val content = borderpane {
         left {
             scrollpane {
                 hbarPolicy = ScrollPane.ScrollBarPolicy.NEVER
@@ -96,6 +97,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                         field("Image") {
                             (inputContainer as HBox).alignment = Pos.CENTER_LEFT
                             button(model.backgroundImageProperty.stringBinding { it?.takeLastWhile { char -> char != File.separatorChar } ?: "Choose an image..." }) {
+                                addClass(ThemedStylesheet.skyButton)
                                 action {
                                     val initialDir = if (!model.backgroundImage.isNullOrBlank()) File(model.backgroundImage).parent else System.getProperty("user.dir")
 
@@ -111,7 +113,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                                 }
                                 useMaxWidth = true
                             }
-                            button(graphic = SVGPath().apply { content = "M 18 6 L 6 18 M 6 6 L 18 18"; stroke = Color.BLACK; strokeWidth = 2.0 }) {
+                            svgbutton(Icons.X) {
                                 disableWhen { model.backgroundImageProperty.isBlank() }
                                 action {
                                     model.backgroundImage = null
@@ -178,7 +180,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                             colorpicker(model.fontShadowColorProperty, ColorPickerMode.Button) {
                                 useMaxWidth = true
                             }
-                            button(graphic = SVGPath().apply { content = "M 18 6 L 6 18 M 6 6 L 18 18"; stroke = Color.BLACK; strokeWidth = 2.0 }) {
+                            svgbutton(Icons.X) {
                                 disableWhen { model.fontShadowColorProperty.isEqualTo(Color.TRANSPARENT) }
                                 action {
                                     model.fontShadowColor = Color.TRANSPARENT

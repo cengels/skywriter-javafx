@@ -10,7 +10,7 @@ import javafx.stage.StageStyle
 import tornadofx.*
 
 /** Represents a [View] that uses its own themed title bar rather than the default JavaFX one. */
-abstract class ThemedView(title: String, val stylesheet: Stylesheet? = null) : View(title) {
+abstract class ThemedView(title: String? = null, val stylesheet: Stylesheet? = null) : View(title) {
     /** The [ThemedView]'s content. The element specified here will be added to the [root] and represents the window's content, aside from the title bar. */
     abstract val content: Parent
     /** If true, any instances of this view opened as modals are resizable. */

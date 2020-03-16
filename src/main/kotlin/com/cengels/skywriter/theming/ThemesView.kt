@@ -134,7 +134,6 @@ class ThemesView(val themesManager: ThemesManager) : ThemedView("Themes", Themin
 
         bottom {
             buttonbar {
-                minHeight = 40.0
                 button("OK", ButtonBar.ButtonData.OK_DONE) {
                     enableWhen { themesManager.selectedThemeProperty.isNotNull }
 
@@ -150,7 +149,7 @@ class ThemesView(val themesManager: ThemesManager) : ThemedView("Themes", Themin
 
     private fun openEditDialog(theme: Theme): EditThemeView {
         return EditThemeView(theme, themesManager.themes.filter { it != theme }.map { it.name }).apply {
-            this.openModal(owner = currentWindow)
+            this.openModal()
         }
     }
 }

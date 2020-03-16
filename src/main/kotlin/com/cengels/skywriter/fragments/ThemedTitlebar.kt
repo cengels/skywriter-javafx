@@ -11,8 +11,8 @@ import javafx.scene.input.MouseEvent
 import tornadofx.*
 
 class ThemedTitlebar(
-    val viewTitle: String,
-    val showMinimize: Boolean = true,
+    val viewTitle: String? = null,
+    val showMinimize: Boolean = false,
     val showMaximize: Boolean = true,
     val showClose: Boolean = true,
     val showIcon: Boolean = true
@@ -27,7 +27,9 @@ class ThemedTitlebar(
                 if (showIcon) {
                     this += Icons.SKY_WRITER
                 }
-                this += SpacedLabel(viewTitle, 0.4)
+                if (viewTitle != null) {
+                    this += SpacedLabel(viewTitle, 0.4)
+                }
             }
         }
 

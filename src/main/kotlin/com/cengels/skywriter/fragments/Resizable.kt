@@ -32,6 +32,7 @@ class Resizable(val stage: Stage) {
                 it.consume()
             }
         }
+
         stage.addEventFilter(MouseEvent.MOUSE_PRESSED) {
             if (canResize) {
                 resizing = true
@@ -101,7 +102,7 @@ class Resizable(val stage: Stage) {
     }
 
     private fun resetCursor() {
-        stage.scene.cursor = Cursor.DEFAULT
+        stage.scene.cursor = null
     }
 
     private fun detectIsCursorAtEdge(mouseEvent: MouseEvent): Boolean {
@@ -110,17 +111,17 @@ class Resizable(val stage: Stage) {
         }
 
         stage.scene.cursor = when {
-            mouseEvent.x > stage.width - RESIZE_THRESHOLD && mouseEvent.y < RESIZE_THRESHOLD -> Cursor.NE_RESIZE
-            mouseEvent.x > stage.width - RESIZE_THRESHOLD && mouseEvent.y > stage.height - RESIZE_THRESHOLD -> Cursor.SE_RESIZE
-            mouseEvent.x < RESIZE_THRESHOLD && mouseEvent.y < RESIZE_THRESHOLD -> Cursor.NW_RESIZE
-            mouseEvent.x < RESIZE_THRESHOLD && mouseEvent.y > stage.height - RESIZE_THRESHOLD -> Cursor.SW_RESIZE
+            mouseEvent.x > stage.width - RESIZE_THRESHOLD * 2 && mouseEvent.y < RESIZE_THRESHOLD * 2 -> Cursor.NE_RESIZE
+            mouseEvent.x > stage.width - RESIZE_THRESHOLD * 2 && mouseEvent.y > stage.height - RESIZE_THRESHOLD * 2 -> Cursor.SE_RESIZE
+            mouseEvent.x < RESIZE_THRESHOLD * 2 && mouseEvent.y < RESIZE_THRESHOLD * 2 -> Cursor.NW_RESIZE
+            mouseEvent.x < RESIZE_THRESHOLD * 2 && mouseEvent.y > stage.height - RESIZE_THRESHOLD * 2 -> Cursor.SW_RESIZE
             mouseEvent.y < RESIZE_THRESHOLD -> Cursor.N_RESIZE
             mouseEvent.x > stage.width - RESIZE_THRESHOLD -> Cursor.E_RESIZE
             mouseEvent.y > stage.height - RESIZE_THRESHOLD -> Cursor.S_RESIZE
             mouseEvent.x < RESIZE_THRESHOLD -> Cursor.W_RESIZE
-            else -> Cursor.DEFAULT
+            else -> null
         }
 
-        return stage.scene.cursor != Cursor.DEFAULT
+        return stage.scene.cursor != null
     }
 }
