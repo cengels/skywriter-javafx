@@ -46,7 +46,7 @@ data class Theme (
     /** The text alignment of normal text in the document. */
     var textAlignment: TextAlignment = TextAlignment.LEFT,
     /** The color of the font shadow, if applicable. */
-    var fontShadowColor: Color = Color.BLACK,
+    var fontShadowColor: Color = Color.TRANSPARENT,
     /** The radius of the font shadow (a value between 0.0 and 127.0). */
     var fontShadowRadius: Double = 2.0,
     /** The spread of the font shadow, i.e. the portion of the radius where the contribution of the source material is 100%. Value between 0.0 and 1.0. */
