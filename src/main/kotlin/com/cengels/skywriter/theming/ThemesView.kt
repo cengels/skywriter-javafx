@@ -3,9 +3,11 @@ package com.cengels.skywriter.theming
 import com.cengels.skywriter.fragments.ThemedView
 import com.cengels.skywriter.style.ThemedStylesheet
 import com.cengels.skywriter.style.ThemingStylesheet
+import com.cengels.skywriter.svg.Icons
 import com.cengels.skywriter.util.bindSelectedItem
 import com.cengels.skywriter.util.getBackgroundFor
 import com.cengels.skywriter.util.setRadiusClip
+import com.cengels.skywriter.util.svgbutton
 import javafx.geometry.Pos
 import javafx.scene.control.ButtonBar
 import javafx.scene.control.ButtonType
@@ -30,7 +32,7 @@ class ThemesView(val themesManager: ThemesManager) : ThemedView("Themes", Themin
     }
 
     override val content = borderpane {
-        this.useMaxSize = true
+        this.fitToParentSize()
         center {
             datagrid(themesManager.themes) {
                 addClass(ThemingStylesheet.themesGrid)
@@ -90,10 +92,9 @@ class ThemesView(val themesManager: ThemesManager) : ThemedView("Themes", Themin
         }
 
         right {
-            vbox {
+            vbox(2) {
                 addClass(ThemedStylesheet.buttonBox)
-                spacing = 10.0
-                button("Add").action {
+                svgbutton(Icons.PLUS, "Add theme").action {
                     openEditDialog(Theme()).result {
                         if (ok) {
                             themesManager.themes.add(result)
@@ -101,11 +102,11 @@ class ThemesView(val themesManager: ThemesManager) : ThemedView("Themes", Themin
                         }
                     }
                 }
-                button("Duplicate").action {
+                svgbutton(Icons.SQUARES, "Duplicate theme").action {
                     themesManager.duplicate()
                     themesManager.save()
                 }
-                button("Edit") {
+                svgbutton(Icons.PENCIL, "Edit theme") {
                     action {
                         openEditDialog(themesManager.selectedTheme!!).result {
                             if (ok) {
@@ -116,7 +117,7 @@ class ThemesView(val themesManager: ThemesManager) : ThemedView("Themes", Themin
                     // For some reason, the condition needs to evaluate to false for it to enable the button.
                     enableWhen { themesManager.selectedThemeProperty.booleanBinding { it != null && !it.default } }
                 }
-                button("Remove") {
+                svgbutton(Icons.TRASH, "Delete theme") {
                     enableWhen { themesManager.selectedThemeProperty.booleanBinding { it != null && !it.default } }
                     shortcut("Delete")
 
@@ -135,6 +136,7 @@ class ThemesView(val themesManager: ThemesManager) : ThemedView("Themes", Themin
         bottom {
             buttonbar {
                 button("OK", ButtonBar.ButtonData.OK_DONE) {
+                    addClass(ThemedStylesheet.primary)
                     enableWhen { themesManager.selectedThemeProperty.isNotNull }
 
                     action {
@@ -142,7 +144,10 @@ class ThemesView(val themesManager: ThemesManager) : ThemedView("Themes", Themin
                         close()
                     }
                 }
-                button("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE).action { close() }
+                button("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE) {
+                    addClass(ThemedStylesheet.secondary)
+                    action { close() }
+                }
             }
         }
     }

@@ -36,13 +36,13 @@ class ThemedTitlebar(
         right {
             hbox {
                 if (showMinimize) {
-                    svgbutton(Icons.HORIZONTAL_LINE).action { currentStage?.isIconified = true }
+                    svgbutton(Icons.HORIZONTAL_LINE, "Minimize").action { currentStage?.isIconified = true }
                 }
                 if (showMaximize) {
-                    svgbutton(Icons.CORNERLESS_SQUARE).action { currentStage?.isMaximized = !currentStage!!.isMaximized }
+                    svgbutton(Icons.CORNERLESS_SQUARE, "Maximize").action { currentStage?.isMaximized = !currentStage!!.isMaximized }
                 }
                 if (showClose) {
-                    svgbutton(Icons.X).action { close() }
+                    svgbutton(Icons.X, "Close").action { close() }
                 }
             }
         }

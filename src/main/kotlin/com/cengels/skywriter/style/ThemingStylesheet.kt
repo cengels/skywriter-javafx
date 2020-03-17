@@ -1,6 +1,7 @@
 package com.cengels.skywriter.style
 
 import com.cengels.skywriter.SkyWriterApp
+import javafx.scene.paint.Color
 import tornadofx.*
 
 class ThemingStylesheet : Stylesheet() {
@@ -15,7 +16,11 @@ class ThemingStylesheet : Stylesheet() {
             padding = box(6.px)
             backgroundRadius += box(ThemedStylesheet.cornerRadius)
             borderRadius += box(ThemedStylesheet.cornerRadius)
-            +selectable
+            +selectable()
+
+            and(selectedClass, pressed) {
+                backgroundColor += Colors.PRIMARY
+            }
         }
 
         themeLabel {

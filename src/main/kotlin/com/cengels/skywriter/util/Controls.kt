@@ -4,6 +4,7 @@ import com.cengels.skywriter.enum.FieldType
 import com.cengels.skywriter.style.GeneralStylesheet
 import com.cengels.skywriter.style.ThemedStylesheet
 import com.cengels.skywriter.style.WriterViewStylesheet
+import com.cengels.skywriter.svg.SVG
 import com.cengels.skywriter.util.convert.EnumConverter
 import com.cengels.skywriter.util.convert.SuffixConverter
 import com.sun.javafx.scene.control.skin.ComboBoxListViewSkin
@@ -16,11 +17,13 @@ import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.layout.Pane
 import javafx.scene.layout.Priority
+import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import javafx.scene.shape.Line
 import javafx.scene.shape.SVGPath
 import javafx.scene.shape.Shape
 import javafx.scene.text.Font
+import javafx.scene.text.TextAlignment
 import javafx.stage.Popup
 import javafx.stage.PopupWindow
 import javafx.util.StringConverter
@@ -297,33 +300,40 @@ fun Node.popupOnClick(fadeDurationMs: Number = 0.0, offsetX: Number = 0.0, offse
     }
 }
 
-fun SVGPath(path: String): SVGPath = SVGPath().apply {
-    addClass(ThemedStylesheet.svg)
-    content = path
-}
-
-fun SVGLine(x1: Double, y1: Double, x2: Double, y2: Double): Line = Line(x1, y1, x2, y2).apply {
-    addClass(ThemedStylesheet.svg)
-}
-
-fun EventTarget.svgbutton(path: String, op: Button.() -> Unit = {}): Button {
-    return svgbutton(SVGPath(path), op)
-}
-
-fun EventTarget.svgbutton(svg: Shape, op: Button.() -> Unit = {}): Button {
-    if (!svg.hasClass(ThemedStylesheet.svg)) {
-        svg.addClass(ThemedStylesheet.svg)
-    }
-
+fun EventTarget.svgbutton(svg: SVG, hint: String, addClass: Boolean = true, op: Button.() -> Unit = {}): Button {
     return button(graphic = svg) {
         addClass(GeneralStylesheet.plainButton)
+        if (addClass) {
+            addClass(ThemedStylesheet.svgButton)
+        }
+        tooltip(hint)
         useMaxSize = true
+        alignment = Pos.CENTER
+        textAlignment = TextAlignment.CENTER
 
         op(this)
     }
 }
 
 fun SelectionHolder.s(selector: String) = select(selector) {}
+
+/** Sets the style min, max, and pref heights of this element to the specified value. */
+var PropertyHolder.height: Dimension<Dimension.LinearUnits>
+    get() = if (this.prefHeight.value != 0.0) this.prefHeight else this.minHeight
+    set(value) {
+        this.minHeight = value
+        this.prefHeight = value
+        this.maxHeight = value
+    }
+
+/** Sets the style min, max, and pref widths of this element to the specified value. */
+var PropertyHolder.width: Dimension<Dimension.LinearUnits>
+    get() = if (this.prefWidth.value != 0.0) this.prefWidth else this.minWidth
+    set(value) {
+        this.minWidth = value
+        this.prefWidth = value
+        this.maxWidth = value
+    }
 
 /** Represents a selector of style "`element *`". */
 val Scoped.allDescendants

@@ -2,6 +2,9 @@ package com.cengels.skywriter.style
 
 import com.cengels.skywriter.SkyWriterApp
 import com.cengels.skywriter.util.allDescendants
+import com.cengels.skywriter.util.height
+import com.cengels.skywriter.util.width
+import javafx.geometry.Pos
 import javafx.scene.Cursor
 import javafx.scene.paint.Color
 import javafx.scene.shape.StrokeLineCap
@@ -12,18 +15,21 @@ class ThemedStylesheet : Stylesheet() {
         val themedView by cssclass()
         val titleBar by cssclass()
         val applicationIcon by cssclass()
-        val svg by cssclass()
         val spacedLabel by cssclass()
         val spacedLabelText by cssclass()
         val skyText by cssclass()
         val skyButton by cssclass()
         val buttonBox by cssclass()
         val trackBackground by cssclass()
+        val primary by cssclass()
+        val secondary by cssclass()
+        val svgButton by cssclass()
+        val svgMaximize by cssclass()
 
         val titleBarHeight = 30.px
         val titleBarButtonWidth = 40.px
         val cornerRadius = 16.px
-        const val titleBarIconScale = 0.9
+        val svgIconSize = 21.px
     }
 
     init {
@@ -38,17 +44,13 @@ class ThemedStylesheet : Stylesheet() {
                 textFill = Colors.Font.REGULAR
             }
 
-            button {
-                +selectable
-            }
-
             titleBar {
-                backgroundColor += Colors.Primary.REGULAR
+                backgroundColor += Colors.Background.HIGH
                 minHeight = titleBarHeight
                 maxHeight = titleBarHeight
                 padding = box(0.px, 0.px, 0.px, 8.px)
 
-                GeneralStylesheet.plainButton {
+                svgButton {
                     padding = box(0.px)
                     minWidth = titleBarButtonWidth
                     maxWidth = titleBarButtonWidth
@@ -56,40 +58,40 @@ class ThemedStylesheet : Stylesheet() {
                     minHeight = titleBarHeight - 1
                     maxHeight = titleBarHeight - 1
 
-                    backgroundColor += Color.TRANSPARENT
+                    +selectable(Color.TRANSPARENT)
 
                     and(hover) {
                         backgroundColor += Colors.Background.REGULAR
                     }
-
-                    svg {
-                        scaleX = titleBarIconScale
-                        scaleY = titleBarIconScale
-                    }
                 }
 
                 applicationIcon {
-                    fill = Colors.Font.REGULAR
-                }
-            }
-
-            GeneralStylesheet.plainButton {
-                s(svg, svg.allDescendants) {
-                    stroke = Colors.Font.REGULAR
-                    strokeWidth = 2.px
-                    strokeLineCap = StrokeLineCap.ROUND
+                    star {
+                        fill = Colors.Font.REGULAR
+                    }
                 }
             }
 
             s(buttonBox, buttonBar) {
                 padding = box(6.px)
+
+                svgButton {
+                    padding = box(8.px)
+                    backgroundRadius += box(50.percent)
+                    borderRadius += box(50.percent)
+
+                    GeneralStylesheet.svg {
+                        height = svgIconSize
+                        width = svgIconSize
+                    }
+                }
             }
 
             buttonBar {
                 minHeight = 40.px
             }
 
-            s(buttonBox contains button, buttonBar contains button, skyButton) {
+            s(buttonBar contains button, skyButton) {
                 minWidth = 7.5.em
                 minHeight = 0.9.em
                 borderWidth += CssBox(0.px, 0.px, 0.px, 0.px)
@@ -107,14 +109,13 @@ class ThemedStylesheet : Stylesheet() {
                     backgroundColor += Color.TRANSPARENT
                 }
 
-                s(incrementButton, decrementButton) {
+                s(incrementArrow, decrementArrow) {
                     fill = Color.TRANSPARENT
                     backgroundColor += Color.TRANSPARENT
                 }
 
                 thumb {
-                    backgroundColor += Colors.Background.LOW
-                    +selectable
+                    +selectable()
                 }
             }
 
@@ -128,8 +129,35 @@ class ThemedStylesheet : Stylesheet() {
             }
 
             comboBoxBase {
-                +selectable
+                +selectable()
             }
+
+            button {
+                +selectable()
+
+                and(secondary) {
+                    textFill = Colors.Font.LOW
+                }
+            }
+
+            svgButton {
+                +selectable(Color.TRANSPARENT)
+            }
+        }
+
+        svgButton {
+            +selectable(Color.TRANSPARENT)
+
+            s(GeneralStylesheet.svg, GeneralStylesheet.svg.allDescendants) {
+                fill = Color.TRANSPARENT
+                stroke = Colors.Font.REGULAR
+                strokeWidth = 2.px
+                strokeLineCap = StrokeLineCap.ROUND
+            }
+        }
+
+        s(svgMaximize, svgMaximize.allDescendants) {
+            strokeWidth = 2.5.px
         }
     }
 }

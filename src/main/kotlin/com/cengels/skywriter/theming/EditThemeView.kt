@@ -113,7 +113,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>)
                                 }
                                 useMaxWidth = true
                             }
-                            svgbutton(Icons.X) {
+                            svgbutton(Icons.X, "Remove background image") {
                                 disableWhen { model.backgroundImageProperty.isBlank() }
                                 action {
                                     model.backgroundImage = null
@@ -180,7 +180,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>)
                             colorpicker(model.fontShadowColorProperty, ColorPickerMode.Button) {
                                 useMaxWidth = true
                             }
-                            svgbutton(Icons.X) {
+                            svgbutton(Icons.X, "Remove font shadow") {
                                 disableWhen { model.fontShadowColorProperty.isEqualTo(Color.TRANSPARENT) }
                                 action {
                                     model.fontShadowColor = Color.TRANSPARENT

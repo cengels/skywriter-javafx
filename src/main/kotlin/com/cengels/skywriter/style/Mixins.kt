@@ -19,16 +19,22 @@ fun fontSmoothing(color: Color) = mixin {
     effect = DropShadow(BlurType.GAUSSIAN, color.shift(opacityBy = -0.25), 0.1, 0.0, 0.0, 0.0)
 }
 
-val selectable = mixin {
+fun selectable(base: Color = Colors.Background.LOW) = mixin {
     cursor = Cursor.HAND
 
-    backgroundColor += Colors.Background.LOW
+    backgroundColor += base
 
     and(hover) {
-        backgroundColor += Colors.Background.HOVER
+        backgroundColor += when (base) {
+            Color.TRANSPARENT -> Colors.Background.LOW
+            else -> Colors.Background.HOVER
+        }
     }
 
     and(selectedClass, pressed) {
-        backgroundColor += Colors.Background.SELECTION
+        backgroundColor += when (base) {
+            Color.TRANSPARENT -> Colors.Background.HOVER
+            else -> Colors.Background.SELECTION
+        }
     }
 }

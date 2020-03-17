@@ -7,6 +7,7 @@ import tornadofx.*
 class GeneralStylesheet : Stylesheet() {
     companion object {
         val plainButton by cssclass()
+        val svg by cssclass()
     }
 
     init {
