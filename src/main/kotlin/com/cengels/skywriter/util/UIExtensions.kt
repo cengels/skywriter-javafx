@@ -14,7 +14,10 @@ import javafx.beans.value.ObservableValue
 import javafx.beans.value.WritableValue
 import javafx.css.Styleable
 import javafx.event.EventTarget
+import javafx.geometry.BoundingBox
+import javafx.geometry.Bounds
 import javafx.geometry.Insets
+import javafx.geometry.Rectangle2D
 import javafx.scene.Node
 import javafx.scene.Scene
 import javafx.scene.image.Image
@@ -22,9 +25,11 @@ import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.shape.Rectangle
 import javafx.stage.FileChooser
+import javafx.stage.Screen
 import javafx.stage.Window
 import javafx.util.Duration
 import tornadofx.*
+import kotlin.math.min
 import kotlin.reflect.KClass
 import kotlin.reflect.full.primaryConstructor
 
@@ -187,3 +192,23 @@ fun Region.setRadiusClip(radius: Number) {
         }
     })
 }
+
+/** Gets the boundaries of the screen the window is placed on. If the window is placed on multiple screens, gets its combined bounding box. */
+val Window.screenBounds: Rectangle2D
+    get() {
+        var minX = 0.0
+        var minY = 0.0
+        var width = 0.0
+        var height = 0.0
+
+        Screen.getScreensForRectangle(this.x, this.y, this.width, this.height).forEach {
+            it.visualBounds.apply {
+                minX = min(this.minX, minX)
+                minY = min(this.minY, minY)
+                width = min(this.width, width)
+                height = min(this.height, height)
+            }
+        }
+
+        return Rectangle2D(minX, minY, width, height)
+    }

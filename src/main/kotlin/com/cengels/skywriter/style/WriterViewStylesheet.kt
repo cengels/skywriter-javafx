@@ -171,20 +171,13 @@ class WriterViewStylesheet(theme: Theme) : Stylesheet() {
         }
 
         s(scrollBar, trackBackground) {
+            cursor = Cursor.HAND
             backgroundColor += Color.TRANSPARENT
         }
 
         thumb {
-            backgroundColor += theme.documentBackground.shiftBy(0.15)
-            backgroundColor += documentHoverColor
-
-            and(hover) {
-                backgroundColor += documentHoverColor
-            }
-        }
-
-        s(scrollBar.and(active).child(thumb)) {
-            backgroundColor += documentHoverColor
+            minHeight = 50.px
+            +selectable(theme.documentBackground.shiftBy(0.15), documentHoverColor, documentHoverColor.shiftBy(-0.1))
         }
 
         s(incrementButton, decrementButton) {

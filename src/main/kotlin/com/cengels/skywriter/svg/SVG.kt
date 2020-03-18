@@ -16,7 +16,7 @@ import tornadofx.setValue
 import kotlin.math.min
 
 /** A group of SVG [Shape]s including the ability to scale and align the child shapes however desired. */
-class SVG(width: Number? = null, height: Number? = width, scaleToFit: Boolean = true, maintainAspectRatio: Boolean = true, alignment: Pos = Pos.CENTER) : Region() {
+class SVG(width: Number? = null, height: Number? = null, scaleToFit: Boolean = true, maintainAspectRatio: Boolean = true, alignment: Pos = Pos.CENTER) : Region() {
     private val group = Group()
     val scaleToFitProperty = SimpleBooleanProperty(scaleToFit)
     /** If true, the contained nodes will be scaled to match the size of this element. Default is true. */
@@ -27,6 +27,10 @@ class SVG(width: Number? = null, height: Number? = width, scaleToFit: Boolean = 
     val alignmentProperty = SimpleObjectProperty(alignment)
     /** Aligns the contained nodes to this element. If [scaleToFit] is true and [maintainAspectRatio] is false, this has no effect. Default is [Pos.CENTER]. */
     var alignment: Pos by alignmentProperty
+
+    // This constructor is technically redundant but helpful for IDE parameter info.
+    constructor(size: Number, scaleToFit: Boolean = true, maintainAspectRatio: Boolean = true, alignment: Pos = Pos.CENTER)
+            : this(size, size, scaleToFit, maintainAspectRatio, alignment)
 
     init {
         addClass(GeneralStylesheet.svg)

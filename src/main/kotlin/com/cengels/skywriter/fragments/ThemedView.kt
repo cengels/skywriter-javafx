@@ -1,13 +1,16 @@
 package com.cengels.skywriter.fragments
 
 import com.cengels.skywriter.style.ThemedStylesheet
+import com.cengels.skywriter.util.screenBounds
 import com.cengels.skywriter.util.setRadiusClip
 import javafx.scene.Parent
 import javafx.scene.paint.Color
 import javafx.scene.shape.Rectangle
 import javafx.stage.Modality
+import javafx.stage.Screen
 import javafx.stage.StageStyle
 import tornadofx.*
+import kotlin.math.min
 
 /** Represents a [View] that uses its own themed title bar rather than the default JavaFX one. */
 abstract class ThemedView(title: String? = null, val stylesheet: Stylesheet? = null) : View(title) {
@@ -29,10 +32,11 @@ abstract class ThemedView(title: String? = null, val stylesheet: Stylesheet? = n
         root += content
     }
 
-    /** Sets the window's initial size. Should be called in [onBeforeShow] to ensure a stage exists. */
+    /** Sets the window's initial size. */
     fun setWindowInitialSize(width: Number, height: Number) = currentStage?.apply {
-        this.width = width.toDouble()
-        this.height = height.toDouble()
+        val screenBounds = this.screenBounds.let { if (it.height == 0.0 || it.width == 0.0) Screen.getPrimary().visualBounds else it }
+        this.width = width.toDouble().coerceIn(this.minWidth..min(this.maxWidth, screenBounds.width))
+        this.height = height.toDouble().coerceIn(this.minHeight..min(this.maxHeight, screenBounds.height))
     }
 
     override fun onBeforeShow() {

@@ -32,6 +32,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>)
         super.onDock()
 
         setWindowMinSize(900.0, 440.0)
+        setWindowInitialSize(1120.0, 690.0)
         // During the first layout pass, widthProperty does not fire a changed event.
         // Therefore, prefHeight will remain unset without the below call.
         Platform.runLater { textAreaBox?.requestLayout() }
@@ -41,10 +42,10 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>)
         left {
             scrollpane {
                 hbarPolicy = ScrollPane.ScrollBarPolicy.NEVER
-                maxWidth = 307.5
+                maxWidth = 350.0
 
                 form {
-                    maxWidth = 300.0
+                    maxWidth = this@scrollpane.maxWidth - 7.5
                     fieldset {
                         field("Name") {
                             textfield(model.nameProperty) {

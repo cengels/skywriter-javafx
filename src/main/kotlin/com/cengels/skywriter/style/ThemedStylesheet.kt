@@ -38,8 +38,11 @@ class ThemedStylesheet : Stylesheet() {
             backgroundRadius += box(cornerRadius)
             borderRadius += box(cornerRadius)
 
-            s(spacedLabelText, skyText) {
+            s(form contains label, form contains text) {
                 font = SkyWriterApp.applicationFont
+            }
+
+            s(spacedLabelText, skyText) {
                 fill = Colors.Font.REGULAR
                 textFill = Colors.Font.REGULAR
             }
@@ -62,6 +65,10 @@ class ThemedStylesheet : Stylesheet() {
 
                     and(hover) {
                         backgroundColor += Colors.Background.REGULAR
+                    }
+
+                    s(GeneralStylesheet.svg, GeneralStylesheet.svg.allDescendants) {
+                        stroke = Colors.Font.DEEP
                     }
                 }
 
@@ -96,20 +103,25 @@ class ThemedStylesheet : Stylesheet() {
                 minHeight = 0.9.em
                 borderWidth += CssBox(0.px, 0.px, 0.px, 0.px)
                 textFill = Colors.Font.REGULAR
-                font = SkyWriterApp.applicationFont
                 fontSize = 10.pt
                 padding = box(3.px)
             }
 
             scrollBar {
                 backgroundColor += Color.TRANSPARENT
-                minWidth = 20.px
+                prefWidth = 14.px
+                prefHeight = 14.px
 
                 trackBackground {
                     backgroundColor += Color.TRANSPARENT
                 }
 
                 s(incrementArrow, decrementArrow) {
+                    // Can't apply this style to incrementButton, decrementButton
+                    // because the VirtualizedScrollPane uses these buttons to calculate its own size
+                    // meaning without them it will always be invisible.
+                    height = 0.px
+                    width = 0.px
                     fill = Color.TRANSPARENT
                     backgroundColor += Color.TRANSPARENT
                 }
@@ -119,17 +131,38 @@ class ThemedStylesheet : Stylesheet() {
                 }
             }
 
-            s(form contains label, form contains text, textField, comboBoxBase contains label) {
-                font = SkyWriterApp.applicationFont
-                fill = Colors.Font.LOW
-                textFill = Colors.Font.LOW
+            form {
+                s(button, comboBoxBase, textField) {
+                    height = 32.px
+                }
+
+                label {
+                    and(legend) {
+                        +textColor(Colors.Font.REGULAR)
+                    }
+
+                    +textColor(Colors.Font.DEEP)
+                }
+
+                button {
+                    +textColor(Colors.Font.LOW)
+                }
             }
 
             textField {
+                backgroundColor += Colors.Background.LOW
+                +textColor(Colors.Font.LOW)
             }
 
             comboBoxBase {
-                +selectable()
+                +selectable(Colors.Background.LOW)
+                +textColor(Colors.Font.LOW)
+
+                arrowButton {
+                    padding = box(0.px, 9.px)
+                    // backgroundColor += c("#382f5c")
+                    backgroundColor += Colors.Background.HOVER
+                }
             }
 
             button {
@@ -150,14 +183,14 @@ class ThemedStylesheet : Stylesheet() {
 
             s(GeneralStylesheet.svg, GeneralStylesheet.svg.allDescendants) {
                 fill = Color.TRANSPARENT
-                stroke = Colors.Font.REGULAR
+                stroke = Colors.Font.LOW
                 strokeWidth = 2.px
                 strokeLineCap = StrokeLineCap.ROUND
             }
-        }
 
-        s(svgMaximize, svgMaximize.allDescendants) {
-            strokeWidth = 2.5.px
+            s(svgMaximize, svgMaximize.allDescendants) {
+                strokeWidth = 2.5.px
+            }
         }
     }
 }

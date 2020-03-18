@@ -14,6 +14,7 @@ object Colors {
         override val DISABLED = c("#413c54")
     }
     object Font : LeveledColorSet {
+        val DEEP = c("#9e9e9f")
         override val LOW = c("#A8A8A9")
         override val REGULAR = c("#CACACA")
         override val HIGH = c("#FCFCFC")

@@ -25,7 +25,7 @@ class ThemedTitlebar(
             hbox(11) {
                 alignment = Pos.CENTER
                 if (showIcon) {
-                    this += Icons.SKY_WRITER
+                    this += Icons.SKYWRITER
                 }
                 if (viewTitle != null) {
                     this += SpacedLabel(viewTitle, 0.4)
