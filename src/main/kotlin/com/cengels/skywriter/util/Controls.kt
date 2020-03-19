@@ -94,8 +94,9 @@ fun EventTarget.percentfield(property: Property<Double>, max: Double = 1.0, op: 
     }
 }
 
+@Suppress("UNCHECKED_CAST")
 /** Adds a custom text field that only accepts integers and shows a suffix. */
-fun EventTarget.pixelfield(property: Property<Number>, op: TextField.() -> Unit = {}) = textfield(property, SuffixConverter("pixels"), op).apply {
+fun <T : Number> EventTarget.pixelfield(property: Property<T>, op: TextField.() -> Unit = {}) = textfield(property as Property<Number>, SuffixConverter("pixels"), op).apply {
     alignment = Pos.CENTER_RIGHT
     val suffix = " pixels"
     hgrow = Priority.ALWAYS

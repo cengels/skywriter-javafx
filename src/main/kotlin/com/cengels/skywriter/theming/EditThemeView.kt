@@ -166,12 +166,12 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>)
                         field {
                             (inputContainer as HBox).alignment = Pos.CENTER_LEFT
                             label("Horizontal").minWidth = 60.0
-                            pixelfield(model.paddingHorizontalProperty as Property<Number>)
+                            pixelfield(model.paddingHorizontalProperty)
                             label("Vertical") {
                                 minWidth = 50.0
                                 alignment = Pos.CENTER_RIGHT
                             }
-                            pixelfield(model.paddingVerticalProperty as Property<Number>)
+                            pixelfield(model.paddingVerticalProperty)
                         }
                     }
 
@@ -190,7 +190,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>)
                         }
                         field {
                             label("Radius").minWidth = 50.0
-                            pixelfield(model.fontShadowRadiusProperty as Property<Number>) {
+                            pixelfield(model.fontShadowRadiusProperty) {
                                 validator {
                                     if (it == null || !it.isDouble() || it.toDouble() > 127.0) {
                                         error("Value must be between 0 and 127.");
@@ -204,9 +204,9 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>)
                         }
                         field {
                             label("Offset X").minWidth = 50.0
-                            pixelfield(model.fontShadowOffsetXProperty as Property<Number>)
+                            pixelfield(model.fontShadowOffsetXProperty)
                             label("Offset Y").minWidth = 50.0
-                            pixelfield(model.fontShadowOffsetYProperty as Property<Number>)
+                            pixelfield(model.fontShadowOffsetYProperty)
                         }
                     }
                 }
