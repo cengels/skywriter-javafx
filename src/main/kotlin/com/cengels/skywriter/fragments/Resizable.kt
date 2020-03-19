@@ -10,15 +10,22 @@ import java.lang.Double.max
 import java.lang.IllegalArgumentException
 
 /** Adds resizable behaviour to an undecorated stage. */
-class Resizable(val stage: Stage) {
+class Resizable(val stage: Stage,
+                /** The number of pixels just inside the outer window that the cursor can resize the window in. */
+                val threshold: Double = DEFAULT_THRESHOLD) {
     companion object {
-        /** The number of pixels just inside the outer window that the cursor can resize the window in. */
-        var RESIZE_THRESHOLD: Double = 6.0
+        const val DEFAULT_THRESHOLD: Double = 6.0
     }
+    /** True if a resize operation is in progress to prevent other UI events from changing the cursor mid-resize, for instance. */
     private var resizing = false
+    /** True if the user's cursor is near one of the edges. */
     private var canResize = false
+    /** The mouse coordinates at the start of the resize operation. */
     private var resizeStartPosition: Point2D? = null
+    /** The stage's size at the start of the resize operation. */
     private var resizeStartSize: Point2D? = null
+    /** The stage's position at the start of the resize operation. */
+    private var stageStartPosition: Point2D? = null
 
     init {
         if (stage.style !== StageStyle.TRANSPARENT && stage.style !== StageStyle.UNDECORATED) {
@@ -38,6 +45,7 @@ class Resizable(val stage: Stage) {
                 resizing = true
                 resizeStartPosition = Point2D(it.screenX, it.screenY)
                 resizeStartSize = Point2D(stage.width, stage.height)
+                stageStartPosition = Point2D(stage.x, stage.y)
                 it.consume()
             }
         }
@@ -68,35 +76,37 @@ class Resizable(val stage: Stage) {
     }
 
     private fun resizeX(mouseEvent: MouseEvent) {
-        val minWidth = max(stage.minWidth, RESIZE_THRESHOLD * 2)
-        val start = resizeStartPosition ?: return
+        val minWidth = max(stage.minWidth, threshold * 2)
+        val mouseStart = resizeStartPosition ?: return
+        val stageStart = stageStartPosition ?: return
         val size = resizeStartSize ?: return
 
         if (stage.scene.cursor.isAnyOf(Cursor.NW_RESIZE, Cursor.W_RESIZE, Cursor.SW_RESIZE)) {
             if (stage.width > minWidth || mouseEvent.x < 0) {
-                stage.width = (stage.x - mouseEvent.screenX + stage.width).coerceAtLeast(minWidth)
-                stage.x = mouseEvent.screenX
+                stage.width = (size.x + (mouseStart.x - mouseEvent.screenX)).coerceAtLeast(minWidth)
+                stage.x = (stageStart.x - mouseStart.x) + mouseEvent.screenX
             }
         } else {
-            if (stage.width > minWidth || mouseEvent.x + start.x - stage.width > 0) {
-                stage.width = (mouseEvent.screenX - start.x + size.x).coerceAtLeast(minWidth)
+            if (stage.width > minWidth || mouseEvent.x + mouseStart.x - stage.width > 0) {
+                stage.width = (mouseEvent.screenX - mouseStart.x + size.x).coerceAtLeast(minWidth)
             }
         }
     }
 
     private fun resizeY(mouseEvent: MouseEvent) {
-        val minHeight = max(stage.minHeight, RESIZE_THRESHOLD * 2)
-        val start = resizeStartPosition ?: return
+        val minHeight = max(stage.minHeight, threshold * 2)
+        val mouseStart = resizeStartPosition ?: return
+        val stageStart = stageStartPosition ?: return
         val size = resizeStartSize ?: return
 
         if (stage.scene.cursor.isAnyOf(Cursor.NW_RESIZE, Cursor.N_RESIZE, Cursor.NE_RESIZE)) {
             if (stage.height > minHeight || mouseEvent.y < 0) {
-                stage.height = (stage.y - mouseEvent.screenY + stage.height).coerceAtLeast(minHeight)
-                stage.y = mouseEvent.screenY
+                stage.height = (size.y + (mouseStart.y - mouseEvent.screenY)).coerceAtLeast(minHeight)
+                stage.y = (stageStart.y - mouseStart.y) + mouseEvent.screenY
             }
         } else {
-            if (stage.height > minHeight || mouseEvent.y + start.y - stage.height > 0) {
-                stage.height = (mouseEvent.screenY - start.y + size.y).coerceAtLeast(minHeight)
+            if (stage.height > minHeight || mouseEvent.y + mouseStart.y - stage.height > 0) {
+                stage.height = (mouseEvent.screenY - mouseStart.y + size.y).coerceAtLeast(minHeight)
             }
         }
     }
@@ -111,14 +121,14 @@ class Resizable(val stage: Stage) {
         }
 
         stage.scene.cursor = when {
-            mouseEvent.x > stage.width - RESIZE_THRESHOLD * 2 && mouseEvent.y < RESIZE_THRESHOLD * 2 -> Cursor.NE_RESIZE
-            mouseEvent.x > stage.width - RESIZE_THRESHOLD * 2 && mouseEvent.y > stage.height - RESIZE_THRESHOLD * 2 -> Cursor.SE_RESIZE
-            mouseEvent.x < RESIZE_THRESHOLD * 2 && mouseEvent.y < RESIZE_THRESHOLD * 2 -> Cursor.NW_RESIZE
-            mouseEvent.x < RESIZE_THRESHOLD * 2 && mouseEvent.y > stage.height - RESIZE_THRESHOLD * 2 -> Cursor.SW_RESIZE
-            mouseEvent.y < RESIZE_THRESHOLD -> Cursor.N_RESIZE
-            mouseEvent.x > stage.width - RESIZE_THRESHOLD -> Cursor.E_RESIZE
-            mouseEvent.y > stage.height - RESIZE_THRESHOLD -> Cursor.S_RESIZE
-            mouseEvent.x < RESIZE_THRESHOLD -> Cursor.W_RESIZE
+            mouseEvent.x > stage.width - threshold * 2 && mouseEvent.y < threshold * 2 -> Cursor.NE_RESIZE
+            mouseEvent.x > stage.width - threshold * 2 && mouseEvent.y > stage.height - threshold * 2 -> Cursor.SE_RESIZE
+            mouseEvent.x < threshold * 2 && mouseEvent.y < threshold * 2 -> Cursor.NW_RESIZE
+            mouseEvent.x < threshold * 2 && mouseEvent.y > stage.height - threshold * 2 -> Cursor.SW_RESIZE
+            mouseEvent.y < threshold -> Cursor.N_RESIZE
+            mouseEvent.x > stage.width - threshold -> Cursor.E_RESIZE
+            mouseEvent.y > stage.height - threshold -> Cursor.S_RESIZE
+            mouseEvent.x < threshold -> Cursor.W_RESIZE
             else -> null
         }
 

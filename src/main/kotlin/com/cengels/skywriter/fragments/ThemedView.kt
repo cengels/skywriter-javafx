@@ -4,6 +4,7 @@ import com.cengels.skywriter.style.ThemedStylesheet
 import com.cengels.skywriter.util.screenBounds
 import com.cengels.skywriter.util.setRadiusClip
 import javafx.scene.Parent
+import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import javafx.scene.shape.Rectangle
 import javafx.stage.Modality
@@ -18,18 +19,23 @@ abstract class ThemedView(title: String? = null, val stylesheet: Stylesheet? = n
     abstract val content: Parent
     /** If true, any instances of this view opened as modals are resizable. */
     var resizable: Boolean = true
+    private lateinit var themedViewContainer: VBox
 
     /** The root of this [ThemedView] will always be a [BorderPane] containing the titlebar and the [content]. */
-    final override val root = vbox(0) {
+    final override val root = stackpane {
         addClass(ThemedStylesheet.themedView)
 
-        this += ThemedTitlebar(title)
+        themedViewContainer = vbox(0) {
+            addClass(ThemedStylesheet.themedViewContainer)
+
+            this += ThemedTitlebar(title)
+        }
     }
 
     override fun onDock() {
         super.onDock()
 
-        root += content
+        themedViewContainer += content
     }
 
     /** Sets the window's initial size. */
@@ -48,7 +54,7 @@ abstract class ThemedView(title: String? = null, val stylesheet: Stylesheet? = n
 
         this.root.scene.fill = Color.TRANSPARENT
         currentStage?.apply {
-            root.setRadiusClip(ThemedStylesheet.cornerRadius.value)
+            themedViewContainer.setRadiusClip(ThemedStylesheet.cornerRadius.value)
         }
     }
 
@@ -66,7 +72,7 @@ abstract class ThemedView(title: String? = null, val stylesheet: Stylesheet? = n
             block = false,
             resizable = true
         )?.apply {
-            if (resizable) Resizable(this)
+            if (resizable) Resizable(this, ThemedStylesheet.shadowRadius)
 
             if (minWidth != 0.0 && width == 0.0) width = minWidth
             if (minHeight != 0.0 && height == 0.0) height = minHeight

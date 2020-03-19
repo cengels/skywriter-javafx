@@ -6,6 +6,7 @@ import com.cengels.skywriter.util.height
 import com.cengels.skywriter.util.width
 import javafx.geometry.Pos
 import javafx.scene.Cursor
+import javafx.scene.effect.DropShadow
 import javafx.scene.paint.Color
 import javafx.scene.shape.StrokeLineCap
 import tornadofx.*
@@ -13,6 +14,7 @@ import tornadofx.*
 class ThemedStylesheet : Stylesheet() {
     companion object {
         val themedView by cssclass()
+        val themedViewContainer by cssclass()
         val titleBar by cssclass()
         val applicationIcon by cssclass()
         val spacedLabel by cssclass()
@@ -30,13 +32,25 @@ class ThemedStylesheet : Stylesheet() {
         val titleBarButtonWidth = 40.px
         val cornerRadius = 16.px
         val svgIconSize = 21.px
+        const val shadowRadius = 10.0
+        val shadowColor = c(0.05, 0.05, 0.05, 0.3)
     }
 
     init {
         themedView {
-            backgroundColor += Colors.Background.REGULAR
+            backgroundColor += Color.TRANSPARENT
             backgroundRadius += box(cornerRadius)
             borderRadius += box(cornerRadius)
+
+            themedViewContainer {
+                backgroundColor += Colors.Background.REGULAR
+                backgroundRadius += box(cornerRadius)
+                borderRadius += box(cornerRadius)
+            }
+
+            backgroundInsets += box(shadowRadius.px)
+            padding = box(shadowRadius.px)
+            effect = DropShadow(shadowRadius, 2.5, 2.5, shadowColor)
 
             s(form contains label, form contains text, textField) {
                 font = SkyWriterApp.applicationFont

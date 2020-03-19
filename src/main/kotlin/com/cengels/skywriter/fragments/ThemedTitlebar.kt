@@ -3,6 +3,7 @@ package com.cengels.skywriter.fragments
 import com.cengels.skywriter.style.ThemedStylesheet
 import com.cengels.skywriter.svg.Icons
 import com.cengels.skywriter.util.SpacedLabel
+import com.cengels.skywriter.util.setRadiusClip
 import com.cengels.skywriter.util.svgbutton
 import javafx.geometry.Point2D
 import javafx.geometry.Pos
