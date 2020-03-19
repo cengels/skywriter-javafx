@@ -115,6 +115,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>)
                                 useMaxWidth = true
                             }
                             svgbutton(Icons.X, "Remove background image") {
+                                maxWidth = 33.0
                                 disableWhen { model.backgroundImageProperty.isBlank() }
                                 action {
                                     model.backgroundImage = null
@@ -182,6 +183,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>)
                                 useMaxWidth = true
                             }
                             svgbutton(Icons.X, "Remove font shadow") {
+                                maxWidth = 33.0
                                 disableWhen { model.fontShadowColorProperty.isEqualTo(Color.TRANSPARENT) }
                                 action {
                                     model.fontShadowColor = Color.TRANSPARENT

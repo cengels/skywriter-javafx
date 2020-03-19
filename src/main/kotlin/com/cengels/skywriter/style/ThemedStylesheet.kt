@@ -38,8 +38,9 @@ class ThemedStylesheet : Stylesheet() {
             backgroundRadius += box(cornerRadius)
             borderRadius += box(cornerRadius)
 
-            s(form contains label, form contains text) {
+            s(form contains label, form contains text, textField) {
                 font = SkyWriterApp.applicationFont
+                fontSize = 9.5.pt
             }
 
             s(spacedLabelText, skyText) {
@@ -103,7 +104,6 @@ class ThemedStylesheet : Stylesheet() {
                 minHeight = 0.9.em
                 borderWidth += CssBox(0.px, 0.px, 0.px, 0.px)
                 textFill = Colors.Font.REGULAR
-                fontSize = 10.pt
                 padding = box(3.px)
             }
 
@@ -152,6 +152,10 @@ class ThemedStylesheet : Stylesheet() {
             textField {
                 backgroundColor += Colors.Background.LOW
                 +textColor(Colors.Font.LOW)
+
+                and(focused) {
+                    backgroundColor += Colors.Background.HOVER
+                }
             }
 
             comboBoxBase {
@@ -163,6 +167,10 @@ class ThemedStylesheet : Stylesheet() {
                     // backgroundColor += c("#382f5c")
                     backgroundColor += Colors.Background.HOVER
                 }
+            }
+
+            colorPicker {
+                minWidth = 110.px
             }
 
             button {

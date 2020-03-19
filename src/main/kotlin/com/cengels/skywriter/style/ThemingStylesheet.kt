@@ -26,7 +26,7 @@ class ThemingStylesheet : Stylesheet() {
         themeLabel {
             padding = box(6.px, 0.px, 0.px, 0.px)
             font = SkyWriterApp.applicationFont
-            fontSize = 9.pt
+            fontSize = 10.pt
         }
     }
 }
