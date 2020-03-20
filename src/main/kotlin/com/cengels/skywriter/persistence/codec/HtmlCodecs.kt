@@ -3,12 +3,14 @@ package com.cengels.skywriter.persistence.codec
 import com.cengels.skywriter.style.FormattingStylesheet
 import com.cengels.skywriter.util.StyleClassedParagraph
 import com.cengels.skywriter.util.StyleClassedSegment
+import com.cengels.skywriter.util.toggle
 import javafx.scene.input.DataFormat
 import org.fxmisc.richtext.model.Paragraph
 import org.fxmisc.richtext.model.SegmentOps
 import org.fxmisc.richtext.model.StyledSegment
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
+import org.jsoup.nodes.TextNode
 import java.io.BufferedWriter
 
 object HtmlCodecs : CodecGroup<Any, Element> {
@@ -106,32 +108,33 @@ object HtmlCodecs : CodecGroup<Any, Element> {
         }
 
         override fun decode(input: Element): List<StyleClassedSegment> {
-            val styledSegments: MutableList<StyleClassedSegment> = mutableListOf()
+            return gatherSegments(input).let { if (it.isEmpty()) it.plus(StyledSegment("", mutableListOf())) else it }
+        }
 
-            if (input.wholeOwnText().isNotEmpty()) {
-                val style: MutableCollection<String> = mutableListOf()
+        /** Recursively traverses the element and its children and gathers all segments into a list of [StyleClassedSegment]s. */
+        private fun gatherSegments(element: Element, parentStyle: Set<String>? = null): List<StyleClassedSegment> {
+            return element.childNodes().fold(listOf()) { acc, it ->
+                val style: MutableSet<String> = parentStyle?.toMutableSet() ?: mutableSetOf()
+                when (it) {
+                    is Element -> {
+                        if (isBold(it)) {
+                            style.toggle(FormattingStylesheet.bold.name)
+                        }
 
-                if (isBold(input)) {
-                    style.add(FormattingStylesheet.bold.name)
+                        if (isItalicized(it)) {
+                            style.toggle(FormattingStylesheet.italic.name)
+                        }
+
+                        if (isStrikethrough(it)) {
+                            style.toggle(FormattingStylesheet.strikethrough.name)
+                        }
+
+                        acc.plus(gatherSegments(it, style))
+                    }
+                    is TextNode -> acc.plus(StyledSegment(it.wholeText, style) as StyleClassedSegment)
+                    else -> acc
                 }
-
-                if (isItalicized(input)) {
-                    style.add(FormattingStylesheet.italic.name)
-                }
-
-                if (isStrikethrough(input)) {
-                    style.add(FormattingStylesheet.strikethrough.name)
-                }
-
-                styledSegments.add(StyledSegment(input.wholeOwnText(), style))
-            } else if (input.childrenSize() == 0) {
-                return styledSegments.plus(StyledSegment("", mutableListOf()))
             }
-
-            return styledSegments.plus(
-                input.children()
-                    .flatMap { decode(it) }
-            )
         }
 
         private fun isBold(input: Element): Boolean {

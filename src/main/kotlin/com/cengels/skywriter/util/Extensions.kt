@@ -37,6 +37,17 @@ fun <T> Collection<T>.plusDistinct(element: T): List<T> {
     return this.toList()
 }
 
+/** Toggle the given element in the collection, i.e. removes if it already existed and adds it otherwise. Returns the original collection. */
+fun <TC : MutableCollection<T>, T> TC.toggle(element: T): TC {
+    if (this.contains(element)) {
+        this.remove(element)
+    } else {
+        this.add(element)
+    }
+
+    return this
+}
+
 /**
  * Returns a new instance of this list with all instances of the given element removed only if it was not already contained within the list.
  *
