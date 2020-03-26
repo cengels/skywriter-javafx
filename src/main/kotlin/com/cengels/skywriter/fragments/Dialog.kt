@@ -3,7 +3,7 @@ package com.cengels.skywriter.fragments
 import tornadofx.*
 
 /** Represents a [View] that returns a result when it is closed. */
-abstract class Dialog<T>(title: String? = null) : View(title) {
+abstract class Dialog<T>(title: String? = null, stylesheet: Stylesheet? = null) : ThemedView(title, stylesheet) {
     private var resultCallback: (Dialog<T>.() -> Unit)? = null
 
     /** If the form returns a concrete result like an edited or added object, this field contains it. */

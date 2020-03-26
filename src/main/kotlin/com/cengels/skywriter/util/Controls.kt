@@ -1,6 +1,10 @@
 package com.cengels.skywriter.util
 
 import com.cengels.skywriter.enum.FieldType
+import com.cengels.skywriter.style.GeneralStylesheet
+import com.cengels.skywriter.style.ThemedStylesheet
+import com.cengels.skywriter.style.WriterViewStylesheet
+import com.cengels.skywriter.svg.SVG
 import com.cengels.skywriter.util.convert.EnumConverter
 import com.cengels.skywriter.util.convert.SuffixConverter
 import com.sun.javafx.scene.control.skin.ComboBoxListViewSkin
@@ -13,13 +17,19 @@ import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.layout.Pane
 import javafx.scene.layout.Priority
+import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
+import javafx.scene.shape.Line
+import javafx.scene.shape.SVGPath
+import javafx.scene.shape.Shape
 import javafx.scene.text.Font
+import javafx.scene.text.TextAlignment
 import javafx.stage.Popup
 import javafx.stage.PopupWindow
 import javafx.util.StringConverter
 import javafx.util.converter.PercentageStringConverter
 import tornadofx.*
+import tornadofx.Stylesheet.Companion.star
 import java.time.Instant
 import kotlin.math.min
 
@@ -84,8 +94,9 @@ fun EventTarget.percentfield(property: Property<Double>, max: Double = 1.0, op: 
     }
 }
 
+@Suppress("UNCHECKED_CAST")
 /** Adds a custom text field that only accepts integers and shows a suffix. */
-fun EventTarget.pixelfield(property: Property<Number>, op: TextField.() -> Unit = {}) = textfield(property, SuffixConverter("pixels"), op).apply {
+fun <T : Number> EventTarget.pixelfield(property: Property<T>, op: TextField.() -> Unit = {}) = textfield(property as Property<Number>, SuffixConverter("pixels"), op).apply {
     alignment = Pos.CENTER_RIGHT
     val suffix = " pixels"
     hgrow = Priority.ALWAYS
@@ -195,13 +206,15 @@ fun EventTarget.fontpicker(property: Property<String>, fonts: List<String>? = Fo
     required()
 
     // This increases performance. Without this, opening the combobox for the first time takes over a second.
-    properties["comboBoxRowsToMeasureWidth"] = 10
+    properties["comboBoxRowsToMeasureWidth"] = 0
 
     // Show the font in its own font family
     setCellFactory {
         return@setCellFactory object: ListCell<String>() {
             override fun updateItem(item: String?, empty: Boolean) {
                 super.updateItem(item, empty)
+
+                prefWidth = 300.0
 
                 if (empty || item == null) {
                     text = null
@@ -215,7 +228,7 @@ fun EventTarget.fontpicker(property: Property<String>, fonts: List<String>? = Fo
     }
 
     // Auto complete
-    var searchString: String = ""
+    var searchString = ""
     var lastInput: Instant = Instant.MIN
 
     setOnKeyTyped { keyEvent ->
@@ -250,10 +263,10 @@ fun Node.popup(op: VBox.(popup: Popup) -> Unit = {}): Popup = Popup().apply {
     val popup = this
 
     content.add(VBox().apply {
-        initializeStyle()
+        // initializeStyle()
         spacing = 7.5
         useMaxSize = true
-        addClass("popup-box")
+        addClass(WriterViewStylesheet.popupBox)
         op(this, popup)
     })
 }
@@ -289,3 +302,42 @@ fun Node.popupOnClick(fadeDurationMs: Number = 0.0, offsetX: Number = 0.0, offse
         op(this, popup)
     }
 }
+
+fun EventTarget.svgbutton(svg: SVG, hint: String, addClass: Boolean = true, op: Button.() -> Unit = {}): Button {
+    return button(graphic = svg) {
+        addClass(GeneralStylesheet.plainButton)
+        if (addClass) {
+            addClass(ThemedStylesheet.svgButton)
+        }
+        tooltip(hint)
+        useMaxSize = true
+        alignment = Pos.CENTER
+        textAlignment = TextAlignment.CENTER
+
+        op(this)
+    }
+}
+
+fun SelectionHolder.s(selector: String) = select(selector) {}
+
+/** Sets the style min, max, and pref heights of this element to the specified value. */
+var PropertyHolder.height: Dimension<Dimension.LinearUnits>
+    get() = if (this.prefHeight.value != 0.0) this.prefHeight else this.minHeight
+    set(value) {
+        this.minHeight = value
+        this.prefHeight = value
+        this.maxHeight = value
+    }
+
+/** Sets the style min, max, and pref widths of this element to the specified value. */
+var PropertyHolder.width: Dimension<Dimension.LinearUnits>
+    get() = if (this.prefWidth.value != 0.0) this.prefWidth else this.minWidth
+    set(value) {
+        this.minWidth = value
+        this.prefWidth = value
+        this.maxWidth = value
+    }
+
+/** Represents a selector of style "`element *`". */
+val Scoped.allDescendants
+    get() = this contains star

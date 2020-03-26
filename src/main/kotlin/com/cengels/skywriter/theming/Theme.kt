@@ -1,12 +1,8 @@
 package com.cengels.skywriter.theming
 
 import com.cengels.skywriter.enum.ImageSizingType
-import com.cengels.skywriter.util.convert.ColorConverter
-import com.cengels.skywriter.util.shiftBy
+import javafx.scene.paint.Color
 import javafx.scene.text.TextAlignment
-import javafx.util.converter.PercentageStringConverter
-import tornadofx.css
-import java.awt.Color
 import java.io.Serializable
 
 /** A theme the user can apply to change the look of the main writing area. */
@@ -44,13 +40,13 @@ data class Theme (
     /** The color of text. */
     var fontColor: Color = Color.BLACK,
     /** The background color of the area behind the document. */
-    var windowBackground: Color = Color.LIGHT_GRAY,
+    var windowBackground: Color = Color.LIGHTGRAY,
     /** The background color of the text area. */
     var documentBackground: Color = Color.WHITE,
     /** The text alignment of normal text in the document. */
     var textAlignment: TextAlignment = TextAlignment.LEFT,
     /** The color of the font shadow, if applicable. */
-    var fontShadowColor: Color = Color.BLACK,
+    var fontShadowColor: Color = Color.TRANSPARENT,
     /** The radius of the font shadow (a value between 0.0 and 127.0). */
     var fontShadowRadius: Double = 2.0,
     /** The spread of the font shadow, i.e. the portion of the radius where the contribution of the source material is 100%. Value between 0.0 and 1.0. */
@@ -65,23 +61,23 @@ data class Theme (
     }
 
     /** Creates a number of CSS variables that can be appended to a stylesheet and used freely. */
-    fun toStylesheet(): String {
-        return "-font-family: $fontFamily;\n" +
-               "-text-fill: ${ColorConverter.convert(fontColor).css};\n" +
-               "-text-fill-desaturated: ${ColorConverter.convert(fontColor).shiftBy(-0.25).css};\n" +
-               "-font-shadow: dropshadow(gaussian, ${ColorConverter.convert(fontShadowColor).css}, $fontShadowRadius, $fontShadowSpread, $fontShadowOffsetX, $fontShadowOffsetY);\n" +
-               "-window-fill: ${ColorConverter.convert(windowBackground).css};\n" +
-               "-document-fill: ${ColorConverter.convert(documentBackground).css};\n" +
-               "-document-fill-hover: ${ColorConverter.convert(documentBackground).brighter().css};\n" +
-               "-document-fill-light: ${ColorConverter.convert(documentBackground).shiftBy(0.05).css};\n" +
-               "-document-fill-lighter: ${ColorConverter.convert(documentBackground).shiftBy(0.1).css};\n" +
-               "-document-fill-lightest: ${ColorConverter.convert(documentBackground).shiftBy(0.15).css};\n" +
-               "-document-fill-dark: ${ColorConverter.convert(documentBackground).shiftBy(-0.05).css};\n" +
-               "-document-fill-darker: ${ColorConverter.convert(documentBackground).shiftBy(-0.10).css};\n" +
-               "-document-fill-darkest: ${ColorConverter.convert(documentBackground).shiftBy(-0.15).css};\n" +
-               "-text-alignment: ${textAlignment.name.toLowerCase()};\n" +
-               "-paragraph-spacing: 50;\n" +
-               "-first-line-indent: ${firstLineIndent}px;\n" +
-               "-line-spacing: ${PercentageStringConverter().toString(lineHeight)};"
-    }
+    // fun toStylesheet(): String {
+    //     return "-font-family: $fontFamily;\n" +
+    //            "-text-fill: ${ColorConverter.convert(fontColor).css};\n" +
+    //            "-text-fill-desaturated: ${ColorConverter.convert(fontColor).shiftBy(-0.25).css};\n" +
+    //            "-font-shadow: dropshadow(gaussian, ${ColorConverter.convert(fontShadowColor).css}, $fontShadowRadius, $fontShadowSpread, $fontShadowOffsetX, $fontShadowOffsetY);\n" +
+    //            "-window-fill: ${ColorConverter.convert(windowBackground).css};\n" +
+    //            "-document-fill: ${ColorConverter.convert(documentBackground).css};\n" +
+    //            "-document-fill-hover: ${ColorConverter.convert(documentBackground).brighter().css};\n" +
+    //            "-document-fill-light: ${ColorConverter.convert(documentBackground).shiftBy(0.05).css};\n" +
+    //            "-document-fill-lighter: ${ColorConverter.convert(documentBackground).shiftBy(0.1).css};\n" +
+    //            "-document-fill-lightest: ${ColorConverter.convert(documentBackground).shiftBy(0.15).css};\n" +
+    //            "-document-fill-dark: ${ColorConverter.convert(documentBackground).shiftBy(-0.05).css};\n" +
+    //            "-document-fill-darker: ${ColorConverter.convert(documentBackground).shiftBy(-0.10).css};\n" +
+    //            "-document-fill-darkest: ${ColorConverter.convert(documentBackground).shiftBy(-0.15).css};\n" +
+    //            "-text-alignment: ${textAlignment.name.toLowerCase()};\n" +
+    //            "-paragraph-spacing: 50;\n" +
+    //            "-first-line-indent: ${firstLineIndent}px;\n" +
+    //            "-line-spacing: ${PercentageStringConverter().toString(lineHeight)};"
+    // }
 }

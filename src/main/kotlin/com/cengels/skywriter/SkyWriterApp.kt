@@ -8,6 +8,7 @@ import javafx.scene.image.Image
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCodeCombination
 import javafx.scene.input.KeyCombination
+import javafx.scene.text.Font
 import javafx.stage.Stage
 import javafx.stage.WindowEvent
 import sun.awt.OSInfo
@@ -17,13 +18,15 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import javax.swing.filechooser.FileSystemView
 
-class SkyWriterApp : App(WriterView::class, GeneralStylesheet::class, FormattingStylesheet::class) {
+class SkyWriterApp : App(WriterView::class, GeneralStylesheet::class, ThemedStylesheet::class) {
     companion object {
         private val isWindows = OSInfo.getOSType() == OSInfo.OSType.WINDOWS
         /** A [Path] corresponding to the user's home directory. On Windows, this will generally be `%USER%/AppData/Roaming`. On all other operating systems, the property `user.home` is used. */
         val homeDirectory: Path = Paths.get(if (isWindows) System.getenv("APPDATA") else System.getProperty("user.home"))
         /** Skywriter's application directory within the user's home directory. This is where configuration files and historical data will be stored. */
         val applicationDirectory: Path = homeDirectory.resolve(if (isWindows) "Skywriter" else "skywriter")
+        val applicationIcon = Image(SkyWriterApp::class.java.getResourceAsStream("air.png"))
+        val applicationFont: Font = Font.loadFont(SkyWriterApp::class.java.getResource("Baloo2-Regular.ttf").toExternalForm(), 10.7)
 
         @JvmStatic
         fun main(args: Array<String>) {
@@ -58,7 +61,6 @@ class SkyWriterApp : App(WriterView::class, GeneralStylesheet::class, Formatting
 
         super.start(stage)
 
-        stage.scene.stylesheets.add(WriterView::class.java.getResource("dynamic.css").toExternalForm())
-        stage.icons.add(Image(this::class.java.getResourceAsStream("air.png")))
+        stage.icons.add(applicationIcon)
     }
 }

@@ -2,28 +2,33 @@ package com.cengels.skywriter.theming
 
 import com.cengels.skywriter.enum.FieldType
 import com.cengels.skywriter.fragments.Dialog
+import com.cengels.skywriter.style.ThemedStylesheet
+import com.cengels.skywriter.style.ThemingStylesheet
+import com.cengels.skywriter.svg.Icons
 import com.cengels.skywriter.util.*
 import javafx.application.Platform
-import javafx.beans.binding.DoubleBinding
 import javafx.beans.property.Property
 import javafx.geometry.Pos
 import javafx.scene.control.ButtonBar
-import javafx.scene.control.ListCell
 import javafx.scene.control.OverrunStyle
 import javafx.scene.control.ScrollPane
 import javafx.scene.effect.BlurType
 import javafx.scene.effect.DropShadow
-import javafx.scene.layout.*
+import javafx.scene.layout.HBox
+import javafx.scene.layout.Priority
+import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
-import javafx.scene.shape.SVGPath
 import javafx.scene.text.Font
-import javafx.scene.transform.Transform
 import javafx.stage.Screen
 import tornadofx.*
 import java.io.File
-import kotlin.math.ceil
 
-class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialog<Theme>(if (theme.name.isNotEmpty()) "Edit theme" else "Add theme") {
+class EditThemeView(theme: Theme, private val otherThemes: List<String>)
+    : Dialog<Theme>(if (theme.name.isNotEmpty()) "Edit theme" else "Add theme", ThemingStylesheet()) {
+    companion object {
+        private const val SCALING_FACTOR = 0.7
+    }
+
     private val model: EditThemeViewModel = EditThemeViewModel(theme)
     private var textAreaBox: VBox? = null
 
@@ -31,19 +36,20 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
         super.onDock()
 
         setWindowMinSize(900.0, 440.0)
+        setWindowInitialSize(1120.0, 690.0)
         // During the first layout pass, widthProperty does not fire a changed event.
         // Therefore, prefHeight will remain unset without the below call.
         Platform.runLater { textAreaBox?.requestLayout() }
     }
 
-    override val root = borderpane {
+    override val content = borderpane {
         left {
             scrollpane {
                 hbarPolicy = ScrollPane.ScrollBarPolicy.NEVER
-                maxWidth = 307.5
+                maxWidth = 350.0
 
                 form {
-                    maxWidth = 300.0
+                    maxWidth = this@scrollpane.maxWidth - 7.5
                     fieldset {
                         field("Name") {
                             textfield(model.nameProperty) {
@@ -72,7 +78,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                         }
                         field("Line height") {
                             (inputContainer as HBox).alignment = Pos.CENTER_LEFT
-                            percentfield(model.lineHeightProperty, 10.0)
+                            percentfield(model.lineHeightProperty, 10.0).isDisable = true
                             combobox(model.textAlignmentProperty) {
                                 minWidth = 80.0
                             }
@@ -96,6 +102,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                         field("Image") {
                             (inputContainer as HBox).alignment = Pos.CENTER_LEFT
                             button(model.backgroundImageProperty.stringBinding { it?.takeLastWhile { char -> char != File.separatorChar } ?: "Choose an image..." }) {
+                                addClass(ThemedStylesheet.skyButton)
                                 action {
                                     val initialDir = if (!model.backgroundImage.isNullOrBlank()) File(model.backgroundImage).parent else System.getProperty("user.dir")
 
@@ -111,7 +118,8 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                                 }
                                 useMaxWidth = true
                             }
-                            button(graphic = SVGPath().apply { content = "M 18 6 L 6 18 M 6 6 L 18 18"; stroke = Color.BLACK; strokeWidth = 2.0 }) {
+                            svgbutton(Icons.X, "Remove background image") {
+                                maxWidth = 33.0
                                 disableWhen { model.backgroundImageProperty.isBlank() }
                                 action {
                                     model.backgroundImage = null
@@ -163,12 +171,12 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                         field {
                             (inputContainer as HBox).alignment = Pos.CENTER_LEFT
                             label("Horizontal").minWidth = 60.0
-                            pixelfield(model.paddingHorizontalProperty as Property<Number>)
+                            pixelfield(model.paddingHorizontalProperty)
                             label("Vertical") {
                                 minWidth = 50.0
                                 alignment = Pos.CENTER_RIGHT
                             }
-                            pixelfield(model.paddingVerticalProperty as Property<Number>)
+                            pixelfield(model.paddingVerticalProperty)
                         }
                     }
 
@@ -178,7 +186,8 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                             colorpicker(model.fontShadowColorProperty, ColorPickerMode.Button) {
                                 useMaxWidth = true
                             }
-                            button(graphic = SVGPath().apply { content = "M 18 6 L 6 18 M 6 6 L 18 18"; stroke = Color.BLACK; strokeWidth = 2.0 }) {
+                            svgbutton(Icons.X, "Remove font shadow") {
+                                maxWidth = 33.0
                                 disableWhen { model.fontShadowColorProperty.isEqualTo(Color.TRANSPARENT) }
                                 action {
                                     model.fontShadowColor = Color.TRANSPARENT
@@ -187,7 +196,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                         }
                         field {
                             label("Radius").minWidth = 50.0
-                            pixelfield(model.fontShadowRadiusProperty as Property<Number>) {
+                            pixelfield(model.fontShadowRadiusProperty) {
                                 validator {
                                     if (it == null || !it.isDouble() || it.toDouble() > 127.0) {
                                         error("Value must be between 0 and 127.");
@@ -201,9 +210,9 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                         }
                         field {
                             label("Offset X").minWidth = 50.0
-                            pixelfield(model.fontShadowOffsetXProperty as Property<Number>)
+                            pixelfield(model.fontShadowOffsetXProperty)
                             label("Offset Y").minWidth = 50.0
-                            pixelfield(model.fontShadowOffsetYProperty as Property<Number>)
+                            pixelfield(model.fontShadowOffsetYProperty)
                         }
                     }
                 }
@@ -218,32 +227,35 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                     isFillWidth = false
 
                     backgroundProperty().bind(model.windowBackgroundProperty.objectBinding(model.backgroundImageProperty, model.backgroundImageSizingTypeProperty) { getBackgroundFor(it!!, model.backgroundImage, model.backgroundImageSizingType) })
-                    // 16:9
-                    prefHeightProperty().bind(widthProperty().multiply(0.5625))
+                    prefHeightProperty().bind(widthProperty().multiply(0.5625)) // 16:9
+                    val originalWidth = 750.0
+                    val originalHeight = originalWidth * 0.5625
                     textAreaBox = this@textArea
 
                     alignment = Pos.CENTER
 
                     vbox document@{
                         isFillWidth = true
-                        paddingVerticalProperty.bind(model.paddingVerticalProperty)
-                        paddingHorizontalProperty.bind(model.paddingHorizontalProperty)
+                        paddingHorizontalProperty.bind(model.paddingHorizontalProperty.doubleBinding(this@textArea.widthProperty()) {
+                            it!! * SCALING_FACTOR * this@textArea.width / originalWidth
+                        })
+                        paddingVerticalProperty.bind(model.paddingVerticalProperty.doubleBinding(this@textArea.heightProperty()) {
+                            it!! * SCALING_FACTOR * this@textArea.height / originalHeight
+                        })
+
+                        prefWidthProperty().bind(model.documentWidthProperty.doubleBinding(this@textArea.widthProperty()) {
+                            if (model.documentWidth > 0.0 && model.documentWidth <= 1.0)
+                                this@textArea.width * model.documentWidth
+                                else this@textArea.width / Screen.getPrimary().bounds.width * model.documentWidth
+                        })
+
+                        prefHeightProperty().bind(model.documentHeightProperty.doubleBinding(this@textArea.heightProperty()) {
+                            if (model.documentHeight > 0.0 && model.documentHeight <= 1.0)
+                                this@textArea.height * model.documentHeight
+                            else this@textArea.height / Screen.getPrimary().bounds.height * model.documentHeight
+                        })
 
                         backgroundProperty().bind(model.documentBackgroundProperty.backgroundBinding())
-                        prefWidthProperty().bind(model.documentWidthProperty.doubleBinding(this@textArea.widthProperty(), FX.primaryStage.widthProperty()) {
-                            if (it!! <= 1) {
-                                return@doubleBinding this@textArea.width * it
-                            }
-
-                            return@doubleBinding it / Screen.getPrimary().bounds.width * this@textArea.width
-                        })
-                        prefHeightProperty().bind(model.documentHeightProperty.doubleBinding(this@textArea.heightProperty(), FX.primaryStage.heightProperty()) {
-                            if (it!! <= 1) {
-                                return@doubleBinding this@textArea.height * it
-                            }
-
-                            return@doubleBinding it / Screen.getPrimary().bounds.height * this@textArea.height
-                        })
 
                         label {
                             useMaxWidth = true
@@ -256,8 +268,8 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>) : Dialo
                             })
                             isWrapText = true
                             textOverrun = OverrunStyle.CLIP
-                            fontProperty().bind(this@parentContainer.widthProperty().objectBinding(model.fontSizeProperty, model.fontFamilyProperty) {
-                                Font.font(model.fontFamily, this@parentContainer.height / FX.primaryStage.height * model.fontSize)
+                            fontProperty().bind(model.fontSizeProperty.objectBinding(this@textArea.widthProperty(), model.fontFamilyProperty) {
+                                Font.font(model.fontFamily, model.fontSize * SCALING_FACTOR * this@textArea.width / originalWidth)
                             })
                         }
                     }

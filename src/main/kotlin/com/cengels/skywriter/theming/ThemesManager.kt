@@ -2,11 +2,13 @@ package com.cengels.skywriter.theming
 
 import com.cengels.skywriter.SkyWriterApp
 import com.cengels.skywriter.persistence.AppConfig
+import com.cengels.skywriter.util.convert.ColorTypeAdapter
 import com.google.gson.GsonBuilder
 import javafx.beans.property.SimpleListProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.ObservableList
 import javafx.concurrent.Task
+import javafx.scene.paint.Color
 import javafx.scene.text.Font
 import tornadofx.*
 import java.io.File
@@ -19,7 +21,7 @@ object ThemesManager {
     val fonts: List<String>?
         get() = fontsTask?.get()
 
-    val gson = GsonBuilder().setPrettyPrinting().create()
+    val gson = GsonBuilder().registerTypeAdapter(Color::class.java, ColorTypeAdapter()) .setPrettyPrinting().create()
     val themesProperty = SimpleListProperty<Theme>(observableListOf())
     var themes: ObservableList<Theme> by themesProperty
     val selectedThemeProperty = SimpleObjectProperty<Theme>(DEFAULT)
