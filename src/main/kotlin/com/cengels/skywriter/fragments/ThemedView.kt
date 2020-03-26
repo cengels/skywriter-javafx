@@ -76,6 +76,7 @@ abstract class ThemedView(title: String? = null, val stylesheet: Stylesheet? = n
 
             if (minWidth != 0.0 && width == 0.0) width = minWidth
             if (minHeight != 0.0 && height == 0.0) height = minHeight
+            if (y < 0) y = 0.0
         }
     }
 }
