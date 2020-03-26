@@ -52,11 +52,14 @@ class WriterViewModel {
     fun load(segmentOps: SegmentOps<String, MutableCollection<String>>): StyleClassedDocument {
         val file = this.file ?: throw NullPointerException("File cannot be null when attempting to save a document.")
 
+        findAndReplaceState = FindAndReplace.None
+
         return MarkdownParser.load(file, segmentOps)
     }
 
     fun reset(document: EditableStyleClassedDocument) {
         originalDocument = document.snapshot()
+        findAndReplaceState = FindAndReplace.None
         file = null
         newProgressTracker(0)
     }
