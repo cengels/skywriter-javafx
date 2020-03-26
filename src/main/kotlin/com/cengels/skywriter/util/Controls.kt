@@ -206,13 +206,15 @@ fun EventTarget.fontpicker(property: Property<String>, fonts: List<String>? = Fo
     required()
 
     // This increases performance. Without this, opening the combobox for the first time takes over a second.
-    properties["comboBoxRowsToMeasureWidth"] = 10
+    properties["comboBoxRowsToMeasureWidth"] = 0
 
     // Show the font in its own font family
     setCellFactory {
         return@setCellFactory object: ListCell<String>() {
             override fun updateItem(item: String?, empty: Boolean) {
                 super.updateItem(item, empty)
+
+                prefWidth = 300.0
 
                 if (empty || item == null) {
                     text = null
@@ -226,7 +228,7 @@ fun EventTarget.fontpicker(property: Property<String>, fonts: List<String>? = Fo
     }
 
     // Auto complete
-    var searchString: String = ""
+    var searchString = ""
     var lastInput: Instant = Instant.MIN
 
     setOnKeyTyped { keyEvent ->

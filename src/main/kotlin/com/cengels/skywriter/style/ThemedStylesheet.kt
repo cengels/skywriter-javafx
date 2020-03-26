@@ -122,11 +122,16 @@ class ThemedStylesheet : Stylesheet() {
             }
 
             scrollBar {
+                cursor = Cursor.HAND
                 backgroundColor += Color.TRANSPARENT
                 prefWidth = 14.px
                 prefHeight = 14.px
 
                 trackBackground {
+                    backgroundColor += Color.TRANSPARENT
+                }
+
+                s(incrementButton, decrementButton) {
                     backgroundColor += Color.TRANSPARENT
                 }
 
@@ -137,11 +142,11 @@ class ThemedStylesheet : Stylesheet() {
                     height = 0.px
                     width = 0.px
                     fill = Color.TRANSPARENT
-                    backgroundColor += Color.TRANSPARENT
                 }
 
                 thumb {
                     +selectable()
+                    minHeight = 40.px
                 }
             }
 
@@ -173,7 +178,7 @@ class ThemedStylesheet : Stylesheet() {
             }
 
             comboBoxBase {
-                +selectable(Colors.Background.LOW)
+                +selectable(Colors.Background.LOW, selected = Colors.Background.HOVER)
                 +textColor(Colors.Font.LOW)
 
                 arrowButton {
@@ -183,8 +188,41 @@ class ThemedStylesheet : Stylesheet() {
                 }
             }
 
+            comboBoxPopup contains listView {
+                backgroundColor += Color.TRANSPARENT
+
+                listCell and filled {
+                }
+
+                listCell {
+                    and(filled) {
+                        +selectable(Colors.Background.LOW)
+                    }
+
+                    // Gets rid of a visible line at the bottom of the list (unfilled cells)
+                    backgroundColor += Colors.Background.LOW
+                }
+
+                scrollBar {
+                    backgroundColor += Colors.Background.HOVER
+
+                    thumb {
+                        backgroundColor += Colors.Background.SELECTION
+                        minHeight = 100.px
+                    }
+                }
+            }
+
             colorPicker {
                 minWidth = 110.px
+            }
+
+            s(colorPalette) {
+                backgroundColor += Colors.Background.LOW
+            }
+
+            colorPickerGrid {
+                backgroundColor += Colors.Background.HOVER
             }
 
             button {

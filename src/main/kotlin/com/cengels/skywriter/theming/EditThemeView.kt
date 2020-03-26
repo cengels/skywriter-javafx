@@ -74,7 +74,7 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>)
                         }
                         field("Line height") {
                             (inputContainer as HBox).alignment = Pos.CENTER_LEFT
-                            percentfield(model.lineHeightProperty, 10.0)
+                            percentfield(model.lineHeightProperty, 10.0).isDisable = true
                             combobox(model.textAlignmentProperty) {
                                 minWidth = 80.0
                             }
