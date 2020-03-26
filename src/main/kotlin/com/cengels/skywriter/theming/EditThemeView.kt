@@ -25,6 +25,10 @@ import java.io.File
 
 class EditThemeView(theme: Theme, private val otherThemes: List<String>)
     : Dialog<Theme>(if (theme.name.isNotEmpty()) "Edit theme" else "Add theme", ThemingStylesheet()) {
+    companion object {
+        private const val SCALING_FACTOR = 0.7
+    }
+
     private val model: EditThemeViewModel = EditThemeViewModel(theme)
     private var textAreaBox: VBox? = null
 
@@ -223,32 +227,35 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>)
                     isFillWidth = false
 
                     backgroundProperty().bind(model.windowBackgroundProperty.objectBinding(model.backgroundImageProperty, model.backgroundImageSizingTypeProperty) { getBackgroundFor(it!!, model.backgroundImage, model.backgroundImageSizingType) })
-                    // 16:9
-                    prefHeightProperty().bind(widthProperty().multiply(0.5625))
+                    prefHeightProperty().bind(widthProperty().multiply(0.5625)) // 16:9
+                    val originalWidth = 750.0
+                    val originalHeight = originalWidth * 0.5625
                     textAreaBox = this@textArea
 
                     alignment = Pos.CENTER
 
                     vbox document@{
                         isFillWidth = true
-                        paddingVerticalProperty.bind(model.paddingVerticalProperty)
-                        paddingHorizontalProperty.bind(model.paddingHorizontalProperty)
+                        paddingHorizontalProperty.bind(model.paddingHorizontalProperty.doubleBinding(this@textArea.widthProperty()) {
+                            it!! * SCALING_FACTOR * this@textArea.width / originalWidth
+                        })
+                        paddingVerticalProperty.bind(model.paddingVerticalProperty.doubleBinding(this@textArea.heightProperty()) {
+                            it!! * SCALING_FACTOR * this@textArea.height / originalHeight
+                        })
+
+                        prefWidthProperty().bind(model.documentWidthProperty.doubleBinding(this@textArea.widthProperty()) {
+                            if (model.documentWidth > 0.0 && model.documentWidth <= 1.0)
+                                this@textArea.width * model.documentWidth
+                                else this@textArea.width / Screen.getPrimary().bounds.width * model.documentWidth
+                        })
+
+                        prefHeightProperty().bind(model.documentHeightProperty.doubleBinding(this@textArea.heightProperty()) {
+                            if (model.documentHeight > 0.0 && model.documentHeight <= 1.0)
+                                this@textArea.height * model.documentHeight
+                            else this@textArea.height / Screen.getPrimary().bounds.height * model.documentHeight
+                        })
 
                         backgroundProperty().bind(model.documentBackgroundProperty.backgroundBinding())
-                        prefWidthProperty().bind(model.documentWidthProperty.doubleBinding(this@textArea.widthProperty(), FX.primaryStage.widthProperty()) {
-                            if (it!! <= 1) {
-                                return@doubleBinding this@textArea.width * it
-                            }
-
-                            return@doubleBinding it / Screen.getPrimary().bounds.width * this@textArea.width
-                        })
-                        prefHeightProperty().bind(model.documentHeightProperty.doubleBinding(this@textArea.heightProperty(), FX.primaryStage.heightProperty()) {
-                            if (it!! <= 1) {
-                                return@doubleBinding this@textArea.height * it
-                            }
-
-                            return@doubleBinding it / Screen.getPrimary().bounds.height * this@textArea.height
-                        })
 
                         label {
                             useMaxWidth = true
@@ -261,8 +268,8 @@ class EditThemeView(theme: Theme, private val otherThemes: List<String>)
                             })
                             isWrapText = true
                             textOverrun = OverrunStyle.CLIP
-                            fontProperty().bind(this@parentContainer.widthProperty().objectBinding(model.fontSizeProperty, model.fontFamilyProperty) {
-                                Font.font(model.fontFamily, this@parentContainer.height / FX.primaryStage.height * model.fontSize)
+                            fontProperty().bind(model.fontSizeProperty.objectBinding(this@textArea.widthProperty(), model.fontFamilyProperty) {
+                                Font.font(model.fontFamily, model.fontSize * SCALING_FACTOR * this@textArea.width / originalWidth)
                             })
                         }
                     }

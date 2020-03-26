@@ -122,13 +122,24 @@ fun Node.findParent(predicate: (node: Node) -> Boolean): Node? {
     return parent.findParent(predicate)
 }
 
+/** Listens to a variable number of observables and executes the given function if any of the observables change as well as executing it once during the initial call. */
+fun executeAndListen(vararg dependencies: Observable, op: () -> Unit) {
+    listen(true, *dependencies, op = op)
+}
+
 /** Listens to a variable number of observables and executes the given function if any of the observables change. */
 fun listen(vararg dependencies: Observable, op: () -> Unit) {
+    listen(false, *dependencies, op = op)
+}
+
+private fun listen(executeNow: Boolean, vararg dependencies: Observable, op: () -> Unit) {
     if (dependencies.isEmpty()) {
         throw IllegalArgumentException("Must specify at least one dependency.")
     }
 
     dependencies.forEach { it.addListener { op() } }
+
+    if (executeNow) op()
 }
 
 /** Animates this property whenever the given observable value changes. */
