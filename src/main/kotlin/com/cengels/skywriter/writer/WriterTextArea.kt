@@ -34,6 +34,8 @@ import tornadofx.finally
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.text.BreakIterator
+import kotlin.math.max
+import kotlin.math.min
 
 class WriterTextArea : StyleClassedTextArea() {
     val smartReplacer: SmartReplacer = SmartReplacer(SmartReplacer.DEFAULT_QUOTES_MAP, SmartReplacer.DEFAULT_SYMBOL_MAP)
@@ -58,6 +60,8 @@ class WriterTextArea : StyleClassedTextArea() {
     private var centerCaretRequested: Boolean = false
     private val virtualFlow: VirtualFlow<Any, Cell<Any, Node>> = this.children.filterIsInstance<VirtualFlow<Any, Cell<Any, Node>>>().single()
     private var undoEnabled = SuspendableYes()
+    /** Describes the original index of the user's click when they hold the mouse down. */
+    private var hitOrigin: Int = -1
 
     init {
         this.isWrapText = true
@@ -144,10 +148,13 @@ class WriterTextArea : StyleClassedTextArea() {
                 it.clickCount == 2 -> textSelectionMode = TextSelectionMode.Word
                 it.clickCount >= 3 -> textSelectionMode = TextSelectionMode.Line
             }
+
+            hitOrigin = caretPosition
         }
 
         this.setOnMouseReleased {
             textSelectionMode = TextSelectionMode.None
+            hitOrigin = -1
         }
 
         this.setOnNewSelectionDrag {
@@ -351,7 +358,6 @@ class WriterTextArea : StyleClassedTextArea() {
 
     /** Vertically centers the caret in the viewport. */
     fun requestCenterCaret() {
-        // this.showParagraphAtBottom(currentParagraph)
         // visible paragraphs will not be updated yet if this isn't run asynchronously
         centerCaretRequested = true
     }
@@ -371,25 +377,21 @@ class WriterTextArea : StyleClassedTextArea() {
     }
 
     /** Selects the specified range plus the words immediately surrounding the start and end points. */
-    fun selectWords(anchorPosition: Int, caretPosition: Int) {
-        val anchorWord = text.findWordBoundaries(anchorPosition)
-        val caretWord = text.findWordBoundaries(caretPosition)
+    fun selectWords(range: IntRange) {
+        val iterator = getWordBreakIterator()
 
-        if (caretPosition > anchorPosition || anchorWord == caretWord) {
-            selectRange(anchorWord.first, caretWord.last)
-        } else {
-            selectRange(anchorWord.last, caretWord.first)
-        }
+        selectRange(max(iterator.preceding(range.first), 0), iterator.following(range.last - 1).let { if (it == -1) this.text.length else it })
     }
 
     /** Selects the lines between the specified start and end points. */
-    fun selectLines(anchorPosition: Int, caretPosition: Int) {
-        if (caretPosition > anchorPosition) {
-            val caretParagraph = getParagraphIndexAt(caretPosition)
-            selectRange(getParagraphIndexAt(anchorPosition), 0, caretParagraph, getParagraphLength(caretParagraph))
-        } else {
-            val anchorParagraph = getParagraphIndexAt(anchorPosition)
-            selectRange(anchorParagraph, getParagraphLength(anchorParagraph), getParagraphIndexAt(caretPosition), 0)
+    fun selectLines(range: IntRange) {
+        val lastParagraph = getParagraphIndexAt(range.last)
+        selectRange(getParagraphIndexAt(range.first), 0, lastParagraph, getParagraphLength(lastParagraph))
+    }
+
+    private fun getWordBreakIterator(): BreakIterator {
+        return BreakIterator.getWordInstance().also {
+            it.setText(text.replace('’', '\'').replace('‘', '\''))
         }
     }
 
@@ -569,15 +571,13 @@ class WriterTextArea : StyleClassedTextArea() {
     }
 
     private fun getPrecedingWordBreakIterator(at: Int = caretPosition): BreakIterator {
-        return BreakIterator.getWordInstance().also {
-            it.setText(text)
+        return getWordBreakIterator().also {
             it.preceding(at)
         }
     }
 
     private fun getFollowingWordBreakIterator(at: Int = caretPosition): BreakIterator {
-        return BreakIterator.getWordInstance().also {
-            it.setText(text)
+        return getWordBreakIterator().also {
             it.following(at)
         }
     }
@@ -585,8 +585,8 @@ class WriterTextArea : StyleClassedTextArea() {
     private fun updateSelection(hit: Int) {
         when (textSelectionMode) {
             TextSelectionMode.Character -> moveTo(hit, NavigationActions.SelectionPolicy.ADJUST)
-            TextSelectionMode.Word -> selectWords(anchor, hit)
-            TextSelectionMode.Line -> selectLines(anchor, hit)
+            TextSelectionMode.Word -> selectWords(min(hit, hitOrigin)..max(hit, hitOrigin))
+            TextSelectionMode.Line -> selectLines(min(hit, hitOrigin)..max(hit, hitOrigin))
             else -> return
         }
     }
