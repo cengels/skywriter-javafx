@@ -70,6 +70,9 @@ class WriterTextArea : StyleClassedTextArea() {
         // prefer HTML (the RTF codecs are imperfect)
         decoderCodecs = listOf(HtmlCodecs.DOCUMENT_CODEC, RtfCodecs.DOCUMENT_CODEC)
 
+        wordCountEngine.behaviour.excludedStyles = listOf("comment")
+        undoManager = UndoUtils.richTextSuspendableUndoManager(this, undoEnabled)
+
         this.caretPositionProperty().addListener { _, _, _ ->
             if (this.initialized) {
                 this.requestFollowCaret()
@@ -82,9 +85,6 @@ class WriterTextArea : StyleClassedTextArea() {
                 }
             }
         }
-
-        wordCountEngine.behaviour.excludedStyles = listOf("search-highlighting", "comment")
-        undoManager = UndoUtils.richTextSuspendableUndoManager(this, undoEnabled)
 
         this.plainTextChanges().subscribe { change ->
             midChange = true
@@ -142,20 +142,31 @@ class WriterTextArea : StyleClassedTextArea() {
             InputMap.consume(EventPattern.keyPressed(KeyCode.DELETE, KeyCombination.CONTROL_DOWN)) { event -> this.deleteNextWord() }
         ))
 
-        this.setOnMousePressed {
-            when {
-                it.clickCount == 1 -> textSelectionMode = TextSelectionMode.Character
-                it.clickCount == 2 -> textSelectionMode = TextSelectionMode.Word
-                it.clickCount >= 3 -> textSelectionMode = TextSelectionMode.Line
+        Nodes.addInputMap(this, InputMap.sequence<MouseEvent>(
+            InputMap.consume(EventPattern.mousePressed()) { event ->
+
+                when {
+                    event.clickCount == 1 -> {
+                        moveTo(hit(event.x, event.y).insertionIndex)
+                        textSelectionMode = TextSelectionMode.Character
+                    }
+                    event.clickCount == 2 -> {
+                        selectWord()
+                        textSelectionMode = TextSelectionMode.Word
+                    }
+                    event.clickCount >= 3 -> {
+                        selectParagraph()
+                        textSelectionMode = TextSelectionMode.Paragraph
+                    }
+                }
+
+                hitOrigin = caretPosition
+            },
+            InputMap.consume(EventPattern.mouseReleased()) { event ->
+                textSelectionMode = TextSelectionMode.None
+                hitOrigin = -1
             }
-
-            hitOrigin = caretPosition
-        }
-
-        this.setOnMouseReleased {
-            textSelectionMode = TextSelectionMode.None
-            hitOrigin = -1
-        }
+        ))
 
         this.setOnNewSelectionDrag {
             // By default, RichTextFX has no special behaviour for double or triple click selections, so it's
@@ -376,6 +387,10 @@ class WriterTextArea : StyleClassedTextArea() {
         }
     }
 
+    override fun selectWord() {
+        selectWords(caretPosition..caretPosition)
+    }
+
     /** Selects the specified range plus the words immediately surrounding the start and end points. */
     fun selectWords(range: IntRange) {
         val iterator = getWordBreakIterator()
@@ -383,8 +398,8 @@ class WriterTextArea : StyleClassedTextArea() {
         selectRange(max(iterator.preceding(range.first), 0), iterator.following(range.last - 1).let { if (it == -1) this.text.length else it })
     }
 
-    /** Selects the lines between the specified start and end points. */
-    fun selectLines(range: IntRange) {
+    /** Selects the paragraphs between the specified start and end points. */
+    fun selectParagraphs(range: IntRange) {
         val lastParagraph = getParagraphIndexAt(range.last)
         selectRange(getParagraphIndexAt(range.first), 0, lastParagraph, getParagraphLength(lastParagraph))
     }
@@ -586,7 +601,7 @@ class WriterTextArea : StyleClassedTextArea() {
         when (textSelectionMode) {
             TextSelectionMode.Character -> moveTo(hit, NavigationActions.SelectionPolicy.ADJUST)
             TextSelectionMode.Word -> selectWords(min(hit, hitOrigin)..max(hit, hitOrigin))
-            TextSelectionMode.Line -> selectLines(min(hit, hitOrigin)..max(hit, hitOrigin))
+            TextSelectionMode.Paragraph -> selectParagraphs(min(hit, hitOrigin)..max(hit, hitOrigin))
             else -> return
         }
     }

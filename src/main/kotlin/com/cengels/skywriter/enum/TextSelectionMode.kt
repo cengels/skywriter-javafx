@@ -6,6 +6,6 @@ enum class TextSelectionMode {
     Character,
     /** The user has clicked twice. The selection increments by whole words. */
     Word,
-    /** The user has clicked three times. The selection increments by lines. */
-    Line
+    /** The user has clicked three times. The selection increments by paragraphs. */
+    Paragraph
 }
