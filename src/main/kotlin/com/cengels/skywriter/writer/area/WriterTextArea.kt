@@ -215,10 +215,9 @@ class WriterTextArea : StyleClassedTextArea() {
         if (selection.length > 0) {
             val content = ClipboardContent()
             val encoderCodec = this.encoderCodec
+            content.putString(selectedText)
 
-            if (encoderCodec == null) {
-                content.putString(selectedText)
-            } else {
+            if (encoderCodec != null) {
                 val subDocument = subDocument(selection.start, selection.end)
                 val byteOutputStream = ByteArrayOutputStream()
                 try {
