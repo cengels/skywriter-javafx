@@ -9,6 +9,9 @@ import com.cengels.skywriter.style.WriterViewStylesheet
 import com.cengels.skywriter.theming.ThemesManager
 import com.cengels.skywriter.theming.ThemesView
 import com.cengels.skywriter.util.*
+import com.cengels.skywriter.writer.area.WriterTextArea
+import com.cengels.skywriter.writer.area.activateStyle
+import com.cengels.skywriter.writer.area.clearStyle
 import javafx.animation.Interpolator
 import javafx.beans.value.ObservableDoubleValue
 import javafx.geometry.Pos
@@ -40,69 +43,31 @@ class WriterView : View("Skywriter") {
         model.dirtyProperty.onChange { this.updateTitle() }
     }
 
-    val textArea = WriterTextArea().also {
-        it.richChanges().subscribe { change ->
-            model.dirty = model.originalDocument != it.document?.snapshot()
+    val textArea = WriterTextArea().also { textArea ->
+        textArea.richChanges().subscribe { change ->
+            model.dirty = model.originalDocument != textArea.document?.snapshot()
             model.progressTracker?.lastChange = LocalDateTime.now()
             model.progressTracker?.scheduleReset()
         }
 
         model.originalDocumentProperty.addListener { observable, oldValue, newValue ->
-            model.dirty = newValue != it.document?.snapshot()
+            model.dirty = newValue != textArea.document?.snapshot()
         }
 
         model.findAndReplaceStateProperty.addListener { observable, oldValue, newValue ->
             if (newValue == WriterViewModel.FindAndReplace.None) {
-                it.clearStyle(0, it.text.lastIndex, "search-highlighting")
+                textArea.clearStyle("search-highlighting")
             }
         }
 
-        it.wordCountProperty.addListener { observable, oldValue, newValue ->
-            if (it.initialized) {
-                model.updateProgress(it.wordCount)
+        textArea.wordCountProperty.addListener { observable, oldValue, newValue ->
+            if (textArea.initialized) {
+                model.updateProgress(textArea.wordCount)
             }
         }
 
-        it.useMaxHeight = true
-        it.paddingHorizontalProperty.bind(ThemesManager.selectedThemeProperty.doubleBinding { it!!.paddingHorizontal.toDouble() })
-        it.paddingVerticalProperty.bind(ThemesManager.selectedThemeProperty.doubleBinding { it!!.paddingVertical.toDouble() })
-        it.backgroundProperty().bind(ThemesManager.selectedThemeProperty.objectBinding { it!!.documentBackground.toBackground() })
-
-        ThemesManager.selectedThemeProperty.onChangeAndNow { theme ->
-            it.style {
-                fontSize = theme!!.fontSize.pt
-                fontFamily = theme.fontFamily
-            }
-        }
-
-        it.contextMenu = contextmenu {
-            item("Cut") {
-                this.enableWhen(it.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
-                this.action { it.cut() }
-            }
-            item("Copy") {
-                this.enableWhen(it.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
-                this.action { it.copy() }
-            }
-            item("Paste").action { it.paste() }
-            item("Paste Untracked").action {
-                val wordCountBefore = it.wordCount
-                it.paste()
-                model.correct(it.wordCount - wordCountBefore)
-            }
-            item("Delete") {
-                this.enableWhen(it.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
-                action { it.deleteText(it.selection) }
-            }
-            item("Delete Untracked") {
-                this.enableWhen(it.selectionProperty().booleanBinding { selection -> selection!!.length > 0 })
-                action {
-                    val wordCountBefore = it.wordCount
-                    it.deleteText(it.selection)
-                    model.correct(it.wordCount - wordCountBefore)
-                }
-            }
-        }
+        textArea.useMaxHeight = true
+        textArea.contextMenu = WriterViewContextMenu(textArea, model)
 
         // Doesn't work.
 //        shortcut("Shift+Enter") {

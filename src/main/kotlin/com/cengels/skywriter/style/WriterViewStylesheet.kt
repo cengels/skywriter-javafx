@@ -48,6 +48,11 @@ class WriterViewStylesheet(theme: Theme) : Stylesheet() {
         }
 
         styledTextArea {
+            fontSize = theme.fontSize.pt
+            fontFamily = theme.fontFamily
+            backgroundColor += theme.documentBackground
+            padding = box(theme.paddingVertical.px, theme.paddingHorizontal.px)
+
             star {
                 textAlignment = theme.textAlignment
                 fontSmoothingType = FontSmoothingType.GRAY

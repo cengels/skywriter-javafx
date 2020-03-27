@@ -1,4 +1,4 @@
-package com.cengels.skywriter.writer
+package com.cengels.skywriter.writer.area
 
 import com.cengels.skywriter.enum.Heading
 import com.cengels.skywriter.enum.TextSelectionMode
@@ -56,22 +56,19 @@ class WriterTextArea : StyleClassedTextArea() {
     private var encoderCodec: DocumentCodec<Any>? = null
     private var decoderCodecs: List<DocumentCodec<Any>> = listOf()
     private var midChange: Boolean = false
-    private var textSelectionMode: TextSelectionMode = TextSelectionMode.None
     private var centerCaretRequested: Boolean = false
     private val virtualFlow: VirtualFlow<Any, Cell<Any, Node>> = this.children.filterIsInstance<VirtualFlow<Any, Cell<Any, Node>>>().single()
-    private var undoEnabled = SuspendableYes()
-    /** Describes the original index of the user's click when they hold the mouse down. */
-    private var hitOrigin: Int = -1
+    private val undoEnabled = SuspendableYes()
 
     init {
         this.isWrapText = true
-
         encoderCodec = HtmlCodecs.DOCUMENT_CODEC
         // prefer HTML (the RTF codecs are imperfect)
         decoderCodecs = listOf(HtmlCodecs.DOCUMENT_CODEC, RtfCodecs.DOCUMENT_CODEC)
-
         wordCountEngine.behaviour.excludedStyles = listOf("comment")
         undoManager = UndoUtils.richTextSuspendableUndoManager(this, undoEnabled)
+        this.initializeNavigation()
+        smartReplacer.observe(this)
 
         this.caretPositionProperty().addListener { _, _, _ ->
             if (this.initialized) {
@@ -134,49 +131,6 @@ class WriterTextArea : StyleClassedTextArea() {
                 (wordCountProperty as IntegerProperty).set(this.countWords())
             }
         }
-
-        Nodes.addInputMap(this, InputMap.sequence<KeyEvent>(
-            InputMap.consume(EventPattern.keyPressed(KeyCode.END)) { event -> this.moveTo(this.text.lastIndex) },
-            InputMap.consume(EventPattern.keyPressed(KeyCode.HOME)) { event -> this.moveTo(0) },
-            InputMap.consume(EventPattern.keyPressed(KeyCode.BACK_SPACE, KeyCombination.CONTROL_DOWN)) { event -> this.deleteLastWord() },
-            InputMap.consume(EventPattern.keyPressed(KeyCode.DELETE, KeyCombination.CONTROL_DOWN)) { event -> this.deleteNextWord() }
-        ))
-
-        Nodes.addInputMap(this, InputMap.sequence<MouseEvent>(
-            InputMap.consume(EventPattern.mousePressed()) { event ->
-
-                when {
-                    event.clickCount == 1 -> {
-                        moveTo(hit(event.x, event.y).insertionIndex)
-                        textSelectionMode = TextSelectionMode.Character
-                    }
-                    event.clickCount == 2 -> {
-                        selectWord()
-                        textSelectionMode = TextSelectionMode.Word
-                    }
-                    event.clickCount >= 3 -> {
-                        selectParagraph()
-                        textSelectionMode = TextSelectionMode.Paragraph
-                    }
-                }
-
-                hitOrigin = caretPosition
-            },
-            InputMap.consume(EventPattern.mouseReleased()) { event ->
-                textSelectionMode = TextSelectionMode.None
-                hitOrigin = -1
-            }
-        ))
-
-        this.setOnNewSelectionDrag {
-            // By default, RichTextFX has no special behaviour for double or triple click selections, so it's
-            // manually implemented here.
-            updateSelection(hit(it.x, it.y).insertionIndex)
-        }
-
-        this.setOnNewSelectionDragFinished { /* overridden so the selection doesn't change on mouse release */ }
-
-        smartReplacer.observe(this)
     }
 
     /** Executes the given block with the [undoManager] ignoring any changes emitted during the execution. */
@@ -190,19 +144,6 @@ class WriterTextArea : StyleClassedTextArea() {
         this.undoManager.forgetHistory()
         textInsertionStyle = null
         midChange = false
-        textSelectionMode = TextSelectionMode.None
-    }
-
-    /** Deletes the next word and only the next word, excluding the last space. */
-    fun deleteNextWord() {
-        val nextWordBoundary = getFollowingWordBreakIterator().next()
-        deleteText(caretPosition, if (text[nextWordBoundary].isLetterOrDigit()) nextWordBoundary - 1 else nextWordBoundary)
-    }
-
-    /** Deletes the last word and only the last word, excluding the first space. */
-    fun deleteLastWord() {
-        val previousWordBoundary = getPrecedingWordBreakIterator().previous()
-        deleteText(if (text[previousWordBoundary].isLetterOrDigit()) previousWordBoundary else previousWordBoundary + 1, caretPosition)
     }
 
     /** Queues the specified call until after the document has completed all its queued changes and is ready to accept new ones. */
@@ -231,123 +172,6 @@ class WriterTextArea : StyleClassedTextArea() {
         }
     }
 
-    /** Gets the paragraph at the specified absolute character position. */
-    fun getParagraphAt(characterPosition: Int): StyleClassedParagraph {
-        return getParagraph(getParagraphIndexAt(characterPosition))
-    }
-
-    /** Gets the paragraph index at the specified absolute character position. */
-    fun getParagraphIndexAt(characterPosition: Int): Int {
-        return this.offsetToPosition(characterPosition, TwoDimensional.Bias.Backward).major
-    }
-
-    fun updateSelectionWith(className: String) {
-        val selection: IndexRange = this.selection
-        this.toggleStyleClass(selection.start, selection.end, className)
-    }
-
-    fun isRangeStyled(start: Int, end: Int, className: String): Boolean {
-        val styleSpans = getStyleSpans(start, end)
-
-        return styleSpans.all { span -> span.style.any { style -> style == className } }
-    }
-
-    /** Maintains all styles in the given range and adds or removes the given class from the range. */
-    fun toggleStyleClass(start: Int, end: Int, className: String) {
-        if (isRangeStyled(start, end, className)) {
-            clearStyle(start, end, className)
-        } else {
-            addStyle(start, end, className)
-        }
-    }
-
-    /** Clears all styles of the given class from the document. */
-    fun clearStyle(className: String) {
-        suspendUndo { setStyleSpans(0, getStyleSpans(0, text.lastIndex).mapStyles { style -> style.minusAll(className) }) }
-    }
-
-    /** Clears all styles of the given class from the given range. */
-    fun clearStyle(start: Int, end: Int, className: String) {
-        setStyleSpans(start, getStyleSpans(start, end).mapStyles { style -> style.minusAll(className) })
-    }
-
-    /** Adds the style of the given class to the given range, maintaining all pre-existing styles. */
-    fun addStyle(start: Int, end: Int, className: String) {
-        setStyleSpans(start, getStyleSpans(start, end).mapStyles { style -> style.plusDistinct(className) })
-    }
-
-    /** Merges the style spans in the given range with the given style spans by adding each className from the given style spans to the current style spans in a union. */
-    fun unionStyles(start: Int, end: Int, styleSpans: StyleSpans<MutableCollection<String>>) {
-        suspendUndo {
-            setStyleSpans(start, getStyleSpans(start, end).overlay(styleSpans) { first, second ->
-                return@overlay first.plus(second)
-            })
-        }
-    }
-
-    /** Merges the style spans in the given range with the given style spans by subtracting each className from the given style spans to the current style spans in an exclusion. */
-    fun excludeStyles(start: Int, end: Int, styleSpans: StyleSpans<MutableCollection<String>>) {
-        suspendUndo {
-            setStyleSpans(start, getStyleSpans(start, end).overlay(styleSpans) { first, second ->
-                return@overlay first.minus(second)
-            })
-        }
-    }
-
-    private fun createStyleSpans(ranges: List<IntRange>, className: String): StyleSpans<MutableCollection<String>> {
-        return StyleSpansBuilder<MutableCollection<String>>().apply {
-            ranges.forEachIndexed { index, it ->
-                add(mutableListOf(className), it.length)
-
-                if (ranges.size > index + 1) {
-                    val inBetween = ranges[index + 1].first - it.last
-
-                    if (inBetween > 0) {
-                        add(mutableListOf(), ranges[index + 1].first - it.last)
-                    }
-                }
-            }
-        }.create()
-    }
-
-    /** Adds the given style class to each style span in the given ranges. This allows you to update multiple parts of the document in one pass. */
-    fun mergeStyles(ranges: List<IntRange>, className: String) {
-        if (ranges.isEmpty()) {
-            return
-        }
-
-        val styleSpans = createStyleSpans(ranges, className)
-        unionStyles(ranges.first().first, ranges.last().last, styleSpans)
-    }
-
-    /** Clears the given style class from each style span in the given ranges. This allows you to update multiple parts of the document in one pass. */
-    fun clearStyles(ranges: List<IntRange>, className: String) {
-        if (ranges.isEmpty()) {
-            return
-        }
-
-        val styleSpans = createStyleSpans(ranges, className)
-        excludeStyles(ranges.first().first, ranges.last().last, styleSpans)
-    }
-
-    /** If text is selected, styles the selected text with the specified class. Otherwise, starts a new segment with the specified style class. */
-    fun activateStyle(className: String) {
-        if (selection.length > 0) {
-            updateSelectionWith(className)
-        } else {
-            textInsertionStyle.let {
-                val styleAtPosition = getStyleAtPosition(caretPosition)
-                textInsertionStyle = when {
-                    it == null -> if (styleAtPosition.contains(className))
-                                      styleAtPosition.minus(className)
-                                      else styleAtPosition.plus(className)
-                    it.contains(className) -> it.minus(className)
-                    else -> it.plus(className)
-                }
-            }
-        }
-    }
-
     /** Sets the currently selected paragraphs as the specified heading. */
     fun setHeading(heading: Heading?) {
         val range = this.getSelectedParagraphs()
@@ -362,10 +186,6 @@ class WriterTextArea : StyleClassedTextArea() {
             this.setParagraphStyle(i, stylesWithoutHeading)
         }
     }
-
-    /** Gets the index range of selected paragraphs. If only one paragraph is selected, start and end will be the same. */
-    fun getSelectedParagraphs(): IndexRange =
-        IndexRange(this.caretSelectionBind.startParagraphIndex, this.caretSelectionBind.endParagraphIndex)
 
     /** Vertically centers the caret in the viewport. */
     fun requestCenterCaret() {
@@ -389,25 +209,6 @@ class WriterTextArea : StyleClassedTextArea() {
 
     override fun selectWord() {
         selectWords(caretPosition..caretPosition)
-    }
-
-    /** Selects the specified range plus the words immediately surrounding the start and end points. */
-    fun selectWords(range: IntRange) {
-        val iterator = getWordBreakIterator()
-
-        selectRange(max(iterator.preceding(range.first), 0), iterator.following(range.last - 1).let { if (it == -1) this.text.length else it })
-    }
-
-    /** Selects the paragraphs between the specified start and end points. */
-    fun selectParagraphs(range: IntRange) {
-        val lastParagraph = getParagraphIndexAt(range.last)
-        selectRange(getParagraphIndexAt(range.first), 0, lastParagraph, getParagraphLength(lastParagraph))
-    }
-
-    private fun getWordBreakIterator(): BreakIterator {
-        return BreakIterator.getWordInstance().also {
-            it.setText(text.replace('’', '\'').replace('‘', '\''))
-        }
     }
 
     override fun copy() {
@@ -541,6 +342,11 @@ class WriterTextArea : StyleClassedTextArea() {
         }
     }
 
+    /** Counts the number of selected words in the text area. */
+    fun countSelectedWords(): Int {
+        return this.countWords(this.selection)
+    }
+
     private fun countWords(range: IndexRange): Int {
         return wordCountEngine.sum(this.subDocument(range))
     }
@@ -552,57 +358,5 @@ class WriterTextArea : StyleClassedTextArea() {
         }
 
         return this.countWords(IndexRange(0, this.text.lastIndex))
-    }
-
-    /** Counts the number of selected words in the text area. */
-    fun countSelectedWords(): Int {
-        return this.countWords(this.selection)
-    }
-
-    /** Highlights all occurrences of the specified string in the document. */
-    fun highlight(searchString: String, className: String, wholeWords: Boolean = false, caseSensitive: Boolean = false) {
-        val matches = TextAreaSearcher.assembleRegex(searchString, wholeWords, caseSensitive, useRegex = false)
-            .findAll(this.text)
-
-        mergeStyles(matches.map { it.range.first..it.range.last + 1 }.toList(), className)
-    }
-
-    private fun getTextWithoutComments(from: Int, to: Int): String {
-        if (text.isEmpty()) {
-            return ""
-        }
-
-        var index = 0
-        return getStyleSpans(0, text.lastIndex).fold("") { acc, styleSpan ->
-            if (styleSpan.style.contains("comment")) {
-                index += styleSpan.length
-                acc
-            } else {
-                acc + getText(index, index + styleSpan.length).also {
-                    index += styleSpan.length
-                }
-            }
-        }
-    }
-
-    private fun getPrecedingWordBreakIterator(at: Int = caretPosition): BreakIterator {
-        return getWordBreakIterator().also {
-            it.preceding(at)
-        }
-    }
-
-    private fun getFollowingWordBreakIterator(at: Int = caretPosition): BreakIterator {
-        return getWordBreakIterator().also {
-            it.following(at)
-        }
-    }
-
-    private fun updateSelection(hit: Int) {
-        when (textSelectionMode) {
-            TextSelectionMode.Character -> moveTo(hit, NavigationActions.SelectionPolicy.ADJUST)
-            TextSelectionMode.Word -> selectWords(min(hit, hitOrigin)..max(hit, hitOrigin))
-            TextSelectionMode.Paragraph -> selectParagraphs(min(hit, hitOrigin)..max(hit, hitOrigin))
-            else -> return
-        }
     }
 }

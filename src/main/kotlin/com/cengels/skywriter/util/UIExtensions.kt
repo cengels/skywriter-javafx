@@ -20,6 +20,7 @@ import javafx.geometry.Insets
 import javafx.geometry.Rectangle2D
 import javafx.scene.Node
 import javafx.scene.Scene
+import javafx.scene.control.IndexRange
 import javafx.scene.image.Image
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
@@ -223,3 +224,7 @@ val Window.screenBounds: Rectangle2D
 
         return Rectangle2D(minX, minY, width, height)
     }
+
+operator fun IndexRange.contains(index: Int): Boolean {
+    return this.start <= index && index < this.end
+}

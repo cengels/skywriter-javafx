@@ -1,4 +1,4 @@
-package com.cengels.skywriter.writer
+package com.cengels.skywriter.writer.area
 
 import com.cengels.skywriter.util.replace
 import javafx.beans.property.SimpleBooleanProperty
@@ -50,7 +50,12 @@ class TextAreaSearcher(private val context: WriterTextArea) {
         }
 
         try {
-            assembleRegex(it, this.findWholeWords, this.caseSensitive, this.useRegex)
+            assembleRegex(
+                it,
+                this.findWholeWords,
+                this.caseSensitive,
+                this.useRegex
+            )
         } catch (e: PatternSyntaxException) {
             null
         }

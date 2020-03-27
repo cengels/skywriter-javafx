@@ -1,4 +1,4 @@
-package com.cengels.skywriter.writer
+package com.cengels.skywriter.writer.area
 
 import org.fxmisc.richtext.model.PlainTextChange
 import org.fxmisc.richtext.model.TwoDimensional
