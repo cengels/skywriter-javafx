@@ -323,9 +323,13 @@ class WriterTextArea : StyleClassedTextArea() {
                     if (endTokenIndex != -1) {
                         text.findLastAnyOf(tokenList, change.position)?.also {
                             if (it.second == startToken && text.findAnyOf(tokenList, change.position)?.second != endToken) {
-                                removalIndices.add(it.first..change.position)
+                                removalIndices.add(it.first..change.position + 1)
                             }
                         }
+                    }
+
+                    if ((startTokenIndex != -1 || endTokenIndex != -1) && removalIndices.isEmpty()) {
+                        removalIndices.add(change.position..change.insertionEnd)
                     }
                 }
             }
