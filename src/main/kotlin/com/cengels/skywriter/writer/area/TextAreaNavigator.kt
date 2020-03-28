@@ -33,7 +33,7 @@ fun WriterTextArea.initializeNavigation() {
 
             when {
                 event.clickCount == 1 -> {
-                    moveTo(hit(event.x, event.y).insertionIndex)
+                    moveTo(hit(event.x, event.y).insertionIndex, if (event.isShiftDown) NavigationActions.SelectionPolicy.ADJUST else NavigationActions.SelectionPolicy.CLEAR)
                     textSelectionMode = TextSelectionMode.Character
                 }
                 event.clickCount == 2 -> {
