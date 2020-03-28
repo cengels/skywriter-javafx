@@ -4,6 +4,7 @@ import com.cengels.skywriter.persistence.AppConfig
 import com.cengels.skywriter.style.*
 import com.cengels.skywriter.theming.ThemesManager
 import com.cengels.skywriter.writer.WriterView
+import javafx.application.Platform
 import javafx.scene.image.Image
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCodeCombination
@@ -39,6 +40,7 @@ class SkyWriterApp : App(WriterView::class, GeneralStylesheet::class, ThemedStyl
     }
 
     override fun start(stage: Stage) {
+        Platform.setImplicitExit(false)
         stage.minWidth = 300.0
         stage.minHeight = 200.0
 
@@ -59,8 +61,20 @@ class SkyWriterApp : App(WriterView::class, GeneralStylesheet::class, ThemedStyl
         ThemesManager.load()
         ThemesManager.selectedTheme = ThemesManager.themes.find { it.name == AppConfig.activeTheme } ?: ThemesManager.DEFAULT
 
-        super.start(stage)
-
         stage.icons.add(applicationIcon)
+
+        super.start(stage)
     }
+
+    override fun onBeforeShow(view: UIComponent) {
+        super.onBeforeShow(view)
+        view.primaryStage.hide()
+
+        FX.initialized.onChangeOnce {
+            view.primaryStage.show()
+            Platform.setImplicitExit(true)
+        }
+    }
+
+    override fun shouldShowPrimaryStage(): Boolean = false
 }
