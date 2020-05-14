@@ -1,10 +1,12 @@
-# Legacy
+# What is this?
 
-This is a legacy project. You're probably looking for [this repository](https://github.com/cengels/skywriter).
+This is a repository for Skywriter, a distraction-free writer that exports directly to Markdown, written in Kotlin and JavaFX.
 
-## What is this?
+## Legacy
 
-This is a repository of Skywriter, a distraction-free writer that exports directly to Markdown, written in Kotlin and JavaFX.
+This is a legacy project. You may be looking for [this repository](https://github.com/cengels/skywriter), which is a reimplementation of this project in Qt.
+
+Do note that the linked repository is a non-functional work-in-progress. The project contained in this repository is, however, in a **fully working and functional state**, apart from some bugs and limitations caused by the underlying framework, so feel free to check it out and compile it if you wish. I still use this project exclusively for my own writing while development on the new Qt project is ongoing.
 
 ## Why was this project abandoned in favour of the new skywriter project?
 
